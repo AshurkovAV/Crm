@@ -1,0 +1,265 @@
+/* Контейнер для фиксированных кнопок */
+.fixed-buttons-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+/* Общие стили для обеих ссылок */
+.create-account, .policy-link {
+    position: absolute;
+    font-size: 16px;
+    color: white;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    padding: 12px 25px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    pointer-events: auto;
+    z-index: 1001;
+}
+
+/* Позиционирование для create-account */
+.create-account {
+    top: 20px;
+    right: 20px;
+}
+
+/* Позиционирование для policy-link */
+.policy-link {
+    bottom: 20px;
+    left: 20px;
+}
+
+    /* Стили при наведении для обеих ссылок */
+    .create-account:hover, .policy-link:hover {
+        background: rgba(255, 255, 255, 0.25);
+        backdrop-filter: blur(15px);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        color: white;
+        text-decoration: none;
+    }
+
+    /* Стили при клике для обеих ссылок */
+    .create-account:active, .policy-link:active {
+        transform: translateY(0);
+    }
+
+/* Основной контент по центру */
+.main-content {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* Адаптивность для мобильных устройств */
+@@media screen and (max-width: 768px) {
+    .fixed-buttons-container {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+        padding: 20px;
+        order: 3; /* Перемещаем в конец */
+    }
+
+    .create-account, .policy-link {
+        position: relative;
+        text-align: center;
+        width: 100%;
+        max-width: 300px;
+        top: auto;
+        right: auto;
+        bottom: auto;
+        left: auto;
+        margin: 0;
+    }
+
+    .main-content {
+        order: 2;
+        min-height: auto;
+        padding: 40px 20px;
+    }
+}
+
+/* Стили для формы авторизации (дополнительные улучшения) */
+.wrapper {
+    width: 100%;
+    max-width: 450px;
+    margin: 0 auto;
+}
+
+#formContent {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+
+
+
+.social-login {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 30px;
+}
+
+.social-btn {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+    background-color: #56baed;
+    color: white;
+    font-size: 24px;
+    border: none;
+    -webkit-box-shadow: 0 10px 30px 0 rgba(95,186,233,0.4);
+    box-shadow: 0 10px 30px 0 rgba(95,186,233,0.4);
+}
+
+    .social-btn:hover {
+        transform: translateY(-5px);
+        -webkit-box-shadow: 0 15px 30px 0 rgba(95,186,233,0.6);
+        box-shadow: 0 15px 30px 0 rgba(95,186,233,0.6);
+    }
+
+.social-name {
+    display: block;
+    text-align: center;
+    margin-top: 8px;
+    font-size: 12px;
+    color: #2c539e;
+    font-weight: 500;
+}
+
+.social-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.divider {
+    display: flex;
+    align-items: center;
+    margin: 20px 0;
+}
+
+    .divider::before, .divider::after {
+        content: "";
+        flex: 1;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .divider span {
+        padding: 0 15px;
+        color: #777;
+        font-size: 14px;
+    }
+
+.form-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: #2c539e;
+        font-weight: 500;
+    }
+
+    .form-group input {
+        width: 100%;
+        padding: 16px;
+        border: 1px solid #dce6f8;
+        border-radius: 10px;
+        font-size: 16px;
+        transition: all 0.3s ease;
+        background: #f5f9ff;
+    }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #2c539e;
+            box-shadow: 0 0 0 3px rgba(44, 83, 158, 0.2);
+        }
+
+.login-btn {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, #2c539e 0%, #3b6cc7 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(32, 106, 203, 0.3);
+}
+
+    .login-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 7px 18px rgba(32, 106, 203, 0.4);
+    }
+
+.signup-link {
+    text-align: center;
+    margin-top: 25px;
+    color: #7a7a7a;
+}
+
+    .signup-link a {
+        color: #2c539e;
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+        .signup-link a:hover {
+            text-decoration: underline;
+        }
+
+@media (max-width: 500px) {
+    .container {
+        padding: 30px 20px;
+    }
+
+    .social-login {
+        gap: 15px;
+    }
+
+    .social-btn {
+        width: 35px;
+        height: 35px;
+        font-size: 15px;
+    }
+}
+
+label {
+    font-size: 14px;
+    padding-top: 25px;
+    margin-bottom: 8px;
+    display: block;
+    width: 100%;
+}

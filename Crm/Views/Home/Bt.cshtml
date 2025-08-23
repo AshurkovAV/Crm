@@ -1,0 +1,53 @@
+﻿@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Размытая ссылка-кнопка</title>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .blur-link {
+            display: inline-block;
+            padding: 15px 35px;
+            font-size: 18px;
+            text-decoration: none;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+            .blur-link:hover {
+                background: rgba(255, 255, 255, 0.25);
+                backdrop-filter: blur(15px);
+                transform: translateY(-2px);
+                box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
+                color: white;
+                text-decoration: none;
+            }
+
+            .blur-link:active {
+                transform: translateY(0);
+            }
+    </style>
+</head>
+<body>
+    <a href="#" class="blur-link">Моя размытая ссылка</a>
+</body>
+</html>

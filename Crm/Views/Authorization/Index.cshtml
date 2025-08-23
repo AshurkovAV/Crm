@@ -1,0 +1,55 @@
+﻿@{
+    Layout = null;
+}
+
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM - Вход в систему</title>
+    <link rel="stylesheet" href="~/css/lk.css" />
+</head>
+<body>
+    <div class="container">
+        <div class="login-section">
+            <h1>CRM</h1>
+            <h2>Войти в систему</h2>
+            
+            <div class="login-form">
+                <div class="form-group">
+                    <label>Логин</label>
+                    <input type="text" placeholder="Введите логин">
+                </div>
+                
+                <div class="form-group">
+                    <label>Пароль</label>
+                    <input type="password" placeholder="Введите пароль">
+                </div>
+                
+                <button class="login-button">ВОЙТИ В СИСТЕМУ</button>
+            </div>
+            
+            <div class="auth-links">
+                <a href="register.html">Регистрация</a> | 
+                <a href="forgot-password.html">Забыли пароль?</a>
+            </div>
+            
+            <div class="help-text">
+                Политика обработки персональных данных
+            </div>
+            
+            <div class="footer">
+                <p>Cистема управления производством — мы вам поможем.</p>
+            </div>
+            
+            <div class="organization">
+                <p>Эффективно управлять заказами клиентов и производственными процессами</p>
+            </div>
+        </div>
+        
+        <div class="image-section" style="background-image: url(/image/bg-account.jpg);">
+            <!-- Фоновое изображение задано через CSS -->
+        </div>
+    </div>
+</body>
+</html>

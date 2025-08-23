@@ -1,0 +1,76 @@
+﻿@page
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Войти в CRM</title>
+    <link href="~/css/Site.css" rel="stylesheet" />
+    <link href="~/css/authorization/lk.css" rel="stylesheet" />
+    <link href="~/css/devextreme/dx.light.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="~/js/devextreme/jquery.js"></script>
+    <script src="~/js/devextreme/dx.all.js"></script>
+    <script src="~/js/devextreme/localization/dx.messages.ru.js"></script>
+    <script src="~/js/modules/auth/authorization.js"></script>  
+</head>
+<body>
+    <!-- Контейнер для фиксированных кнопок -->
+    <div class="fixed-buttons-container">
+        <a href="Home/Create" class="create-account">Создать кабинет CRM</a>
+        <a href="#" class="policy-link">Политика обработки персональных данных</a>
+    </div>
+
+    <!-- Основной контент -->
+    <div class="main-content">
+        <div class="wrapper fadeInDown">
+            <div id="formContent">
+                <!-- Tabs Titles -->
+                <h2 class="active">Вход в CRM</h2>
+                <!-- Login Form -->
+                <form id="loginForm" autocomplete="on">
+                    <label for="email">E-mail или телефон</label>
+                    <input type="text"
+                           id="email"
+                           class="fadeIn second"
+                           name="email"
+                           placeholder="name@company.ru">                   
+                    <button type="submit" id="loginButton" class="fadeIn fourth dx-button dx-button-default">
+                        <span class="button-text">Войти</span>
+                    </button>                   
+                </form>
+                <div class="divider">
+                    <span>или</span>
+                </div>
+                <div class="social-login">
+                    <div class="social-item">
+                        <div class="social-btn" title="VK">
+                            <i class="fab fa-vk"></i>
+                        </div>                        
+                    </div>
+
+                    <div class="social-item">
+                        <div class="social-btn" title="Mail.ru">
+                            <i class="far fa-envelope"></i>
+                        </div>                        
+                    </div>
+
+                    <div class="social-item">
+                        <div class="social-btn" title="Yandex">
+                            <span style="font-weight: bold;">Я</span>
+                        </div>                        
+                    </div>
+
+                    <div class="social-item">
+                        <div class="social-btn" title="Google">
+                            <i class="fab fa-google"></i>
+                        </div>                       
+                    </div>
+                </div>
+               
+            </div>
+        </div>
+    </div>
+</body>
+</html>
