@@ -13,7 +13,7 @@
     <script src="~/js/devextreme/jquery.js"></script>
     <script src="~/js/devextreme/dx.all.js"></script>
     <script src="~/js/devextreme/localization/dx.messages.ru.js"></script>
-    <script src="~/js/modules/auth/authorization.js"></script>  
+    <script src="~/js/modules/auth/create.js"></script>
 </head>
 <body>
     <!-- Контейнер для фиксированных кнопок -->
@@ -36,10 +36,18 @@
                            class="fadeIn second"
                            name="email"
                            placeholder="name@company.ru">                   
-                    <button type="submit" id="loginButton" class="fadeIn fourth dx-button dx-button-default">
-                        <span class="button-text">Войти</span>
-                    </button>                   
+                    <button type="submit" id="loginButton" class="fadeIn fourth">
+                        <span class="button-text">Продолжить</span>
+                    </button>
                 </form>
+                <div style="color: #828b95; font-size: 13px; margin: 21px; padding: 15px 8px 5px;">
+                    <span style="display: block; text-align: left;">
+                        Нажимая кнопку «Продолжить», вы подтверждаете, что принимаете
+                        <a href="">пользовательское соглашение</a>, даёте поручение и
+                        <a href="">согласие</a> на обработку персональных данных.
+                    </span>
+                   
+                </div>
                 <div class="divider">
                     <span>создайте с помощью</span>
                 </div>

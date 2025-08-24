@@ -386,14 +386,23 @@ button[type=submit], button[type=button], button[type=reset] {
     }
 }
 
-#loginButton {
-    position: relative;
-    width: 200px; /* Фиксированная ширина */
-    height: 50px; /* Фиксированная высота */
-    padding: 0; /* Убираем стандартные отступы */
-    overflow: hidden; /* Скрываем выходящее за границы */
-}
+    #loginButton {
+        width: 85%;
+        margin: 5px auto 40px auto;
+        display: block;
+        padding: 15px 0; /* Убираем боковые отступы, оставляем только вертикальные */
+    }
 
+    input[type=text], input[type=password], #loginButton {
+        width: 85%;
+        margin: 5px auto;
+        display: block;
+    }
+
+   
+    #loginButton:hover, #loginButton:active {
+        width: 85%; /* Сохраняем ширину при взаимодействии */
+    }
 .button-content {
     display: inline-block;
     position: relative;
