@@ -407,7 +407,7 @@ public partial class CrmContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Users__3214EC076F4B87AF");
+            entity.HasKey(e => e.Id).HasName("PK__Users__3214EC0779243ABA");
 
             entity.ToTable(tb => tb.HasTrigger("trg_Users_UpdateModifiedDate"));
 
@@ -426,6 +426,7 @@ public partial class CrmContext : DbContext
             entity.Property(e => e.Login).HasMaxLength(255);
             entity.Property(e => e.ModifiedDate).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.RealName).HasMaxLength(255);
+            entity.Property(e => e.Role).HasMaxLength(20);
             entity.Property(e => e.Sex).HasMaxLength(10);
         });
 

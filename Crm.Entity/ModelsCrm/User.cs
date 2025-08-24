@@ -31,6 +31,8 @@ public partial class User
 
     public string? IsAvatarEmpty { get; set; }
 
+    public string? Role { get; set; }
+
     public bool IsActive { get; set; }
 
     public string? DefaultPhone { get; set; }

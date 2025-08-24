@@ -1,4 +1,4 @@
-﻿using Crm.Domain.Entities;
+﻿using Crm.Entity.Entities;
 using Crm.Entity.Services;
 using MediatR;
 using Microsoft.Extensions.Logging;

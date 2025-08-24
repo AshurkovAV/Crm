@@ -37,5 +37,10 @@ namespace Crm.Entity.Services
 
             return result;
         }
+
+        public Task AddAsync(Entities.User user)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
