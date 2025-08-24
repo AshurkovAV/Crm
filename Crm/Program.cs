@@ -6,7 +6,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 
 //Внедряем зависимость
-builder.Services.AddSingleton<ICrmRepository, CrmRepository>();
+builder.Services.AddSingleton<ICrmRepository,  CrmRepository>();
+builder.Services.AddSingleton<IUserRepository, UserRepository>();
+
 
 var app = builder.Build();
 

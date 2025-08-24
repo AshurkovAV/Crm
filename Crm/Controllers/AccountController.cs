@@ -5,22 +5,49 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using Crm.Extensions;
+using MediatR;
 
 namespace Crm.Controllers
 {
-    public class AuthorizationController : Controller
+    public class AccountController : Controller
     {
         private ICrmRepository  _crmRepository;
-        public AuthorizationController(ICrmRepository crmRepository)
+        private readonly IMediator _mediator;
+        public AccountController(ICrmRepository crmRepository,
+            IMediator mediator)
         {
+            _mediator = mediator;
             _crmRepository = crmRepository;             
         }
 
         [HttpPost]
-        [Route("/Authorization/Login")]
+        [Route("/Account/Login")]
         public async Task<IActionResult> Login([FromBody] LoginModel model)
         {
-            Console.WriteLine("/Authorization/Login");
+            Console.WriteLine("/Account/Login");
+            if (!ModelState.IsValid)
+            {
+                return Json(new { success = false, message = "invalid_credentials" });
+            }
+            Console.WriteLine("Запрос в базу данных для проверки пользователя");
+            var user = _crmRepository.GetUser(model.Email);
+            if (user.HasError)
+            {
+                return Json(new { success = false, message = "not_email" });
+            }
+
+            await Authenticate(model.Email); // Аутентификация (если нужно)
+            HttpContext.Session.SetCurrentUser(user.Data);
+
+            return Json(new { success = true, redirectUrl = Url.Action("Index", "Home") });
+
+        }
+
+        [HttpPost]
+        [Route("/Account/Create")]
+        public async Task<IActionResult> Create([FromBody] LoginModel model)
+        {
+            Console.WriteLine("/Account/Create");
             if (!ModelState.IsValid)
             {
                 return Json(new { success = false, message = "invalid_credentials" });

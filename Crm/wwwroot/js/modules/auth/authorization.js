@@ -19,7 +19,7 @@
             });
 
             try {
-                const response = await fetch("/Authorization/Login", {
+                const response = await fetch("/Account/Login", {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: jsonData
