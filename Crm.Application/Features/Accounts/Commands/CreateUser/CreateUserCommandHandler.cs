@@ -24,12 +24,12 @@ namespace Crm.Application.Features.Accounts.Commands.CreateUser
                 // 1. Проверяем, существует ли пользователь
                 var us = _userRepository.GetUser(request.Email);
 
-                if (us.HasError)
+                if (us.Success)
                 {
                     return new CreateUserResult
                     {
                         Succeeded = false,
-                        Errors = new List<string> { "User with this email already exists" }
+                        Errors = new List<string> { "Пользователь с таким адресом электронной почты уже существует" }
                     };
                 }
 
@@ -39,8 +39,7 @@ namespace Crm.Application.Features.Accounts.Commands.CreateUser
                     );
 
                 // 4. Сохраняем в базу
-                await _userRepository.AddAsync(user);
-               // await _userRepository.SaveChangesAsync(cancellationToken);
+                await _userRepository.AddAsync(user);               
 
                 _logger.LogInformation("User created successfully with ID: {UserId}", user.Id);
 
@@ -48,6 +47,7 @@ namespace Crm.Application.Features.Accounts.Commands.CreateUser
                 return new CreateUserResult
                 {
                     Succeeded = true,
+                    UserBase = user,
                     UserId = user.Id.ToString()
                 };
             }

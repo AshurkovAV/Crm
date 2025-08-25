@@ -19,20 +19,21 @@
             });
 
             try {
-                const response = await fetch("/Authorization/Login", {
+                const response = await fetch("/Account/Create", {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: jsonData
                 });
-
+                
                 if (!response.ok) {
                     const errorData = await response.json();
                     throw new Error(errorData.message);
                 }
 
                 const data = await response.json();
-                if (data.success) {
-                    window.location.href = "/";
+                console.error(data);
+                if (data.succeeded) {
+                    window.location.href = "/crmsetup";
                 } else {
                     throw new Error(data.message);
                 }
@@ -64,6 +65,19 @@
             case 'network_error':
                 message = "Проблемы с соединением к серверу";
                 break;
+            default:
+                // Для неизвестных ошибок используем переданное значение
+                if (errorType && typeof errorType === 'string') {
+                    message = errorType;
+                } else if (errorType && errorType.message) {
+                    // Если это объект ошибки с полем message
+                    message = errorType.message;
+                } else {
+                    // Любой другой случай
+                    message = "Неизвестная ошибка при авторизации";
+                }
+                break;
+
         }
 
         if (typeof DevExpress !== 'undefined') {

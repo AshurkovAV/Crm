@@ -1,4 +1,5 @@
-﻿using MediatR;
+﻿using Crm.Entity.Entities;
+using MediatR;
 
 namespace Crm.Application.Features.Accounts.Commands.CreateUser
 {
@@ -12,6 +13,7 @@ namespace Crm.Application.Features.Accounts.Commands.CreateUser
     {
         public bool Succeeded { get; set; }
         public string? UserId { get; set; }
+        public  User UserBase { get; set; }
         public List<string> Errors { get; set; } = new();
     }
 }

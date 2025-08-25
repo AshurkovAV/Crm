@@ -1,5 +1,7 @@
 ﻿using Crm.Core.Infrastructure;
 using Crm.Entity.ModelsCrm;
+using Microsoft.EntityFrameworkCore;
+using System.Threading;
 
 namespace Crm.Entity.Services
 {
@@ -38,9 +40,26 @@ namespace Crm.Entity.Services
             return result;
         }
 
-        public Task AddAsync(Entities.User user)
+        public async Task AddAsync(User user)
         {
-            throw new NotImplementedException();
+            using (var db = new CrmContext())
+            {
+                // Проверяем, что пользователь еще не добавлен в контекст
+                var existingEntry = db.ChangeTracker.Entries<User>()
+                    .FirstOrDefault(e => e.Entity.Id == user.Id);
+
+                if (existingEntry == null)
+                {
+                    await db.Users.AddAsync(user);
+                }
+                else
+                {
+                    // Если уже отслеживается, просто обновляем состояние
+                    existingEntry.State = EntityState.Added;
+                }
+                db.SaveChanges();
+            }
+               
         }
     }
 }

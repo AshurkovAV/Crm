@@ -5,7 +5,7 @@ namespace Crm.Entity.Services
 {
     public interface IUserRepository
     {
-        Task AddAsync(Entities.User user);
+        Task AddAsync(User user);
         TransactionResult<User> GetUser(string email);
         IEnumerable<User> GetUsers();
     }

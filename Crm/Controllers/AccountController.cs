@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using Crm.Extensions;
 using MediatR;
+using Crm.Application.Features.Accounts.Commands.CreateUser;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace Crm.Controllers
 {
@@ -19,17 +21,26 @@ namespace Crm.Controllers
             _mediator = mediator;
             _crmRepository = crmRepository;             
         }
+        public IActionResult Index()
+        {
+            return View();
+        }
+
+        public IActionResult Create()
+        {
+            return View();
+        }
 
         [HttpPost]
         [Route("/Account/Login")]
-        public async Task<IActionResult> Login([FromBody] LoginModel model)
+        public async Task<IActionResult> Login([FromBody] CreateUserCommand model)
         {
             Console.WriteLine("/Account/Login");
             if (!ModelState.IsValid)
             {
                 return Json(new { success = false, message = "invalid_credentials" });
             }
-            Console.WriteLine("Запрос в базу данных для проверки пользователя");
+            Console.WriteLine("Запрос в базу данных для проверки пользователя");           
             var user = _crmRepository.GetUser(model.Email);
             if (user.HasError)
             {
@@ -45,24 +56,25 @@ namespace Crm.Controllers
 
         [HttpPost]
         [Route("/Account/Create")]
-        public async Task<IActionResult> Create([FromBody] LoginModel model)
+        public async Task<IActionResult> Create([FromBody] CreateUserCommand model)
         {
             Console.WriteLine("/Account/Create");
             if (!ModelState.IsValid)
             {
-                return Json(new { success = false, message = "invalid_credentials" });
+                return Json(new { Succeeded = false, message = "invalid_credentials" });
             }
-            Console.WriteLine("Запрос в базу данных для проверки пользователя");
-            var user = _crmRepository.GetUser(model.Email);
-            if (user.HasError)
+            Console.WriteLine("Запрос в базу данных для проверки пользователя");            
+            var result = await _mediator.Send(model);
+
+            if (result.Succeeded)
             {
-                return Json(new { success = false, message = "not_email" });
+                await Authenticate(model.Email); // Аутентификация (если нужно)
+                HttpContext.Session.SetCurrentUser(result.UserBase);
+
+                return Json(new { Succeeded = true, redirectUrl = Url.Action("start", "CrmSetup") });
             }
 
-            await Authenticate(model.Email); // Аутентификация (если нужно)
-            HttpContext.Session.SetCurrentUser(user.Data);
-
-            return Json(new { success = true, redirectUrl = Url.Action("Index", "Home") });
+            return Json(new { Succeeded = false, message = result.Errors });
 
         }
 

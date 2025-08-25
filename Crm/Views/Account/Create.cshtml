@@ -1,0 +1,84 @@
+﻿@page
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Создайте CRM</title>
+    <link href="~/css/Site.css" rel="stylesheet" />
+    <link href="~/css/authorization/lk.css" rel="stylesheet" />
+    <link href="~/css/devextreme/dx.light.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="~/js/devextreme/jquery.js"></script>
+    <script src="~/js/devextreme/dx.all.js"></script>
+    <script src="~/js/devextreme/localization/dx.messages.ru.js"></script>
+    <script src="~/js/modules/auth/create.js"></script>
+</head>
+<body>
+    <!-- Контейнер для фиксированных кнопок -->
+    <div class="fixed-buttons-container">
+        <a href="/Account/Index" class="create-account">Войти</a>
+        <a href="#" class="policy-link">Политика обработки персональных данных</a>
+    </div>
+
+    <!-- Основной контент -->
+    <div class="main-content">
+        <div class="wrapper fadeInDown">
+            <div id="formContent">
+                <!-- Tabs Titles -->
+                <h2 class="active">Создайте CRM</h2>
+                <!-- Login Form -->
+                <form id="loginForm" autocomplete="on">
+                    <label for="email">E-mail</label>
+                    <input type="text"
+                           id="email"
+                           class="fadeIn second"
+                           name="email"
+                           placeholder="name@company.ru">                   
+                    <button type="submit" id="loginButton" class="fadeIn fourth">
+                        <span class="button-text">Продолжить</span>
+                    </button>
+                </form>
+                <div style="color: #828b95; font-size: 13px; margin: 21px; padding: 15px 8px 5px;">
+                    <span style="display: block; text-align: left;">
+                        Нажимая кнопку «Продолжить», вы подтверждаете, что принимаете
+                        <a href="">пользовательское соглашение</a>, даёте поручение и
+                        <a href="">согласие</a> на обработку персональных данных.
+                    </span>
+                   
+                </div>
+                <div class="divider">
+                    <span>создайте с помощью</span>
+                </div>
+                <div class="social-login">
+                    <div class="social-item">
+                        <div class="social-btn" title="VK">
+                            <i class="fab fa-vk"></i>
+                        </div>                        
+                    </div>
+
+                    <div class="social-item">
+                        <div class="social-btn" title="Mail.ru">
+                            <i class="far fa-envelope"></i>
+                        </div>                        
+                    </div>
+
+                    <div class="social-item">
+                        <div class="social-btn" title="Yandex">
+                            <span style="font-weight: bold;">Я</span>
+                        </div>                        
+                    </div>
+
+                    <div class="social-item">
+                        <div class="social-btn" title="Google">
+                            <i class="fab fa-google"></i>
+                        </div>                       
+                    </div>
+                </div>
+               
+            </div>
+        </div>
+    </div>
+</body>
+</html>

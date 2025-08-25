@@ -1,12 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Crm.Entity.Entities;
+using MediatR;
 
 namespace Crm.Application.Features.Accounts.Commands.Login
 {
-    internal class LoginCommand
+    public class LoginCommand : IRequest<LoginResult>
     {
+        public string Email { get; set; } = string.Empty;
+    }
+
+    public class LoginResult
+    {
+        public bool Succeeded { get; set; }
+        public string? UserId { get; set; }
+        public User UserBase { get; set; }
+        public List<string> Errors { get; set; } = new();
     }
 }

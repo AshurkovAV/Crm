@@ -1,76 +1,53 @@
-﻿@page
-@{
+﻿@{
     Layout = null;
 }
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <title>Войти в CRM</title>
-    <link href="~/css/Site.css" rel="stylesheet" />
-    <link href="~/css/authorization/lk.css" rel="stylesheet" />
-    <link href="~/css/devextreme/dx.light.css" rel="stylesheet" />
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <script src="~/js/devextreme/jquery.js"></script>
-    <script src="~/js/devextreme/dx.all.js"></script>
-    <script src="~/js/devextreme/localization/dx.messages.ru.js"></script>
-    <script src="~/js/modules/auth/authorization.js"></script>  
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Размытая ссылка-кнопка</title>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .blur-link {
+            display: inline-block;
+            padding: 15px 35px;
+            font-size: 18px;
+            text-decoration: none;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+            .blur-link:hover {
+                background: rgba(255, 255, 255, 0.25);
+                backdrop-filter: blur(15px);
+                transform: translateY(-2px);
+                box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
+                color: white;
+                text-decoration: none;
+            }
+
+            .blur-link:active {
+                transform: translateY(0);
+            }
+    </style>
 </head>
 <body>
-    <!-- Контейнер для фиксированных кнопок -->
-    <div class="fixed-buttons-container">
-        <a href="Home/Create" class="create-account">Создать кабинет CRM</a>
-        <a href="#" class="policy-link">Политика обработки персональных данных</a>
-    </div>
-
-    <!-- Основной контент -->
-    <div class="main-content">
-        <div class="wrapper fadeInDown">
-            <div id="formContent">
-                <!-- Tabs Titles -->
-                <h2 class="active">Вход в CRM</h2>
-                <!-- Login Form -->
-                <form id="loginForm" autocomplete="on">
-                    <label for="email">E-mail или телефон</label>
-                    <input type="text"
-                           id="email"
-                           class="fadeIn second"
-                           name="email"
-                           placeholder="name@company.ru">                   
-                    <button type="submit" id="loginButton" class="fadeIn fourth">
-                        <span class="button-text">Продолжить</span>
-                    </button>
-                </form>
-                <div class="divider">
-                    <span>или</span>
-                </div>
-                <div class="social-login">
-                    <div class="social-item">
-                        <div class="social-btn" title="VK">
-                            <i class="fab fa-vk"></i>
-                        </div>                        
-                    </div>
-
-                    <div class="social-item">
-                        <div class="social-btn" title="Mail.ru">
-                            <i class="far fa-envelope"></i>
-                        </div>                        
-                    </div>
-
-                    <div class="social-item">
-                        <div class="social-btn" title="Yandex">
-                            <span style="font-weight: bold;">Я</span>
-                        </div>                        
-                    </div>
-
-                    <div class="social-item">
-                        <div class="social-btn" title="Google">
-                            <i class="fab fa-google"></i>
-                        </div>                       
-                    </div>
-                </div>
-               
-            </div>
-        </div>
-    </div>
+    <a href="/Home/logout" class="blur-link">Выход пользователя</a>
 </body>
 </html>
