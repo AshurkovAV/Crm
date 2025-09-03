@@ -8,5 +8,6 @@ namespace Crm.Entity.Services
         Task AddAsync(User user);
         TransactionResult<User> GetUser(string email);
         IEnumerable<User> GetUsers();
+        UserToken InsertUserToken(UserToken user);
     }
 }

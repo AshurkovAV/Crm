@@ -8,6 +8,7 @@ using Crm.Extensions;
 using MediatR;
 using Crm.Application.Features.Accounts.Commands.CreateUser;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
+using Crm.Entity.ModelsCrm;
 
 namespace Crm.Controllers
 {
@@ -76,6 +77,32 @@ namespace Crm.Controllers
 
             return Json(new { Succeeded = false, message = result.Errors });
 
+        }
+
+        
+        [HttpGet("/Account/YandexAuthSuccess")]
+        public async Task<IActionResult> YandexAuthSuccess(string token, string email, string name)
+        {
+            try
+            {
+                var viewModel = new User
+                {
+                    DefaultEmail = email,
+                    FirstName = name
+                };
+
+                await Authenticate(email);
+                HttpContext.Session.SetCurrentUser(viewModel);
+
+                // Вместо JSON возвращаем View с JavaScript для закрытия окна
+                return View("YandexAuthSuccess", new { Email = email, Name = name });
+
+
+            }
+            catch (Exception ex)
+            {                
+                return RedirectToAction("Login", new { error = "auth_failed" });
+            }
         }
 
         private async Task Authenticate(string userName)

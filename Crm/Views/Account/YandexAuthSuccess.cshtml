@@ -1,0 +1,67 @@
+﻿@model dynamic
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Авторизация успешна</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .success-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .message {
+            font-size: 18px;
+            margin-bottom: 30px;
+        }
+
+        .loading {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="success-icon">✅</div>
+    <h1>Авторизация успешна!</h1>
+    <div class="message">Окно закроется автоматически...</div>
+    <div class="loading">⏳</div>
+
+    <script>
+        // Передаем данные в родительское окно и закрываем popup
+        if (window.opener) {
+            // Отправляем сообщение родительскому окну
+            window.opener.postMessage({
+                type: 'YANDEX_AUTH_SUCCESS',
+                email: '@Model.Email',
+                name: '@Model.Name',
+                success: true
+            }, '*');
+
+            // Закрываем окно через небольшую задержку
+            setTimeout(function () {
+                window.close();
+            }, 1000);
+        } else {
+            // Если нет родительского окна, просто перенаправляем
+            setTimeout(function () {
+                window.location.href = '/';
+            }, 1500);
+        }
+    </script>
+</body>
+</html>

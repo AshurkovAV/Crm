@@ -51,6 +51,8 @@ public partial class CrmContext : DbContext
 
     public virtual DbSet<User> Users { get; set; }
 
+    public virtual DbSet<UserToken> UserTokens { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
         => optionsBuilder.UseSqlServer("Server=OMSIT;Database=crm;User ID=sa;Password=12345678;encrypt=false");
@@ -428,6 +430,18 @@ public partial class CrmContext : DbContext
             entity.Property(e => e.RealName).HasMaxLength(255);
             entity.Property(e => e.Role).HasMaxLength(20);
             entity.Property(e => e.Sex).HasMaxLength(10);
+        });
+
+        modelBuilder.Entity<UserToken>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__UserToke__3214EC07FD9C6DDE");
+
+            entity.ToTable("UserToken");
+
+            entity.Property(e => e.DateEdit).HasColumnType("datetime");
+            entity.Property(e => e.DeviceId).HasMaxLength(100);
+            entity.Property(e => e.Scope).HasMaxLength(500);
+            entity.Property(e => e.TokenType).HasMaxLength(100);
         });
 
         OnModelCreatingPartial(modelBuilder);

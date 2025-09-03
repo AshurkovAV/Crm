@@ -61,5 +61,27 @@ namespace Crm.Entity.Services
             }
                
         }
+
+        public UserToken InsertUserToken(UserToken user)
+        {
+            using (var db = new CrmContext())
+            {
+                // Проверяем, что пользователь еще не добавлен в контекст
+                var existingEntry = db.ChangeTracker.Entries<UserToken>()
+                    .FirstOrDefault(e => e.Entity.Id == user.Id);
+
+                if (existingEntry == null)
+                {
+                    db.UserTokens.AddAsync(user);
+                }
+                else
+                {
+                    // Если уже отслеживается, просто обновляем состояние
+                    existingEntry.State = EntityState.Added;
+                }
+                db.SaveChanges();
+            }
+            return user;
+        }
     }
 }
