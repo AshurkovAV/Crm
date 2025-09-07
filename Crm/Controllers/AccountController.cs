@@ -27,6 +27,11 @@ namespace Crm.Controllers
             return View();
         }
 
+        public IActionResult VkidPopup()
+        {
+            return View();
+        }
+
         public IActionResult Create()
         {
             return View();

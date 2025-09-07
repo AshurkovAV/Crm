@@ -1,0 +1,197 @@
+﻿@page
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход через VK ID</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        #loading {
+            margin-top: 20px;
+        }
+
+        .error-message {
+            color: #d32f2f;
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ffcdd2;
+            background-color: #ffebee;
+            border-radius: 4px;
+        }
+
+        .success-message {
+            color: #2e7d32;
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #c8e6c9;
+            background-color: #e8f5e8;
+            border-radius: 4px;
+        }
+
+        #vkid-container {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+            min-height: 60px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Вход через VK ID</h2>
+
+        <!-- Контейнер для кнопки VK ID -->
+        <div id="vkid-container"></div>
+        <div id="loading">Загрузка VK ID...</div>
+
+        <!-- Сообщения об ошибках и успехе -->
+        <div id="error-message" class="error-message hidden"></div>
+        <div id="success-message" class="success-message hidden"></div>
+    </div>
+
+    <!-- Подключаем VK ID SDK -->
+    <script src="https://unpkg.com/@@vkid/sdk@@<3.0.0/dist-sdk/umd/index.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const loadingElement = document.getElementById('loading');
+            const errorElement = document.getElementById('error-message');
+            const successElement = document.getElementById('success-message');
+            const containerElement = document.getElementById('vkid-container');
+
+            if ('VKIDSDK' in window) {
+                try {
+                    const VKID = window.VKIDSDK;
+
+                    // Инициализация с вашими данными приложения
+                    VKID.Config.init({
+                        app: 54112877, // Ваш ID приложения
+                        redirectUrl: 'https://crm.biglv.ru/vkauth/callback', // Ваш redirect URL
+                        responseMode: VKID.ConfigResponseMode.Callback, // Callback mode
+                        source: VKID.ConfigSource.LOWCODE,
+                        scope: 'email', // Запрашиваемые права
+                    });
+
+                    // Создаем экземпляр OAuthList
+                    const oAuth = new VKID.OAuthList();
+
+                    // Рендерим кнопку авторизации
+                    oAuth.render({
+                        container: containerElement,
+                        styles: {
+                            borderRadius: 8,
+                            height: 40
+                        },
+                        oauthList: ['vkid']
+                    })
+                        .on(VKID.WidgetEvents.ERROR, function (error) {
+                            console.error('VK ID Error:', error);
+                            showError('Ошибка VK ID: ' + (error.message || error.error));
+                        })
+                        .on(VKID.OAuthListInternalEvents.LOGIN_SUCCESS, function (payload) {
+                            console.log('Login success payload:', payload);
+
+                            const code = payload.code;
+                            const deviceId = payload.device_id;
+
+                            // Обмениваем код на access token
+                            VKID.Auth.exchangeCode(code, deviceId)
+                                .then(function (authData) {
+                                    handleAuthSuccess(authData);
+                                })
+                                .catch(function (error) {
+                                    console.error('Exchange error:', error);
+                                    showError('Ошибка обмена кода: ' + (error.message || error.error));
+                                });
+                        });
+
+                    // Скрываем loading после успешного рендера
+                    loadingElement.classList.add('hidden');
+
+                } catch (error) {
+                    console.error('Initialization error:', error);
+                    showError('Ошибка инициализации: ' + error.message);
+                }
+            } else {
+                showError('VKIDSDK не загрузился. Обновите страницу.');
+            }
+
+            function handleAuthSuccess(data) {
+                console.log('Auth success:', data);
+
+                // Скрываем сообщения об ошибках
+                errorElement.classList.add('hidden');
+
+                // Показываем сообщение об успехе
+                successElement.textContent = 'Авторизация прошла успешно! Закрытие окна...';
+                successElement.classList.remove('hidden');
+
+                // Отправляем данные в родительское окно
+                if (window.opener && !window.opener.closed) {
+                    window.opener.postMessage({
+                        type: 'VKID_AUTH_SUCCESS',
+                        data: {
+                            accessToken: data.access_token,
+                            expiresIn: data.expires_in,
+                            userId: data.user_id,
+                            email: data.email,
+                            scope: data.scope
+                        }
+                    }, '*');
+                }
+
+                // Закрываем окно через 2 секунды
+                setTimeout(function () {
+                    window.close();
+                }, 2000);
+            }
+
+            function showError(message) {
+                loadingElement.classList.add('hidden');
+                errorElement.textContent = message;
+                errorElement.classList.remove('hidden');
+
+                // Отправляем ошибку в родительское окно
+                if (window.opener && !window.opener.closed) {
+                    window.opener.postMessage({
+                        type: 'VKID_AUTH_ERROR',
+                        error: message
+                    }, '*');
+                }
+            }
+
+            // Таймаут на случай проблем с загрузкой
+            setTimeout(function () {
+                if (!loadingElement.classList.contains('hidden')) {
+                    showError('Таймаут загрузки VK ID. Проверьте подключение к интернету.');
+                }
+            }, 10000);
+        });
+    </script>
+</body>
+</html>

@@ -14,6 +14,7 @@
     <script src="~/js/devextreme/dx.all.js"></script>
     <script src="~/js/devextreme/localization/dx.messages.ru.js"></script>
     <script src="~/js/modules/auth/authorization.js"></script>
+    <script src="~/js/modules/auth/yandexauthorization.js"></script>
     <script src="https://yastatic.net/s3/passport-sdk/autofill/v1/sdk-suggest-with-polyfills-latest.js"></script>
 
 </head>
@@ -47,11 +48,11 @@
                 </div>
                 <div class="social-login">
                     <div class="social-item">
-                        <div class="social-btn" title="VK">
+                        <div class="social-btn" id="vkAuthBtn" title="Войти через VK ID" onclick="openVKIDPopup()">
                             <i class="fab fa-vk"></i>
                         </div>
                     </div>
-                    
+                  
                     <div class="social-item">
                         <div class="social-btn" title="Mail.ru">
                             <i class="far fa-envelope"></i>
@@ -79,84 +80,20 @@
         </div>
     </div>
 
+
     <script>
-        // Обработчик сообщений от popup окна
-        window.addEventListener('message', function (event) {
-            // Проверяем origin сообщения для безопасности
-            if (event.origin !== 'https://crm.biglv.ru') return;
-
-            if (event.data.type === 'YANDEX_AUTH_SUCCESS') {
-                console.log('Авторизация успешна через Яндекс');
-                console.log('Email:', event.data.email);
-                console.log('Name:', event.data.name);
-
-                // Показываем уведомление об успехе
-                showAuthSuccessNotification();
-
-                // Перенаправляем на главную страницу
-                setTimeout(function () {
-                    window.location.href = '/';
-                }, 1500);
-            }
-        });
-
-        // Функция показа уведомления об успешной авторизации
-        function showAuthSuccessNotification() {
-            const notification = document.createElement('div');
-            notification.style.cssText = `
-                        position: fixed;
-                        top: 20px;
-                        right: 20px;
-                        background: #28a745;
-                        color: white;
-                        padding: 15px 20px;
-                        border-radius: 5px;
-                        z-index: 10000;
-                        font-weight: bold;
-                    `;
-            notification.textContent = 'Авторизация успешна!';
-            document.body.appendChild(notification);
-
-            setTimeout(() => {
-                notification.remove();
-            }, 3000);
-        }
-
-        document.getElementById('yandexAuthBtn').addEventListener('click', function () {
-            // Параметры для центрального расположения окна
+        // Функция для открытия VK ID popup
+        function openVKIDPopup() {
             const width = 500;
             const height = 600;
-
-            // Вычисляем позицию для центра экрана
             const left = (window.screen.width - width) / 2;
             const top = (window.screen.height - height) / 2;
 
-            // Формируем URL для OAuth-авторизации
-            const authUrl = new URL('https://oauth.yandex.ru/authorize');
-
-            const params = {
-                response_type: 'code',
-                client_id: '9f8dd7d3ac2b42228103fcbe8f11682f',
-                redirect_uri: 'https://crm.biglv.ru/yandexauth/callback',
-                scope: 'login:email login:info login:avatar',
-                display: 'popup',
-                origin: 'https://crm.biglv.ru',
-                state: 'your_generated_state',
-                prompt: 'select_account', // Принудительно показать выбор аккаунта
-                force_confirm: true      // Всегда запрашивать подтверждение
-               
-            };
-
-            // Добавляем параметры к URL
-            Object.keys(params).forEach(key => {
-                authUrl.searchParams.append(key, params[key]);
-            });
-
-            // Открываем OAuth-окно Яндекс по центру экрана
+            // Открываем popup окно
             const popup = window.open(
-                authUrl.toString(),
-                'yandex_oauth',
-                `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
+                '/Account/VkidPopup', // Путь к нашему popup файлу
+                'VKID_Login',
+                `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,status=no`
             );
 
             // Проверяем, открылось ли окно
@@ -164,22 +101,111 @@
                 alert('Пожалуйста, разрешите всплывающие окна для этого сайта');
                 return;
             }
-            
-        });
 
-        // Функция для обработки callback с токеном (если нужно)
-        function handleOAuthCallback() {
-            const hash = window.location.hash.substring(1);
-            const params = new URLSearchParams(hash);
+            // Обработчик сообщений от popup
+            const messageHandler = function (event) {
+                if (event.data && event.data.type === 'VKID_SUCCESS') {
+                    // Обрабатываем успешную авторизацию
+                    handleVKIDSuccess(event.data.data);
+                    if (popup && !popup.closed) popup.close();
+                    window.removeEventListener('message', messageHandler);
+                } else if (event.data && event.data.type === 'VKID_ERROR') {
+                    // Обрабатываем ошибку
+                    handleVKIDError(event.data.data);
+                    if (popup && !popup.closed) popup.close();
+                    window.removeEventListener('message', messageHandler);
+                }
+            };
 
-            if (params.has('access_token')) {
-                const accessToken = params.get('access_token');
-                console.log('Access Token получен:', accessToken);
-            }
+            window.addEventListener('message', messageHandler);
+
+            // Проверяем, закрылось ли окно
+            const checkPopup = setInterval(() => {
+                if (popup.closed) {
+                    clearInterval(checkPopup);
+                    window.removeEventListener('message', messageHandler);
+                }
+            }, 1000);
         }
 
-        // Проверяем, не вернулись ли мы с токеном
-        handleOAuthCallback();
+        // Обработчик успешной авторизации VK ID
+        function handleVKIDSuccess(data) {
+            console.log('VK ID Success:', data);
+            showAuthSuccessNotification('VK ID');
+
+            // Здесь отправляем данные на сервер
+            sendAuthDataToServer({
+                provider: 'vkid',
+                access_token: data.access_token,
+                user: data.user,
+                expires_in: data.expires_in
+            });
+        }
+
+        // Обработчик ошибок VK ID
+        function handleVKIDError(error) {
+            console.error('VK ID Error:', error);
+            alert('Ошибка авторизации VK ID: ' + (error.message || 'Неизвестная ошибка'));
+        }
+
+        // Функция отправки данных на сервер
+        function sendAuthDataToServer(authData) {
+            // Ваша логика отправки данных на сервер
+            fetch('/Account/VKIDAuth', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(authData)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = data.redirectUrl || '/';
+                    } else {
+                        alert('Ошибка авторизации: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Ошибка соединения с сервером');
+                });
+        }
+
+        // Функция показа уведомлений (если у вас её ещё нет)
+        function showAuthSuccessNotification(provider) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #4a76a8;
+                color: white;
+                padding: 15px 20px;
+                border-radius: 5px;
+                z-index: 10000;
+                font-weight: bold;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            `;
+            notification.textContent = `Авторизация через ${provider} успешна!`;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Инициализация после загрузки страницы
+        document.addEventListener('DOMContentLoaded', function () {
+            // Добавляем обработчик если не используем onclick в HTML
+            const vkBtn = document.getElementById('vkAuthBtn');
+            if (vkBtn) {
+                vkBtn.addEventListener('click', openVKIDPopup);
+            }
+        });
     </script>
+
+ 
+    
 </body>
 </html>
