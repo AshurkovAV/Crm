@@ -92,8 +92,7 @@ namespace Crm.Controllers
                 if (!string.IsNullOrEmpty(error))
                 {
                     return RedirectToAction("Login", "Account", new { error = "yandex_auth_failed" });
-                }
-               
+                }             
 
                 // Обмен кода на access_token
                 var tokenResponse = await ExchangeCodeForToken(code);

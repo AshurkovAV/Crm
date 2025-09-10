@@ -1,0 +1,235 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+    padding: 20px;
+    overflow: hidden;
+}
+
+.card {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+    padding: 35px;
+    text-align: center;
+    overflow: visible;
+    z-index: 10;
+}
+
+.card-header {
+    margin-bottom: 20px;
+}
+
+    .card-header h1 {
+        color: #333;
+        font-size: 24px;
+        margin-bottom: 8px;
+        font-weight: 600;
+    }
+
+    .card-header p {
+        color: #666;
+        font-size: 15px;
+    }
+
+.message {
+    background: #f8f9fa;
+    padding: 22px;
+    border-radius: 16px;
+    margin-bottom: 20px;
+    position: relative;
+    z-index: 2;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+    .message p {
+        margin-bottom: 12px;
+        line-height: 1.5;
+        color: #444;
+        font-size: 15px;
+    }
+
+.email {
+    font-weight: bold;
+    color: #2575fc;
+    font-size: 15px;
+}
+
+/* Конверт */
+.envelope-container {
+    position: relative;
+    width: 90px;
+    height: 70px;
+    margin: 15px auto 20px;
+}
+
+.envelope {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
+}
+
+.envelope-body {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(145deg, #64b5f6, #42a5f5);
+    border-radius: 10px;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 85%, 0 100%);
+    z-index: 2;
+}
+
+.envelope-flap {
+    position: absolute;
+    width: 100%;
+    height: 52%;
+    background: linear-gradient(145deg, #42a5f5, #2196f3);
+    border-radius: 10px 10px 0 0;
+    clip-path: polygon(0 0, 100% 0, 50% 100%, 0 0);
+    transform-origin: top;
+    transition: transform 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 3;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.envelope.open .envelope-flap {
+    transform: rotateX(180deg);
+}
+
+.envelope-content {
+    position: absolute;
+    width: 88%;
+    height: 82%;
+    background: linear-gradient(145deg, #e3f2fd, #bbdefb);
+    border-radius: 8px;
+    bottom: 6%;
+    left: 6%;
+    z-index: 1;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Бумажка с цифрой */
+.paper {
+    position: absolute;
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(145deg, #ff5252, #f44336);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 16px;
+    font-weight: bold;
+    color: white;
+    box-shadow: 0 6px 15px rgba(244, 67, 54, 0.3);
+    z-index: 4;
+    bottom: 8px;
+    left: 29px;
+    opacity: 0;
+    transition: all 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border: 2px solid #d32f2f;
+}
+
+    .paper.out {
+        opacity: 1;
+        transform: translate(48px, -45px) scale(1.05);
+    }
+
+.circle {
+    position: absolute;
+    background: rgba(37, 117, 252, 0.1);
+    border-radius: 50%;
+}
+
+.circle-1 {
+    width: 90px;
+    height: 90px;
+    top: -25px;
+    left: -25px;
+}
+
+.circle-2 {
+    width: 70px;
+    height: 70px;
+    bottom: -20px;
+    right: -20px;
+}
+
+.confetti {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    opacity: 0.7;
+    border-radius: 2px;
+}
+
+.replay-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+    color: white;
+    border: none;
+    border-radius: 28px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(37, 117, 252, 0.35);
+    margin-top: 15px;
+    gap: 8px;
+}
+
+    .replay-button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(37, 117, 252, 0.5);
+    }
+
+    .replay-button:active {
+        transform: translateY(0);
+    }
+
+.number-display {
+    font-size: 36px;
+    font-weight: bold;
+    color: #f44336;
+    margin: 10px 0;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Анимация тени при открытии */
+@keyframes envelopeShadow {
+    0% {
+        filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
+    }
+
+    50% {
+        filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.25));
+    }
+
+    100% {
+        filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
+    }
+}
+
+.envelope.open {
+    animation: envelopeShadow 1.2s ease;
+}

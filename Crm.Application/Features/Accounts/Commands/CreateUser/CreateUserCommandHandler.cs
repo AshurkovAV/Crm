@@ -35,7 +35,7 @@ namespace Crm.Application.Features.Accounts.Commands.CreateUser
 
                 // 3. Создаем доменную сущность
                 var user = User.Create(
-                    request.Email
+                    request.Email                    
                     );
 
                 // 4. Сохраняем в базу

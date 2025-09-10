@@ -35,6 +35,8 @@ public partial class User
 
     public bool IsActive { get; set; }
 
+    public bool IsValidation { get; set; }
+
     public string? DefaultPhone { get; set; }
 
     public string? DeviceId { get; set; }

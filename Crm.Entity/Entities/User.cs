@@ -10,7 +10,7 @@
             DefaultEmail = email;
             CreatedDate = DateTime.UtcNow;
             ModifiedDate = DateTime.UtcNow;
-            IsActive = false;
+            IsActive = true;
             Role = UserRole.User.ToString(); // Роль по умолчанию
         }               
 

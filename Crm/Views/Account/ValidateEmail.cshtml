@@ -1,0 +1,164 @@
+﻿@page
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Подтвердить адрес электронной почты</title>
+    <link href="~/css/authorization/validate.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+       
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="circle circle-1"></div>
+        <div class="circle circle-2"></div>
+        
+        <!-- Конфетти -->
+        <div class="confetti" style="background: #ff5252; top: 12%; left: 18%;"></div>
+        <div class="confetti" style="background: #ffd740; top: 8%; right: 22%;"></div>
+        <div class="confetti" style="background: #7c4dff; bottom: 18%; left: 12%;"></div>
+        <div class="confetti" style="background: #69f0ae; bottom: 12%; right: 18%;"></div>
+        
+        <div class="card-header">
+            <h1>Подтверждение email</h1>
+            <p>Мы отправили подтверждания</p>
+        </div>
+        
+        <div class="number-display"></div>
+        
+        <div class="envelope-container">
+            <div class="envelope">
+                <div class="envelope-flap"></div>
+                <div class="envelope-body"></div>
+                <div class="envelope-content"></div>
+            </div>
+            <div class="paper">
+                <div class="number">1</div>
+            </div>
+        </div>
+        
+        <div class="message">
+            <p>Мы отправили письмо с кодом подтверждения</p>
+            <p>на <span class="email" id="userEmail">@TempData["Email"]</span></p>
+        </div>
+        
+        <div class="d-grid gap-2">
+            <button id="resendBtn" class="replay-button">
+                ↻ Отправить письмо повторно
+            </button>
+            <br>
+            <a href="/Account/Index" class="btn btn-secondary">
+                ← Вернуться к входу
+            </a>
+        </div>      
+    </div>
+
+
+    <script>
+        document.getElementById('resendBtn').addEventListener('click', function () {
+            const email = document.getElementById('userEmail').textContent;
+            const resendResult = document.getElementById('resendResult');
+
+            // Показываем загрузку
+            this.innerHTML = '⏳ Отправка...';
+            this.disabled = true;
+
+            fetch('/Account/ResendVerificationEmail', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email: email })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        resendResult.innerHTML = `
+                                <div class="alert alert-success">
+                                    ✅ ${data.message}
+                                </div>
+                            `;
+                    } else {
+                        resendResult.innerHTML = `
+                                <div class="alert alert-danger">
+                                    ❌ ${data.message}
+                                </div>
+                            `;
+                    }
+                })
+                .catch(error => {
+                    resendResult.innerHTML = `
+                            <div class="alert alert-danger">
+                                ❌ Ошибка при отправке
+                            </div>
+                        `;
+                })
+                .finally(() => {
+                    // Восстанавливаем кнопку
+                    this.innerHTML = '↻ Отправить письмо повторно';
+                    this.disabled = false;
+
+                    // Автоскрытие сообщения через 5 секунд
+                    setTimeout(() => {
+                        resendResult.innerHTML = '';
+                    }, 5000);
+                });
+        });
+
+        // Получаем email из sessionStorage (если передали из логина)
+        document.addEventListener('DOMContentLoaded', function () {
+            const savedEmail = sessionStorage.getItem('pendingVerificationEmail');
+            if (savedEmail) {
+                document.getElementById('userEmail').textContent = savedEmail;
+                sessionStorage.removeItem('pendingVerificationEmail');
+            }
+        });
+    </script>
+
+
+
+    <script>
+        // Автоматическое воспроизведение анимации при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(startAnimation, 800);
+        });
+        
+        function startAnimation() {
+            const envelope = document.querySelector('.envelope');
+            const paper = document.querySelector('.paper');
+            
+            // Открываем конверт
+            envelope.classList.add('open');
+            
+            // Через задержку выдвигаем бумажку
+            setTimeout(() => {
+                paper.classList.add('out');
+            }, 800);
+        }
+        
+        function replayAnimation() {
+            const envelope = document.querySelector('.envelope');
+            const paper = document.querySelector('.paper');
+            
+            // Сбрасываем анимацию
+            envelope.classList.remove('open');
+            paper.classList.remove('out');
+            
+            // Перезапускаем анимацию после небольшой задержки
+            setTimeout(() => {
+                envelope.classList.add('open');
+                
+                setTimeout(() => {
+                    paper.classList.add('out');
+                }, 800);
+            }, 200);
+        }
+    </script>
+</body>
+</html>

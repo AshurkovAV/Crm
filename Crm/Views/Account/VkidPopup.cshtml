@@ -77,121 +77,120 @@
     <!-- Подключаем VK ID SDK -->
     <script src="https://unpkg.com/@@vkid/sdk@@<3.0.0/dist-sdk/umd/index.js"></script>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const loadingElement = document.getElementById('loading');
-            const errorElement = document.getElementById('error-message');
-            const successElement = document.getElementById('success-message');
-            const containerElement = document.getElementById('vkid-container');
 
-            if ('VKIDSDK' in window) {
-                try {
-                    const VKID = window.VKIDSDK;
+  <div>
+  
+  <script type="text/javascript">
+    if ('VKIDSDK' in window) {
+      const VKID = window.VKIDSDK;
 
-                    // Инициализация с вашими данными приложения
-                    VKID.Config.init({
-                        app: 54112877, // Ваш ID приложения
-                        redirectUrl: 'https://crm.biglv.ru/vkauth/callback', // Ваш redirect URL
-                        responseMode: VKID.ConfigResponseMode.Callback, // Callback mode
-                        source: VKID.ConfigSource.LOWCODE,
-                        scope: 'email', // Запрашиваемые права
-                    });
+      VKID.Config.init({
+        app: 54112877,
+        redirectUrl: 'https://crm.biglv.ru/vkauth/callback',
+        responseMode: VKID.ConfigResponseMode.Query,
+        source: VKID.ConfigSource.LOWCODE,
+        scope: '',
+      });
 
-                    // Создаем экземпляр OAuthList
-                    const oAuth = new VKID.OAuthList();
+      // Обрабатываем возврат из popup
+      function handlePopupResult() {
+        if (window.location.search.includes('code=') || window.location.hash.includes('code=')) {
+          VKID.Auth.loginByAuthToken()
+            .then(function(data) {
+              console.log('Успешная авторизация:', data);
+              // Очищаем URL от параметров авторизации
+              window.history.replaceState({}, document.title, window.location.pathname);
+            })
+            .catch(vkidOnError);
+        }
+      }
 
-                    // Рендерим кнопку авторизации
-                    oAuth.render({
-                        container: containerElement,
-                        styles: {
-                            borderRadius: 8,
-                            height: 40
-                        },
-                        oauthList: ['vkid']
-                    })
-                        .on(VKID.WidgetEvents.ERROR, function (error) {
-                            console.error('VK ID Error:', error);
-                            showError('Ошибка VK ID: ' + (error.message || error.error));
-                        })
-                        .on(VKID.OAuthListInternalEvents.LOGIN_SUCCESS, function (payload) {
-                            console.log('Login success payload:', payload);
+      // Вызываем при загрузке страницы
+      handlePopupResult();
 
-                            const code = payload.code;
-                            const deviceId = payload.device_id;
+      const oneTap = new VKID.OneTap();
 
-                            // Обмениваем код на access token
-                            VKID.Auth.exchangeCode(code, deviceId)
-                                .then(function (authData) {
-                                    handleAuthSuccess(authData);
-                                })
-                                .catch(function (error) {
-                                    console.error('Exchange error:', error);
-                                    showError('Ошибка обмена кода: ' + (error.message || error.error));
-                                });
-                        });
+      oneTap.render({
+        container: document.currentScript.parentElement,
+        showAlternativeLogin: true
+      })
+      .on(VKID.WidgetEvents.ERROR, vkidOnError)
+      .on(VKID.OneTapInternalEvents.LOGIN_SUCCESS, function (payload) {
+        // Открываем popup для авторизации
+        openVKPopup();
+      });
+    
+      function openVKPopup() {
+        const width = 600;
+        const height = 700;
+        const left = (screen.width - width) / 2;
+        const top = (screen.height - height) / 2;
+        
+        const popup = window.open(
+          '',
+          'VK Auth',
+          `width=${width},height=${height},top=${top},left=${left}`
+        );
 
-                    // Скрываем loading после успешного рендера
-                    loadingElement.classList.add('hidden');
-
-                } catch (error) {
-                    console.error('Initialization error:', error);
-                    showError('Ошибка инициализации: ' + error.message);
-                }
-            } else {
-                showError('VKIDSDK не загрузился. Обновите страницу.');
-            }
-
-            function handleAuthSuccess(data) {
-                console.log('Auth success:', data);
-
-                // Скрываем сообщения об ошибках
-                errorElement.classList.add('hidden');
-
-                // Показываем сообщение об успехе
-                successElement.textContent = 'Авторизация прошла успешно! Закрытие окна...';
-                successElement.classList.remove('hidden');
-
-                // Отправляем данные в родительское окно
-                if (window.opener && !window.opener.closed) {
-                    window.opener.postMessage({
-                        type: 'VKID_AUTH_SUCCESS',
-                        data: {
-                            accessToken: data.access_token,
-                            expiresIn: data.expires_in,
-                            userId: data.user_id,
-                            email: data.email,
-                            scope: data.scope
-                        }
-                    }, '*');
-                }
-
-                // Закрываем окно через 2 секунды
-                setTimeout(function () {
-                    window.close();
-                }, 2000);
-            }
-
-            function showError(message) {
-                loadingElement.classList.add('hidden');
-                errorElement.textContent = message;
-                errorElement.classList.remove('hidden');
-
-                // Отправляем ошибку в родительское окно
-                if (window.opener && !window.opener.closed) {
-                    window.opener.postMessage({
-                        type: 'VKID_AUTH_ERROR',
-                        error: message
-                    }, '*');
-                }
-            }
-
-            // Таймаут на случай проблем с загрузкой
-            setTimeout(function () {
-                if (!loadingElement.classList.contains('hidden')) {
-                    showError('Таймаут загрузки VK ID. Проверьте подключение к интернету.');
-                }
-            }, 10000);
+        // Генерируем URL для авторизации
+        const authUrl = VKID.Auth.createAuthURL({
+          params: {
+            redirect_uri: 'https://crm.biglv.ru/vkauth/callback',
+            display: 'popup',
+            response_type: 'code'
+          }
         });
-    </script>
+
+        // Перенаправляем popup на URL авторизации
+        popup.location.href = authUrl;
+
+        // Проверяем завершение авторизации в popup
+        const checkPopup = setInterval(function() {
+          try {
+            if (popup.closed) {
+              clearInterval(checkPopup);
+              // После закрытия popup проверяем результат
+              handlePopupResult();
+            } else if (popup.location.href.includes('crm.biglv.ru')) {
+              // Popup был перенаправлен на наш сайт
+              const resultUrl = popup.location.href;
+              popup.close();
+              clearInterval(checkPopup);
+              
+              // Извлекаем код из URL
+              const urlParams = new URLSearchParams(new URL(resultUrl).search);
+              const code = urlParams.get('code');
+              
+              if (code) {
+                // Обмениваем код на токен
+                VKID.Auth.exchangeCode(code)
+                  .then(vkidOnSuccess)
+                  .catch(vkidOnError);
+              }
+            }
+          } catch (e) {
+            // Игнорируем ошибки доступа к cross-origin
+          }
+        }, 100);
+      }
+    
+      function vkidOnSuccess(data) {
+        console.log('Успешная авторизация:', data);
+        // Здесь сохраняем токен, обновляем UI и т.д.
+        alert('Авторизация успешна! Токен: ' + data.access_token);
+      }
+    
+      function vkidOnError(error) {
+        console.error('Ошибка авторизации:', error);
+        alert('Ошибка авторизации: ' + error.message);
+      }
+    }
+  </script>
+</div>
+
+    
+  
+
+
 </body>
 </html>

@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json.Serialization;
+using System.Web;
 
 namespace Crm.Controllers
 {
@@ -24,9 +25,57 @@ namespace Crm.Controllers
             _mediator = mediator;
             _httpClientFactory = httpClientFactory;
             _configuration = configuration; 
-        }       
+        }
 
-        [HttpPost("callback")]
+
+        [HttpGet("callback")]
+        public IActionResult Callback(
+        [FromQuery] string access_token,
+        [FromQuery] int user_id,
+        [FromQuery] long expires_in,
+        [FromQuery] string email = "")
+        {
+            try
+            {
+                // Валидация токена
+                if (string.IsNullOrEmpty(access_token) || user_id <= 0)
+                {
+                    return Redirect($"{Request.Scheme}://{Request.Host}/auth-error?message=Invalid token data");
+                }
+
+                // Здесь ваша бизнес-логика:
+                // 1. Проверка токена через VK API (опционально)
+                // 2. Поиск/создание пользователя в БД
+                // 3. Создание сессии
+
+                // Пример: сохраняем в куки
+                Response.Cookies.Append("vk_access_token", access_token, new CookieOptions
+                {
+                    Expires = DateTimeOffset.Now.AddSeconds(expires_in),
+                    HttpOnly = true,
+                    Secure = true
+                });
+
+                Response.Cookies.Append("vk_user_id", user_id.ToString(), new CookieOptions
+                {
+                    Expires = DateTimeOffset.Now.AddSeconds(expires_in),
+                    HttpOnly = true,
+                    Secure = true
+                });
+
+                // Редирект на главную или личный кабинет
+                return Redirect($"{Request.Scheme}://{Request.Host}/");
+            }
+            catch (Exception ex)
+            {
+                // Редирект на страницу ошибки
+                return Redirect($"{Request.Scheme}://{Request.Host}/auth-error?message={HttpUtility.UrlEncode(ex.Message)}");
+            }
+        }
+
+
+
+        [HttpPost("callback1")]
         public async Task<IActionResult> ProcessVkAuth([FromBody] VkAuthRequest request)
         {
             try

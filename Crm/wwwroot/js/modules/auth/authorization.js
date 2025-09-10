@@ -32,7 +32,17 @@
 
                 const data = await response.json();
                 if (data.success) {
-                    window.location.href = "/";
+                    if (data.redirectUrl) {
+                        // Сохраняем email в sessionStorage для страницы верификации
+                        if (data.email) {
+                            sessionStorage.setItem('pendingVerificationEmail', data.email);
+                        }
+                        // Перенаправляем на страницу верификации
+                        window.location.href = data.redirectUrl;
+                    } else {
+                        // Обычный успешный вход
+                        window.location.href = "/";
+                    }
                 } else {
                     throw new Error(data.message);
                 }
