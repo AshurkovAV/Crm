@@ -6,48 +6,530 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Размытая ссылка-кнопка</title>
+    <title>Bitrix24</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+        * {
             margin: 0;
-            font-family: Arial, sans-serif;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-
-        .blur-link {
-            display: inline-block;
-            padding: 15px 35px;
-            font-size: 18px;
-            text-decoration: none;
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px);
+        
+        body {
+            background-color: #f5f7f9;
+            color: #333;
+        }
+        
+        /* Верхнее меню */
+        .top-menu {
+            background-color: #2066b0;
             color: white;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            text-align: center;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            height: 48px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            justify-content: space-between;
         }
-
-            .blur-link:hover {
-                background: rgba(255, 255, 255, 0.25);
-                backdrop-filter: blur(15px);
-                transform: translateY(-2px);
-                box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
-                color: white;
-                text-decoration: none;
+        
+        .top-left {
+            display: flex;
+            align-items: center;
+        }
+        
+        .menu-toggle {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            margin-right: 15px;
+            font-size: 16px;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 3px;
+            transition: background-color 0.2s;
+        }
+        
+        .menu-toggle:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .logo {
+            font-weight: bold;
+            font-size: 16px;
+            margin-right: 25px;
+        }
+        
+        .top-tabs {
+            display: flex;
+            height: 100%;
+        }
+        
+        .tab {
+            padding: 0 15px;
+            display: flex;
+            align-items: center;
+            height: 100%;
+            font-size: 14px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+        
+        .tab:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .tab.active {
+            border-bottom: 3px solid #fff;
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        
+        .top-right {
+            display: flex;
+            align-items: center;
+        }
+        
+        .search-box {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 4px;
+            padding: 5px 10px;
+            margin-right: 15px;
+        }
+        
+        .search-box input {
+            background: transparent;
+            border: none;
+            color: white;
+            padding: 5px;
+            width: 200px;
+            outline: none;
+        }
+        
+        .search-box input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .search-box i {
+            margin-right: 5px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .top-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 3px;
+            margin-left: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .top-icon:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: #4f7ec9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 15px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        /* Основной контейнер */
+        .container {
+            display: flex;
+            margin-top: 48px;
+            min-height: calc(100vh - 48px);
+        }
+        
+        /* Левое меню */
+        .sidebar {
+            width: 240px;
+            background-color: #3a4d68;
+            padding: 15px 0;
+            transition: all 0.3s ease;
+            overflow-y: auto;
+            height: calc(100vh - 48px);
+            position: fixed;
+            left: 0;
+            top: 48px;
+        }
+        
+        .sidebar.collapsed {
+            transform: translateX(-240px);
+            width: 0;
+        }
+        
+        .menu-section {
+            margin-bottom: 5px;
+        }
+        
+        .menu-section h2 {
+            font-size: 13px;
+            color: #9faebd;
+            padding: 10px 20px 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .menu-item {
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            color: #e6eef9;
+            text-decoration: none;
+            transition: background-color 0.2s;
+            font-size: 14px;
+        }
+        
+        .menu-item:hover {
+            background-color: #465875;
+        }
+        
+        .menu-item i {
+            margin-right: 12px;
+            width: 18px;
+            text-align: center;
+            font-size: 16px;
+        }
+        
+        .divider {
+            height: 1px;
+            background-color: #4a5c76;
+            margin: 10px 0;
+        }
+        
+        /* Основное содержимое */
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            margin-left: 240px;
+            transition: margin-left 0.3s ease;
+        }
+        
+        .main-content.expanded {
+            margin-left: 0;
+        }
+        
+        .content-section {
+            background-color: white;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .content-section h2 {
+            margin-bottom: 15px;
+            color: #2066b0;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        table, th, td {
+            border: 1px solid #e0e2e4;
+        }
+        
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        
+        th {
+            background-color: #f5f7f9;
+            font-weight: 600;
+        }
+        
+        @@media (max-width: 1100px) {
+            .tab span {
+                display: none;
             }
-
-            .blur-link:active {
-                transform: translateY(0);
+            
+            .tab {
+                padding: 0 10px;
             }
+            
+            .tab i {
+                margin-right: 0;
+            }
+            
+            .search-box {
+                width: 40px;
+                overflow: hidden;
+                transition: width 0.3s;
+            }
+            
+            .search-box:hover {
+                width: 200px;
+            }
+        }
+        
+        @@media (max-width: 768px) {
+            .sidebar {
+                width: 200px;
+            }
+            
+            .sidebar.collapsed {
+                transform: translateX(-200px);
+            }
+            
+            .main-content {
+                margin-left: 200px;
+            }
+            
+            .main-content.expanded {
+                margin-left: 0;
+            }
+            
+            .top-tabs {
+                display: none;
+            }
+            
+            .search-box {
+                width: 32px;
+                padding: 5px;
+            }
+            
+            .search-box input {
+                display: none;
+            }
+            
+            .search-box:hover {
+                width: 200px;
+                padding: 5px 10px;
+            }
+            
+            .search-box:hover input {
+                display: block;
+            }
+        }
     </style>
 </head>
 <body>
-    <a href="/Home/logout" class="blur-link">Выход пользователя</a>
+    <!-- Верхнее меню -->
+    <div class="top-menu">
+        <div class="top-left">
+            <button class="menu-toggle">☰</button>
+            <div class="logo">Битрикс24</div>
+            <div class="top-tabs">
+                <div class="tab active">
+                    <i class="fas fa-home"></i>
+                    <span>Мой Битрикс24</span>
+                </div>
+                <div class="tab">
+                    <i class="fas fa-tasks"></i>
+                    <span>Задачи и Проекты</span>
+                </div>
+                <div class="tab">
+                    <i class="fas fa-user-friends"></i>
+                    <span>CRM и Маркетинг</span>
+                </div>
+                <div class="tab">
+                    <i class="fas fa-comments"></i>
+                    <span>Коммуникации</span>
+                </div>
+                <div class="tab">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Аналитика и Отчеты</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="top-right">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Поиск">
+            </div>
+            
+            <div class="top-icon">
+                <i class="far fa-bell"></i>
+            </div>
+            
+            <div class="top-icon">
+                <i class="far fa-comment"></i>
+            </div>
+            
+            <div class="top-icon">
+                <i class="fas fa-question-circle"></i>
+            </div>
+            
+            <div class="top-icon">
+                <i class="fas fa-th"></i>
+            </div>
+            
+            <div class="avatar">И</div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <!-- Левое меню -->
+        <div class="sidebar">
+            <div class="menu-section">
+                <h2>Совместная работа</h2>
+                <a href="#" class="menu-item">
+                    <i class="fas fa-tasks"></i>
+                    <span>Задачи и Проекты</span>
+                </a>
+                <a href="#" class="menu-item">
+                    <i class="fas fa-user-friends"></i>
+                    <span>CRM</span>
+                </a>
+                <a href="#" class="menu-item">
+                    <i class="far fa-calendar-alt"></i>
+                    <span>Онлайн-запись</span>
+                </a>
+                <a href="#" class="menu-item">
+                    <i class="fas fa-pallet"></i>
+                    <span>Складской учет</span>
+                </a>
+                <a href="#" class="menu-item">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Маркетинг</span>
+                </a>
+                <a href="#" class="menu-item">
+                    <i class="fas fa-store"></i>
+                    <span>Сайты и Магазины</span>
+                </a>
+                <a href="#" class="menu-item">
+                    <i class="fas fa-file-contract"></i>
+                    <span>КЭДО + Документы</span>
+                </a>
+                <a href="#" class="menu-item">
+                    <i class="fas fa-signature"></i>
+                    <span>Подпись</span>
+                </a>
+                <a href="#" class="menu-item">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>BI Конструктор</span>
+                </a>
+                <a href="#" class="menu-item">
+                    <i class="fas fa-users"></i>
+                    <span>Сотрудники</span>
+                </a>
+                <a href="#" class="menu-item">
+                    <i class="fas fa-cogs"></i>
+                    <span>Автоматизация</span>
+                </a>
+                <a href="#" class="menu-item">
+                    <i class="fas fa-puzzle-piece"></i>
+                    <span>Приложения</span>
+                </a>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <div class="menu-section">
+                <a href="#" class="menu-item">
+                    <i class="fas fa-ellipsis-h"></i>
+                    <span>Показать все</span>
+                </a>
+                <a href="#" class="menu-item">
+                    <i class="fas fa-cog"></i>
+                    <span>Настройки</span>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Основное содержимое -->
+        <div class="main-content">
+            <div class="content-section">
+                <h2>Рабочий стол</h2>
+                <p>Добро пожаловать в Битрикс24! Выберите раздел в левом меню для работы.</p>
+            </div>
+            
+            <div class="content-section">
+                <h2>Последние активности</h2>
+                <p>Здесь будет отображаться ваша последняя активность в системе.</p>
+            </div>
+            
+            <div class="content-section">
+                <h2>Мои задачи</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Задача</th>
+                            <th>Приоритет</th>
+                            <th>Срок</th>
+                            <th>Статус</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Подготовить отчет по продажам</td>
+                            <td>Высокий</td>
+                            <td>15.05.2023</td>
+                            <td>В работе</td>
+                        </tr>
+                        <tr>
+                            <td>Созвать собрание отдела</td>
+                            <td>Средний</td>
+                            <td>12.05.2023</td>
+                            <td>Завершено</td>
+                        </tr>
+                        <tr>
+                            <td>Обновить контакты клиентов</td>
+                            <td>Низкий</td>
+                            <td>20.05.2023</td>
+                            <td>Не начато</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.querySelector('.menu-toggle');
+            const sidebar = document.querySelector('.sidebar');
+            const mainContent = document.querySelector('.main-content');
+            const tabs = document.querySelectorAll('.tab');
+            
+            // Переключение бокового меню
+            menuToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('collapsed');
+                mainContent.classList.toggle('expanded');
+                
+                // Меняем иконку при скрытии/раскрытии
+                if (sidebar.classList.contains('collapsed')) {
+                    menuToggle.textContent = '☰';
+                } else {
+                    menuToggle.textContent = '✕';
+                }
+            });
+            
+            // Активация вкладок
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+        });
+    </script>
 </body>
 </html>
