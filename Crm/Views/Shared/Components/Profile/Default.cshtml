@@ -1,0 +1,18 @@
+﻿@model Crm.Core.ViewModels.ProfileViewModel
+
+<div class="profile-header">
+    <div class="profile-avatar">
+        @if (!string.IsNullOrEmpty(Model.FirstName))
+        {
+            @Model.FirstName[0]
+        }
+        else
+        {
+            @:А
+        }
+    </div>
+    <div class="profile-info">
+        <h3>@(Model.FirstName ?? "Алексей") @(Model.LastName ?? "Ашурков")</h3>
+        <p>@(Model.Position ?? "Менеджер по продажам")</p>
+    </div>
+</div>

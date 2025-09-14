@@ -17,15 +17,32 @@
         }
 
         body {
-            background-color: #f5f7f9;
-            color: #333;
+            background-color: #f8fafc;
+            color: #334155;
+            transition: all 0.3s ease;
+            background-image: url('/image/clouds.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            position: relative;
         }
+
+            body::before {
+                content: '';
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(255, 255, 255, 0.25);
+                z-index: -1;
+            }
 
         /* Верхняя панель */
         .top-bar {
-            background-color: #2066b0;
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
             color: white;
-            padding: 0 20px;
+            padding: 0 24px;
             display: flex;
             align-items: center;
             position: fixed;
@@ -33,40 +50,42 @@
             left: 0;
             right: 0;
             z-index: 1000;
-            height: 48px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            height: 60px;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.15);
+            backdrop-filter: blur(10px);
         }
 
         /* Блок с меню-гамбургером и логотипом */
         .left-controls {
             display: flex;
             align-items: center;
-            width: 240px;
+            width: 260px;
         }
 
         .menu-toggle {
-            background: none;
+            background: rgba(255, 255, 255, 0.1);
             border: none;
             color: white;
             cursor: pointer;
-            margin-right: 15px;
-            font-size: 16px;
-            width: 30px;
-            height: 30px;
+            margin-right: 16px;
+            font-size: 18px;
+            width: 36px;
+            height: 36px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 3px;
-            transition: background-color 0.2s;
+            border-radius: 10px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
             .menu-toggle:hover {
-                background-color: rgba(255, 255, 255, 0.1);
+                background: rgba(255, 255, 255, 0.2);
             }
 
         .logo {
-            font-weight: bold;
-            font-size: 16px;
+            font-weight: 700;
+            font-size: 20px;
+            letter-spacing: 0.5px;
         }
 
         /* Верхнее меню */
@@ -82,47 +101,77 @@
         }
 
         .tab {
-            padding: 0 15px;
+            padding: 0 20px;
             display: flex;
             align-items: center;
             height: 100%;
             font-size: 14px;
             cursor: pointer;
-            border-bottom: 3px solid transparent;
-            transition: all 0.2s;
+            position: relative;
+            transition: all 0.3s ease;
+            opacity: 0.85;
         }
 
             .tab:hover {
-                background-color: rgba(255, 255, 255, 0.1);
+                opacity: 1;
+                background: rgba(255, 255, 255, 0.08);
             }
 
             .tab.active {
-                border-bottom: 3px solid #fff;
-                background-color: rgba(255, 255, 255, 0.05);
+                opacity: 1;
+                background: rgba(255, 255, 255, 0.12);
+            }
+
+            .tab::after {
+                content: '';
+                position: absolute;
+                bottom: 0;
+                left: 20%;
+                width: 60%;
+                height: 3px;
+                background: white;
+                border-radius: 3px 3px 0 0;
+                transform: scaleX(0);
+                transition: transform 0.3s ease;
+            }
+
+            .tab.active::after {
+                transform: scaleX(1);
+            }
+
+            .tab i {
+                margin-right: 8px;
+                font-size: 16px;
             }
 
         .top-right {
             display: flex;
             align-items: center;
             position: relative;
+            gap: 8px;
         }
 
         .search-box {
             display: flex;
             align-items: center;
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 4px;
-            padding: 5px 10px;
-            margin-right: 15px;
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            padding: 8px 16px;
+            transition: all 0.3s ease;
         }
+
+            .search-box:hover {
+                background: rgba(255, 255, 255, 0.18);
+            }
 
             .search-box input {
                 background: transparent;
                 border: none;
                 color: white;
-                padding: 5px;
+                padding: 6px;
                 width: 200px;
                 outline: none;
+                font-size: 14px;
             }
 
                 .search-box input::placeholder {
@@ -130,222 +179,306 @@
                 }
 
             .search-box i {
-                margin-right: 5px;
-                color: rgba(255, 255, 255, 0.7);
+                margin-right: 8px;
+                color: rgba(255, 255, 255, 0.8);
             }
 
         .top-icon {
-            width: 32px;
-            height: 32px;
+            width: 38px;
+            height: 38px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 3px;
-            margin-left: 8px;
+            border-radius: 10px;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: all 0.3s ease;
+            position: relative;
         }
 
             .top-icon:hover {
-                background-color: rgba(255, 255, 255, 0.1);
+                background: rgba(255, 255, 255, 0.15);
+            }
+
+            .top-icon::after {
+                content: '';
+                position: absolute;
+                top: 8px;
+                right: 8px;
+                width: 8px;
+                height: 8px;
+                background: #ef4444;
+                border-radius: 50%;
+                opacity: 0;
+                transform: scale(0);
+                transition: all 0.3s ease;
+            }
+
+            .top-icon.has-notification::after {
+                opacity: 1;
+                transform: scale(1);
             }
 
         .avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background-color: #4f7ec9;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-left: 15px;
             cursor: pointer;
-            font-weight: bold;
+            font-weight: 600;
             position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
         }
+
+            .avatar:hover {
+                transform: scale(1.05);
+                box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4);
+            }
 
         /* Выпадающее меню профиля */
         .profile-dropdown {
             position: absolute;
-            top: 100%;
+            top: calc(100% + 12px);
             right: 0;
-            width: 320px;
+            width: 340px;
             background: white;
-            border-radius: 4px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            margin-top: 10px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+            margin-top: 8px;
             z-index: 1001;
-            display: none;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             overflow: hidden;
         }
 
             .profile-dropdown.active {
-                display: block;
+                opacity: 1;
+                visibility: visible;
+                transform: translateY(0);
             }
 
         .profile-header {
-            background: linear-gradient(to right, #2066b0, #3a8de0);
-            padding: 20px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            padding: 24px;
             color: white;
             display: flex;
             align-items: center;
         }
 
         .profile-avatar {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background-color: white;
+            width: 64px;
+            height: 64px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #ec4899 0%, #f59e0b 100%);
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 24px;
-            color: #2066b0;
-            font-weight: bold;
-            margin-right: 15px;
+            color: white;
+            font-weight: 600;
+            margin-right: 16px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
         }
 
         .profile-info h3 {
-            margin-bottom: 5px;
+            margin-bottom: 6px;
             font-size: 18px;
+            font-weight: 600;
         }
 
         .profile-info p {
             opacity: 0.9;
             font-size: 14px;
+            font-weight: 400;
         }
 
         .profile-menu {
-            padding: 10px 0;
+            padding: 12px 0;
         }
 
         .profile-item {
             display: flex;
             align-items: center;
-            padding: 12px 20px;
-            color: #333;
+            padding: 14px 24px;
+            color: #475569;
             text-decoration: none;
-            transition: background-color 0.2s;
+            transition: all 0.3s ease;
+            position: relative;
         }
 
             .profile-item:hover {
-                background-color: #f5f7f9;
+                background: #f1f5f9;
+                padding-left: 28px;
             }
 
             .profile-item i {
-                margin-right: 12px;
+                margin-right: 16px;
                 width: 20px;
                 text-align: center;
-                color: #7d7d7d;
+                color: #64748b;
+                transition: all 0.3s ease;
+            }
+
+            .profile-item:hover i {
+                color: #6366f1;
             }
 
         .profile-divider {
             height: 1px;
-            background-color: #eaecee;
-            margin: 8px 0;
+            background: linear-gradient(to right, transparent, #e2e8f0, transparent);
+            margin: 8px 24px;
         }
 
         .profile-footer {
-            padding: 15px 20px;
-            background-color: #f9fafb;
+            padding: 16px 24px;
+            background-color: #f8fafc;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border-top: 1px solid #f1f5f9;
         }
 
             .profile-footer a {
-                color: #2066b0;
+                color: #6366f1;
                 text-decoration: none;
                 font-size: 14px;
+                font-weight: 500;
+                transition: all 0.3s ease;
             }
 
+                .profile-footer a:hover {
+                    color: #4f46e5;
+                }
+
         .logout-btn {
-            background-color: #e74c3c;
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
             color: white;
             border: none;
-            padding: 8px 15px;
-            border-radius: 4px;
+            padding: 10px 20px;
+            border-radius: 10px;
             cursor: pointer;
             font-size: 14px;
-            transition: background-color 0.2s;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
         }
 
             .logout-btn:hover {
-                background-color: #c0392b;
+                box-shadow: 0 8px 20px rgba(239, 68, 68, 0.35);
             }
 
         /* Основной контейнер */
         .container {
             display: flex;
-            margin-top: 48px;
-            min-height: calc(100vh - 48px);
+            margin-top: 60px;
+            min-height: calc(100vh - 60px);
         }
 
-        /* Левое меню */
+        /* Левое меню - ОБНОВЛЕННЫЙ СТИЛЬ */
         .sidebar {
-            width: 240px;
-            background-color: #3a4d68;
-            padding: 15px 0;
-            transition: all 0.3s ease;
+            width: 260px;
+            background: transparent; /* Полностью прозрачный фон */
+            padding: 20px 0;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             overflow-y: auto;
-            height: calc(100vh - 48px);
+            height: calc(100vh - 60px);
             position: fixed;
             left: 0;
-            top: 48px;
+            top: 60px;
             z-index: 999;
+            backdrop-filter: blur(15px); /* Чистое размытие */
+            -webkit-backdrop-filter: blur(15px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
         }
 
             .sidebar.collapsed {
-                transform: translateX(-240px);
+                transform: translateX(-260px);
                 width: 0;
             }
 
         .menu-section {
-            margin-bottom: 5px;
+            margin-bottom: 16px;
         }
 
             .menu-section h2 {
-                font-size: 13px;
-                color: #9faebd;
-                padding: 10px 20px 5px;
+                font-size: 12px;
+                color: #ffffff; /* Чистый белый */
+                padding: 16px 24px 8px;
                 text-transform: uppercase;
-                letter-spacing: 0.5px;
+                letter-spacing: 1px;
+                font-weight: 500; /* Менее жирный (было 600) */
             }
 
         .menu-item {
-            padding: 10px 20px;
+            padding: 14px 24px;
             display: flex;
             align-items: center;
-            color: #e6eef9;
+            color: #ffffff; /* Чистый белый */
             text-decoration: none;
-            transition: background-color 0.2s;
+            transition: all 0.3s ease;
             font-size: 14px;
             cursor: pointer;
+            position: relative;
+            margin: 4px 0;
+            border-radius: 0 12px 12px 0;
+            font-weight: 400; /* Менее жирный (было 500) */
+            /* Без text-shadow */
         }
 
             .menu-item:hover {
-                background-color: #465875;
+                background: rgba(255, 255, 255, 0.15);
+                color: #ffffff;
+                padding-left: 28px;
             }
 
             .menu-item i {
-                margin-right: 12px;
+                margin-right: 16px;
                 width: 18px;
                 text-align: center;
-                font-size: 16px;
+                font-size: 18px;
+                color: #ffffff; /* Чистый белый */
+                /* Без filter и drop-shadow */
             }
 
         .divider {
             height: 1px;
-            background-color: #4a5c76;
-            margin: 10px 0;
+            background: rgba(255, 255, 255, 0.2); /* Простая белая линия */
+            margin: 16px 24px;
+            /* Без box-shadow */
         }
+
+            .menu-item::before {
+                content: '';
+                position: absolute;
+                left: 0;
+                top: 0;
+                height: 100%;
+                width: 4px;
+                background: white;
+                border-radius: 0 4px 4px 0;
+                opacity: 0;
+                transform: scaleY(0);
+                transition: all 0.3s ease;
+            }
+
+            .menu-item:hover::before {
+                opacity: 1;
+                transform: scaleY(1);
+            }
+
+       
 
         /* Основное содержимое */
         .main-content {
             flex: 1;
-            padding: 20px;
-            margin-left: 240px;
-            transition: margin-left 0.3s ease;
+            padding: 28px;
+            margin-left: 260px;
+            transition: margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
             .main-content.expanded {
@@ -354,67 +487,80 @@
 
         /* Верхняя панель контента */
         .content-top-bar {
-            background-color: white;
-            border-radius: 4px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            padding: 15px 20px;
-            margin-bottom: 20px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+            padding: 20px 28px;
+            margin-bottom: 28px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            transition: all 0.3s ease;
         }
 
         .content-title {
-            font-size: 20px;
-            color: #2066b0;
-            font-weight: 600;
+            font-size: 24px;
+            color: #1e293b;
+            font-weight: 700;
+            transition: all 0.3s ease;
         }
 
         .content-actions {
             display: flex;
-            gap: 10px;
+            gap: 12px;
         }
 
         .content-btn {
-            background-color: #2066b0;
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
             color: white;
             border: none;
-            padding: 8px 15px;
-            border-radius: 4px;
+            padding: 12px 20px;
+            border-radius: 12px;
             cursor: pointer;
             font-size: 14px;
-            transition: background-color 0.2s;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
         }
 
             .content-btn:hover {
-                background-color: #185494;
+                box-shadow: 0 8px 20px rgba(99, 102, 241, 0.35);
             }
 
             .content-btn.secondary {
-                background-color: #f5f7f9;
-                color: #333;
-                border: 1px solid #ddd;
+                background: white;
+                color: #64748b;
+                border: 1px solid #e2e8f0;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
             }
 
                 .content-btn.secondary:hover {
-                    background-color: #e9ecef;
+                    background: #f8fafc;
+                    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
                 }
 
         /* Секции контента */
         .content-section {
-            background-color: white;
-            border-radius: 4px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            padding: 20px;
-            margin-bottom: 20px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+            padding: 24px;
+            margin-bottom: 24px;
+            transition: all 0.3s ease;
         }
 
+            .content-section:hover {
+                box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+            }
+
             .content-section h2 {
-                margin-bottom: 15px;
-                color: #2066b0;
+                margin-bottom: 16px;
+                color: #1e293b;
+                font-weight: 600;
+                font-size: 18px;
             }
 
         /* Оверлей для закрытия меню при клике вне его */
@@ -424,71 +570,136 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: transparent;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
             z-index: 998;
-            display: none;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
         }
+
+            .overlay.active {
+                opacity: 1;
+                visibility: visible;
+            }
 
         /* Стили для таблицы */
         table {
             width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 16px;
         }
 
             table th, table td {
-                padding: 10px;
+                padding: 16px;
                 text-align: left;
-                border-bottom: 1px solid #eaecee;
+                border-bottom: 1px solid #f1f5f9;
             }
 
             table th {
-                background-color: #f5f7f9;
+                background-color: #f8fafc;
                 font-weight: 600;
+                color: #475569;
+                border-top: 1px solid #f1f5f9;
+                border-bottom: 2px solid #e2e8f0;
             }
 
-            table tr:hover {
-                background-color: #f9fafb;
+            table tr {
+                transition: all 0.3s ease;
+            }
+
+                table tr:hover {
+                    background-color: #f8fafc;
+                }
+
+            table td {
+                color: #64748b;
             }
 
         /* Специфические стили для разных модулей */
         .tasks-view .content-title {
-            color: #28a745;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .crm-view .content-title {
-            color: #17a2b8;
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .marketing-view .content-title {
-            color: #ffc107;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .communications-view .content-title {
-            color: #6f42c1;
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .analytics-view .content-title {
-            color: #e83e8c;
+            background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
+        /* Анимации */
+        @@keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @@keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .content-section {
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        .menu-item {
+            animation: slideIn 0.4s ease forwards;
+        }
+
+        /* Адаптивность */
         @@media (max-width: 1100px) {
             .tab span {
                 display: none;
             }
 
             .tab {
-                padding: 0 10px;
+                padding: 0 16px;
             }
 
                 .tab i {
                     margin-right: 0;
+                    font-size: 18px;
                 }
 
             .search-box {
-                width: 40px;
+                width: 42px;
                 overflow: hidden;
-                transition: width 0.3s;
+                transition: all 0.3s ease;
             }
 
                 .search-box:hover {
@@ -498,28 +709,26 @@
 
         @@media (max-width: 768px) {
             .sidebar {
-                width: 200px;
+                width: 280px;
+                transform: translateX(-280px);
             }
 
-                .sidebar.collapsed {
-                    transform: translateX(-200px);
+                .sidebar.active {
+                    transform: translateX(0);
                 }
 
             .main-content {
-                margin-left: 200px;
+                margin-left: 0;
+                padding: 20px;
             }
-
-                .main-content.expanded {
-                    margin-left: 0;
-                }
 
             .top-tabs {
                 display: none;
             }
 
             .search-box {
-                width: 32px;
-                padding: 5px;
+                width: 38px;
+                padding: 8px;
             }
 
                 .search-box input {
@@ -528,7 +737,7 @@
 
                 .search-box:hover {
                     width: 200px;
-                    padding: 5px 10px;
+                    padding: 8px 16px;
                 }
 
                     .search-box:hover input {
@@ -536,7 +745,7 @@
                     }
 
             .profile-dropdown {
-                width: 280px;
+                width: 300px;
                 right: -10px;
             }
 
@@ -547,12 +756,16 @@
             .content-top-bar {
                 flex-direction: column;
                 align-items: flex-start;
-                gap: 15px;
+                gap: 16px;
             }
 
             .content-actions {
                 width: 100%;
                 flex-wrap: wrap;
+            }
+
+            .top-bar {
+                padding: 0 16px;
             }
         }
     </style>
@@ -567,7 +780,7 @@
         <!-- Блок с меню-гамбургером и логотипом -->
         <div class="left-controls">
             <button class="menu-toggle">☰</button>
-            <div class="logo">CRM</div>
+            <div class="logo">CRM SYSTEM</div>
         </div>
 
         <!-- Верхнее меню -->
@@ -599,10 +812,10 @@
         <div class="top-right">
             <div class="search-box">
                 <i class="fas fa-search"></i>
-                <input type="text" placeholder="Поиск">
+                <input type="text" placeholder="Поиск...">
             </div>
 
-            <div class="top-icon">
+            <div class="top-icon has-notification">
                 <i class="far fa-bell"></i>
             </div>
 
@@ -622,29 +835,20 @@
 
             <!-- Выпадающее меню профиля -->
             <div class="profile-dropdown" id="profileDropdown">
-                <div class="profile-header">
-                    <div class="profile-avatar">А</div>
-                    <div class="profile-info">
-                        <h3>Алексей Ашурков</h3>
-                        <p>Менеджер по продажам</p>
-                    </div>
-                </div>
+                @await Component.InvokeAsync("Profile")
 
                 <div class="profile-menu">
                     <a href="#" class="profile-item">
+                        <i class="fas fa-user-circle"></i>
+                        <span>Мой профиль</span>
+                    </a>
+                    <a href="#" class="profile-item">
+                        <i class="fas fa-cog"></i>
+                        <span>Настройки</span>
+                    </a>
+                    <a href="#" class="profile-item">
                         <i class="fas fa-file-alt"></i>
                         <span>Мои документы</span>
-                    </a>
-                    <a href="#" class="profile-item">
-                        <i class="fas fa-file-contract"></i>
-                        <span>Заявление на отпуск, командировку и другое</span>
-                    </a>
-
-                    <div class="profile-divider"></div>
-
-                    <a href="#" class="profile-item">
-                        <i class="fas fa-money-bill-wave"></i>
-                        <span>Посмотреть зарплату и отпуск</span>
                     </a>
 
                     <div class="profile-divider"></div>
@@ -653,32 +857,9 @@
                         <i class="fas fa-mobile-alt"></i>
                         <span>Войти с телефона</span>
                     </a>
-                    <a href="#" class="profile-item">
-                        <i class="fab fa-windows"></i>
-                        <span>CRM для Windows</span>
-                    </a>
-                    <a href="#" class="profile-item">
-                        <i class="fas fa-download"></i>
-                        <span>Установить</span>
-                    </a>
 
                     <div class="profile-divider"></div>
 
-                    <a href="#" class="profile-item">
-                        <i class="fas fa-shield-alt"></i>
-                        <span>Двухфакторная авторизация</span>
-                    </a>
-                    <a href="#" class="profile-item">
-                        <i class="fas fa-plug"></i>
-                        <span>Подключить</span>
-                    </a>
-
-                    <div class="profile-divider"></div>
-
-                    <a href="#" class="profile-item">
-                        <i class="fas fa-puzzle-piece"></i>
-                        <span>Расширения</span>
-                    </a>
                     <a href="#" class="profile-item">
                         <i class="fas fa-image"></i>
                         <span>Сменить фон</span>
@@ -706,34 +887,11 @@
                     <i class="fas fa-user-friends"></i>
                     <span>CRM</span>
                 </a>
-                <a href="#" class="menu-item" data-view="calendar">
-                    <i class="far fa-calendar-alt"></i>
-                    <span>Онлайн-запись</span>
-                </a>
                 <a href="#" class="menu-item" data-view="warehouse">
                     <i class="fas fa-pallet"></i>
-                    <span>Складской учет</span>
+                    <span>Складский учет</span>
                 </a>
-                <a href="#" class="menu-item" data-view="marketing">
-                    <i class="fas fa-chart-line"></i>
-                    <span>Маркетинг</span>
-                </a>
-                <a href="#" class="menu-item" data-view="websites">
-                    <i class="fas fa-store"></i>
-                    <span>Сайты и Магазины</span>
-                </a>
-                <a href="#" class="menu-item" data-view="documents">
-                    <i class="fas fa-file-contract"></i>
-                    <span>КЭДО + Документы</span>
-                </a>
-                <a href="#" class="menu-item" data-view="signature">
-                    <i class="fas fa-signature"></i>
-                    <span>Подпись</span>
-                </a>
-                <a href="#" class="menu-item" data-view="bi">
-                    <i class="fas fa-chart-pie"></i>
-                    <span>BI Конструктор</span>
-                </a>
+
                 <a href="#" class="menu-item" data-view="employees">
                     <i class="fas fa-users"></i>
                     <span>Сотрудники</span>
@@ -741,10 +899,6 @@
                 <a href="#" class="menu-item" data-view="automation">
                     <i class="fas fa-cogs"></i>
                     <span>Автоматизация</span>
-                </a>
-                <a href="#" class="menu-item" data-view="apps">
-                    <i class="fas fa-puzzle-piece"></i>
-                    <span>Приложения</span>
                 </a>
             </div>
 
@@ -847,136 +1001,136 @@
                     title: "Рабочий стол",
                     color: "#2066b0",
                     content: `
-                                <div class="content-section">
-                                    <h2>Рабочий стол</h2>
-                                    <p>Добро пожаловать в CRM! Выберите раздел в левом меню для работы.</p>
-                                </div>
-                                <div class="content-section">
-                                    <h2>Последние активности</h2>
-                                    <p>Здесь будет отображаться ваша последняя активность в системе.</p>
-                                </div>
-                                <div class="content-section">
-                                    <h2>Мои задачи</h2>
-                                    <table>
-                                        <thead>
-                                            <tr>
-                                                <th>Задача</th>
-                                                <th>Приоритет</th>
-                                                <th>Срок</th>
-                                                <th>Статус</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td>Подготовить отчет по продажам</td>
-                                                <td>Высокий</td>
-                                                <td>15.05.2023</td>
-                                                <td>В работе</td>
-                                            </tr>
-                                            <tr>
-                                                <td>Созвать собрание отдела</td>
-                                                <td>Средний</td>
-                                                <td>12.05.2023</td>
-                                                <td>Завершено</td>
-                                            </tr>
-                                            <tr>
-                                                <td>Обновить контакты клиентов</td>
-                                                <td>Низкий</td>
-                                                <td>20.05.2023</td>
-                                                <td>Не начато</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            `
+                                        <div class="content-section">
+                                            <h2>Рабочий стол</h2>
+                                            <p>Добро пожаловать в CRM! Выберите раздел в левом меню для работы.</p>
+                                        </div>
+                                        <div class="content-section">
+                                            <h2>Последние активности</h2>
+                                            <p>Здесь будет отображаться ваша последняя активность в системе.</p>
+                                        </div>
+                                        <div class="content-section">
+                                            <h2>Мои задачи</h2>
+                                            <table>
+                                                <thead>
+                                                    <tr>
+                                                        <th>Задача</th>
+                                                        <th>Приоритет</th>
+                                                        <th>Срок</th>
+                                                        <th>Статус</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td>Подготовить отчет по продажам</td>
+                                                        <td>Высокий</td>
+                                                        <td>15.05.2023</td>
+                                                        <td>В работе</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Созвать собрание отдела</td>
+                                                        <td>Средний</td>
+                                                        <td>12.05.2023</td>
+                                                        <td>Завершено</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Обновить контакты клиентов</td>
+                                                        <td>Низкий</td>
+                                                        <td>20.05.2023</td>
+                                                        <td>Не начато</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    `
                 },
                 tasks: {
                     title: "Задачи и Проекты",
                     color: "#28a745",
                     content: `
-                                <div class="content-section">
-                                    <h2>Мои задачи</h2>
-                                    <p>Управление задачами и проектами.</p>
-                                    <table>
-                                        <thead>
-                                            <tr>
-                                                <th>Проект</th>
-                                                <th>Задача</th>
-                                                <th>Статус</th>
-                                                <th>Дедлайн</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td>Разработка CRM</td>
-                                                <td>Создать интерфейс задач</td>
-                                                <td>В работе</td>
-                                                <td>25.05.2023</td>
-                                            </tr>
-                                            <tr>
-                                                <td>Маркетинг</td>
-                                                <td>Подготовить кампанию</td>
-                                                <td>Запланировано</td>
-                                                <td>30.05.2023</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            `
+                                        <div class="content-section">
+                                            <h2>Мои задачи</h2>
+                                            <p>Управление задачами и проектами.</p>
+                                            <table>
+                                                <thead>
+                                                    <tr>
+                                                        <th>Проект</th>
+                                                        <th>Задача</th>
+                                                        <th>Статус</th>
+                                                        <th>Дедлайн</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td>Разработка CRM</td>
+                                                        <td>Создать интерфейс задач</td>
+                                                        <td>В работе</td>
+                                                        <td>25.05.2023</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Маркетинг</td>
+                                                        <td>Подготовить кампанию</td>
+                                                        <td>Запланировано</td>
+                                                        <td>30.05.2023</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    `
                 },
                 crm: {
                     title: "CRM и Клиенты",
                     color: "#17a2b8",
                     content: `
-                                <div class="content-section">
-                                    <h2>Клиенты</h2>
-                                    <p>Управление клиентской базой.</p>
-                                    <table>
-                                        <thead>
-                                            <tr>
-                                                <th>Клиент</th>
-                                                <th>Телефон</th>
-                                                <th>Email</th>
-                                                <th>Статус</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td>ООО "Ромашка"</td>
-                                                <td>+7 (123) 456-78-90</td>
-                                                <td>info@romashka.ru</td>
-                                                <td>Активный</td>
-                                            </tr>
-                                            <tr>
-                                                <td>ИП Иванов</td>
-                                                <td>+7 (987) 654-32-10</td>
-                                                <td>ivanov@mail.ru</td>
-                                                <td>Потенциальный</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            `
+                                        <div class="content-section">
+                                            <h2>Клиенты</h2>
+                                            <p>Управление клиентской базой.</p>
+                                            <table>
+                                                <thead>
+                                                    <tr>
+                                                        <th>Клиент</th>
+                                                        <th>Телефон</th>
+                                                        <th>Email</th>
+                                                        <th>Статус</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td>ООО "Ромашка"</td>
+                                                        <td>+7 (123) 456-78-90</td>
+                                                        <td>info@romashka.ru</td>
+                                                        <td>Активный</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>ИП Иванов</td>
+                                                        <td>+7 (987) 654-32-10</td>
+                                                        <td>ivanov@mail.ru</td>
+                                                        <td>Потенциальный</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    `
                 },
                 marketing: {
                     title: "Маркетинг",
                     color: "#ffc107",
                     content: `
-                                <div class="content-section">
-                                    <h2>Маркетинговые кампании</h2>
-                                    <p>Управление маркетинговыми активностями.</p>
-                                </div>
-                            `
+                                        <div class="content-section">
+                                            <h2>Маркетинговые кампании</h2>
+                                            <p>Управление маркетинговыми активностями.</p>
+                                        </div>
+                                    `
                 },
                 communications: {
                     title: "Коммуникации",
                     color: "#6f42c1",
                     content: `
-                                <div class="content-section">
-                                    <h2>Сообщения и уведомления</h2>
-                                    <p>Система внутренних коммуникаций.</p>
-                                </div>
-                            `
+                                        <div class="content-section">
+                                            <h2>Сообщения и уведомления</h2>
+                                            <p>Система внутренних коммуникаций.</p>
+                                        </div>
+                                    `
                 }
             };
 
@@ -1043,10 +1197,22 @@
             // Закрытие меню профиля при клике на кнопку выхода
             const logoutBtn = document.querySelector('.logout-btn');
             if (logoutBtn) {
-                logoutBtn.addEventListener('click', function () {
-                    alert('Выход из системы выполнен');
-                    profileDropdown.classList.remove('active');
-                    overlay.style.display = 'none';
+                logoutBtn.addEventListener('click', function (e) {
+                    e.preventDefault(); // Предотвращаем стандартное поведение, если это ссылка
+
+
+                    // Закрываем меню профиля
+                    if (profileDropdown) {
+                        profileDropdown.classList.remove('active');
+                    }
+
+                    // Скрываем overlay
+                    if (overlay) {
+                        overlay.style.display = 'none';
+                    }
+
+                    // Перенаправляем на страницу выхода
+                    window.location.href = '/Home/logout';
                 });
             }
 

@@ -1,4 +1,6 @@
 using Crm.Application;
+using Crm.Core.Implementations;
+using Crm.Core.Interfaces;
 using Crm.Entity.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -19,6 +21,10 @@ builder.Services.AddHttpClient();
 // Внедряем зависимость
 builder.Services.AddSingleton<ICrmRepository, CrmRepository>();
 builder.Services.AddSingleton<IUserRepository, UserRepository>();
+
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IProfileService, ProfileService>();
 
 // Регистрируем все обработчики команд из Application слоя
 builder.Services.AddApplication();
