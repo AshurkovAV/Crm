@@ -40,7 +40,7 @@
 
         /* Верхняя панель */
         .top-bar {
-            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            background: rgba(99, 102, 241, 0.1); /* Очень прозрачный фиолетовый */
             color: white;
             padding: 0 24px;
             display: flex;
@@ -51,8 +51,9 @@
             right: 0;
             z-index: 1000;
             height: 60px;
-            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.15);
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(15px); /* Такое же размытие как в sidebar */
+            -webkit-backdrop-filter: blur(15px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* Легкая граница */
         }
 
         /* Блок с меню-гамбургером и логотипом */
@@ -109,17 +110,18 @@
             cursor: pointer;
             position: relative;
             transition: all 0.3s ease;
-            opacity: 0.85;
+            opacity: 0.9;
+            font-weight: 400; /* Менее жирный текст */
         }
 
             .tab:hover {
                 opacity: 1;
-                background: rgba(255, 255, 255, 0.08);
+                background: rgba(255, 255, 255, 0.1); /* Легкий ховер */
             }
 
             .tab.active {
                 opacity: 1;
-                background: rgba(255, 255, 255, 0.12);
+                background: rgba(255, 255, 255, 0.15);
             }
 
             .tab::after {
@@ -128,9 +130,9 @@
                 bottom: 0;
                 left: 20%;
                 width: 60%;
-                height: 3px;
+                height: 2px;
                 background: white;
-                border-radius: 3px 3px 0 0;
+                border-radius: 2px 2px 0 0;
                 transform: scaleX(0);
                 transition: transform 0.3s ease;
             }
@@ -154,14 +156,14 @@
         .search-box {
             display: flex;
             align-items: center;
-            background: rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.1); /* Прозрачный фон */
             border-radius: 12px;
             padding: 8px 16px;
             transition: all 0.3s ease;
         }
 
             .search-box:hover {
-                background: rgba(255, 255, 255, 0.18);
+                background: rgba(255, 255, 255, 0.15);
             }
 
             .search-box input {
@@ -193,10 +195,11 @@
             cursor: pointer;
             transition: all 0.3s ease;
             position: relative;
+            background: rgba(255, 255, 255, 0.05); /* Легкий фон */
         }
 
             .top-icon:hover {
-                background: rgba(255, 255, 255, 0.15);
+                background: rgba(255, 255, 255, 0.1);
             }
 
             .top-icon::after {
@@ -768,6 +771,93 @@
                 padding: 0 16px;
             }
         }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+            .modal-header h3 {
+                color: #1e293b;
+                font-weight: 600;
+            }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #64748b;
+        }
+
+        .background-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .background-option {
+            cursor: pointer;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+            .background-option:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            }
+
+            .background-option.active {
+                border-color: #6366f1;
+            }
+
+            .background-option img {
+                width: 100%;
+                height: 120px;
+                object-fit: cover;
+            }
+
+            .background-option span {
+                display: block;
+                text-align: center;
+                padding: 12px;
+                background: #f8fafc;
+                color: #475569;
+                font-weight: 500;
+            }
+
+
+
+            
+        }
     </style>
 </head>
 <body>
@@ -860,7 +950,7 @@
 
                     <div class="profile-divider"></div>
 
-                    <a href="#" class="profile-item">
+                    <a href="#" class="profile-item" id="changeBackgroundBtn">
                         <i class="fas fa-image"></i>
                         <span>Сменить фон</span>
                     </a>
@@ -873,6 +963,42 @@
             </div>
         </div>
     </div>
+    <!-- Модальное окно для выбора фона -->
+    <div class="modal-overlay" id="backgroundModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Выберите фон</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="background-options">
+                <div class="background-option" data-image="/image/slope.jpg">
+                    <img src="/image/slope.jpg" alt="Горы">
+                    <span>Горы</span>
+                </div>
+                <div class="background-option" data-image="/image/clouds.jpg">
+                    <img src="/image/clouds.jpg" alt="Офис">
+                    <span>Ледник</span>
+                </div>
+                <div class="background-option" data-image="/image/lava.jpg">
+                    <img src="/image/lava.jpg" alt="Природа">
+                    <span>Лава</span>
+                </div>
+                <div class="background-option" data-image="/image/slope.jpg">
+                    <img src="/image/slope.jpg" alt="Город">
+                    <span>Природа</span>
+                </div>
+                <div class="background-option" data-image="/image/travel.jpg">
+                    <img src="/image/travel.jpg" alt="Пляж">
+                    <span>Путешествия</span>
+                </div>
+                <div class="background-option" data-image="/image/winter-forest.jpg">
+                    <img src="/image/winter-forest.jpg" alt="Абстракция">
+                    <span>Зимний лес</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
     <div class="container">
         <!-- Левое меню -->
@@ -981,6 +1107,51 @@
             </div>
         </div>
     </div>
+
+
+    <script>
+        // Функционал смены фона
+        const changeBackgroundBtn = document.getElementById('changeBackgroundBtn');
+        const backgroundModal = document.getElementById('backgroundModal');
+        const modalClose = document.querySelector('.modal-close');
+        const backgroundOptions = document.querySelectorAll('.background-option');
+
+        // Открытие модального окна
+        changeBackgroundBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            backgroundModal.style.display = 'flex';
+        });
+
+        // Закрытие модального окна
+        modalClose.addEventListener('click', function () {
+            backgroundModal.style.display = 'none';
+        });
+
+        // Выбор фона
+        backgroundOptions.forEach(option => {
+            option.addEventListener('click', function () {
+                const imageUrl = this.dataset.image;
+
+                // Сохраняем в localStorage
+                localStorage.setItem('backgroundImage', imageUrl);
+
+                // Применяем фон
+                document.body.style.backgroundImage = `url('${imageUrl}')`;
+
+                // Закрываем модальное окно
+                backgroundModal.style.display = 'none';
+            });
+        });
+
+        // Загрузка сохраненного фона при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function () {
+            const savedBackground = localStorage.getItem('backgroundImage');
+            if (savedBackground) {
+                document.body.style.backgroundImage = `url('${savedBackground}')`;
+            }
+        });
+
+    </script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
