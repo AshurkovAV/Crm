@@ -1,0 +1,12 @@
+﻿@model Crm.Core.ViewModels.ProfileViewModel
+
+<div class="avatar" id="profileToggle">
+    @if (!string.IsNullOrEmpty(Model.FirstName))
+    {
+        @Model.FirstName[0]
+    }
+    else
+    {
+        @:А
+    }
+</div>

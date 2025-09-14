@@ -7,6 +7,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CRM - Меню профиля</title>
+    <script src="~/js/user/changeBackground.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -921,7 +922,7 @@
                 <i class="fas fa-th"></i>
             </div>
 
-            <div class="avatar" id="profileToggle">А</div>
+            @await Component.InvokeAsync("Icon")
 
             <!-- Выпадающее меню профиля -->
             <div class="profile-dropdown" id="profileDropdown">
@@ -1108,50 +1109,7 @@
         </div>
     </div>
 
-
-    <script>
-        // Функционал смены фона
-        const changeBackgroundBtn = document.getElementById('changeBackgroundBtn');
-        const backgroundModal = document.getElementById('backgroundModal');
-        const modalClose = document.querySelector('.modal-close');
-        const backgroundOptions = document.querySelectorAll('.background-option');
-
-        // Открытие модального окна
-        changeBackgroundBtn.addEventListener('click', function (e) {
-            e.preventDefault();
-            backgroundModal.style.display = 'flex';
-        });
-
-        // Закрытие модального окна
-        modalClose.addEventListener('click', function () {
-            backgroundModal.style.display = 'none';
-        });
-
-        // Выбор фона
-        backgroundOptions.forEach(option => {
-            option.addEventListener('click', function () {
-                const imageUrl = this.dataset.image;
-
-                // Сохраняем в localStorage
-                localStorage.setItem('backgroundImage', imageUrl);
-
-                // Применяем фон
-                document.body.style.backgroundImage = `url('${imageUrl}')`;
-
-                // Закрываем модальное окно
-                backgroundModal.style.display = 'none';
-            });
-        });
-
-        // Загрузка сохраненного фона при загрузке страницы
-        document.addEventListener('DOMContentLoaded', function () {
-            const savedBackground = localStorage.getItem('backgroundImage');
-            if (savedBackground) {
-                document.body.style.backgroundImage = `url('${savedBackground}')`;
-            }
-        });
-
-    </script>
+  
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -1165,6 +1123,56 @@
             const overlay = document.getElementById('overlay');
             const contentTopBar = document.getElementById('contentTopBar');
             const contentArea = document.getElementById('contentArea');
+
+
+
+            const topMenuData = {
+                dashboard: [
+                    { icon: 'fas fa-home', text: 'Главная' },
+                    { icon: 'fas fa-chart-line', text: 'Аналитика' },
+                    { icon: 'fas fa-bell', text: 'Уведомления' }
+                ],
+                tasks: [
+                    { icon: 'fas fa-folder', text: 'Проекты' },
+                    { icon: 'fas fa-tasks', text: 'Задачи' },
+                    { icon: 'fas fa-stream', text: 'Потоки' },
+                    { icon: 'fas fa-trash', text: 'Корзина' },
+                    { icon: 'fas fa-ellipsis-h', text: 'Еще' }
+                ],
+                crm: [
+                    {
+                        icon: 'fas fa-handshake',
+                        text: 'Сделки',
+                        submenu: []
+                    },
+                    {
+                        icon: 'fas fa-box',
+                        text: 'Товары и Склады',
+                        submenu: []
+                    },
+                    {
+                        icon: 'fas fa-users',
+                        text: 'Клиенты',
+                        submenu: [
+                            { text: 'Контакты' },
+                            { text: 'Компании' },
+                            { text: 'Поставщики' }
+                        ]
+                    },
+                    {
+                        icon: 'fas fa-shopping-cart',
+                        text: 'Продажи',
+                        submenu: []
+                    }
+                ],
+                marketing: [
+                    { icon: 'fas fa-bullhorn', text: 'Кампании' },
+                    { icon: 'fas fa-envelope', text: 'Рассылки' },
+                    { icon: 'fas fa-chart-pie', text: 'Аналитика' }
+                ]
+            };
+
+
 
             // Данные для разных представлений
             const views = {
@@ -1305,6 +1313,127 @@
                 }
             };
 
+
+            function updateTopMenu(viewName) {
+                const topTabs = document.querySelector('.top-tabs');
+                const menuData = topMenuData[viewName] || topMenuData.dashboard;
+
+                // Очищаем текущее меню
+                topTabs.innerHTML = '';
+
+                // Создаем новые вкладки
+                menuData.forEach(item => {
+                    const tab = document.createElement('div');
+                    tab.className = 'tab';
+                    tab.innerHTML = `
+                    <i class="${item.icon}"></i>
+                    <span>${item.text}</span>
+                    ${item.submenu ? '<i class="fas fa-chevron-down" style="font-size: 12px; margin-left: 8px;"></i>' : ''}
+                `;
+
+                    // Добавляем обработчик для подменю
+                    if (item.submenu && item.submenu.length > 0) {
+                        tab.classList.add('has-submenu');
+                        tab.addEventListener('click', function (e) {
+                            e.stopPropagation();
+                            toggleSubmenu(this, item.submenu);
+                        });
+                    }
+
+                    topTabs.appendChild(tab);
+                });
+            }
+
+            // Функция для показа/скрытия подменю
+            function toggleSubmenu(tab, submenuItems) {
+                // Удаляем существующее подменю
+                const existingSubmenu = document.querySelector('.submenu');
+                if (existingSubmenu) {
+                    existingSubmenu.remove();
+                }
+
+                // Создаем новое подменю
+                const submenu = document.createElement('div');
+                submenu.className = 'submenu';
+
+                submenuItems.forEach(subItem => {
+                    const submenuItem = document.createElement('div');
+                    submenuItem.className = 'submenu-item';
+                    submenuItem.textContent = subItem.text;
+                    submenu.appendChild(submenuItem);
+                });
+
+                // Позиционируем подменю
+                const rect = tab.getBoundingClientRect();
+                submenu.style.position = 'fixed';
+                submenu.style.top = (rect.bottom + 5) + 'px';
+                submenu.style.left = rect.left + 'px';
+
+                document.body.appendChild(submenu);
+
+                // Закрываем подменю при клике вне его
+                setTimeout(() => {
+                    document.addEventListener('click', closeSubmenu);
+                }, 0);
+            }
+
+            function closeSubmenu() {
+                const submenu = document.querySelector('.submenu');
+                if (submenu) {
+                    submenu.remove();
+                }
+                document.removeEventListener('click', closeSubmenu);
+            }
+
+            const submenuStyles = `
+        .submenu {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            padding: 8px 0;
+            min-width: 180px;
+            z-index: 1001;
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .submenu-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            color: #475569;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .submenu-item:hover {
+            background: #f1f5f9;
+            color: #6366f1;
+        }
+
+        .tab.has-submenu {
+            position: relative;
+        }
+
+        .tab.has-submenu::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: transparent;
+        }
+        `;
+
+            const styleSheet = document.createElement('style');
+            styleSheet.textContent = submenuStyles;
+            document.head.appendChild(styleSheet);
+
+           
+
+
+
+
             // Функция для смены представления
             function changeView(viewName) {
                 const view = views[viewName] || views.dashboard;
@@ -1320,6 +1449,9 @@
                 // Обновляем классы для стилизации
                 contentTopBar.className = 'content-top-bar ' + viewName + '-view';
                 contentArea.className = viewName + '-view';
+
+                // Обновляем верхнее меню
+                updateTopMenu(viewName);
 
                 // Обновляем активные вкладки
                 tabs.forEach(tab => {
@@ -1389,6 +1521,9 @@
 
             // Инициализация представления по умолчанию
             changeView('dashboard');
+
+            // Обновляем верхнее меню при загрузке
+            updateTopMenu('dashboard');
         });
     </script>
 </body>

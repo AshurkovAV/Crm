@@ -32,9 +32,9 @@ namespace Crm.Core.Implementations
 
             return new ProfileViewModel
             {
-                FirstName = user.FirstName,
-                LastName = user.LastName,
-                Position = user.Role // Или другое поле для должности
+                FirstName = user.FirstName ?? user.DefaultEmail,
+                LastName = user.LastName ?? "",
+                Position = user.Role ?? "Пользователь" // Или другое поле для должности
             };
         }
     }
