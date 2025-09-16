@@ -11,7 +11,6 @@ namespace Crm.Controllers
         private static readonly ConcurrentDictionary<string, SetupProcess> _processes =
             new ConcurrentDictionary<string, SetupProcess>();
 
-
         public IActionResult Index()
         {
             return View();

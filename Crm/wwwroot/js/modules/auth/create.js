@@ -32,7 +32,7 @@
 
                 const data = await response.json();
                 console.error(data);
-                if (data.succeeded) {
+                if (data.Succeeded) {
                     window.location.href = "/crmsetup";
                 } else {
                     throw new Error(data.message);

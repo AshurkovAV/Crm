@@ -13,7 +13,7 @@ using Crm.Application.Features.Accounts.Commands.Login;
 using Microsoft.AspNetCore.Authorization;
 
 namespace Crm.Controllers
-{
+{   
     public class AccountController : Controller
     {
         private ICrmRepository  _crmRepository;
