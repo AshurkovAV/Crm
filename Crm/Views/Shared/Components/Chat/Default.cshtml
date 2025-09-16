@@ -1,0 +1,151 @@
+﻿@model List<Crm.ViewComponents.Chat.ChatModel>
+
+<div class="chat-container">
+    <div class="chat-header">
+        <h3>Сообщения</h3>
+        <div class="chat-actions">
+            <button class="chat-btn"><i class="fas fa-edit"></i></button>
+            <button class="chat-btn"><i class="fas fa-search"></i></button>
+        </div>
+    </div>
+
+    <div class="chat-list">
+        @foreach (var chat in Model)
+        {
+            <div class="chat-item" data-chat-id="@chat.Id">
+                <div class="chat-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="chat-info">
+                    <div class="chat-name">@chat.Name</div>
+                    <div class="chat-last-message">@chat.LastMessage</div>
+                </div>
+                <div class="chat-meta">
+                    <div class="chat-time">@chat.Time</div>
+                    @if (chat.Unread > 0)
+                    {
+                        <div class="chat-unread">@chat.Unread</div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .chat-container {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        height: 600px;
+        overflow: hidden;
+    }
+
+    .chat-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        border-bottom: 1px solid #f1f5f9;
+        background: #f8fafc;
+    }
+
+        .chat-header h3 {
+            margin: 0;
+            color: #1e293b;
+            font-weight: 600;
+        }
+
+    .chat-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .chat-btn {
+        background: none;
+        border: none;
+        color: #64748b;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+        .chat-btn:hover {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+    .chat-list {
+        overflow-y: auto;
+        height: calc(100% - 80px);
+    }
+
+    .chat-item {
+        display: flex;
+        align-items: center;
+        padding: 15px 20px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border-bottom: 1px solid #f8fafc;
+    }
+
+        .chat-item:hover {
+            background: #f8fafc;
+        }
+
+    .chat-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 20px;
+        margin-right: 15px;
+    }
+
+    .chat-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .chat-name {
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 4px;
+    }
+
+    .chat-last-message {
+        color: #64748b;
+        font-size: 14px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .chat-meta {
+        text-align: right;
+    }
+
+    .chat-time {
+        font-size: 12px;
+        color: #94a3b8;
+        margin-bottom: 5px;
+    }
+
+    .chat-unread {
+        background: #6366f1;
+        color: white;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 600;
+    }
+</style>

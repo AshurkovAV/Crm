@@ -41,6 +41,8 @@ public partial class CrmContext : DbContext
 
     public virtual DbSet<ProductionOrder> ProductionOrders { get; set; }
 
+    public virtual DbSet<Project> Projects { get; set; }
+
     public virtual DbSet<PurchaseDetail> PurchaseDetails { get; set; }
 
     public virtual DbSet<Shipment> Shipments { get; set; }
@@ -324,6 +326,23 @@ public partial class CrmContext : DbContext
                 .HasConstraintName("FK_ProductionOrders_Employees");
         });
 
+        modelBuilder.Entity<Project>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Project__3214EC075C83E530");
+
+            entity.ToTable("Project");
+
+            entity.Property(e => e.Activity).HasMaxLength(255);
+            entity.Property(e => e.AttachmentType).HasMaxLength(255);
+            entity.Property(e => e.CreatedDate).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.Efficiency).HasMaxLength(255);
+            entity.Property(e => e.ModifiedDate).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.Name).HasMaxLength(255);
+            entity.Property(e => e.Participants).HasMaxLength(255);
+            entity.Property(e => e.Role).HasMaxLength(255);
+            entity.Property(e => e.Status).HasMaxLength(100);
+        });
+
         modelBuilder.Entity<PurchaseDetail>(entity =>
         {
             entity.HasKey(e => e.PurchaseDetailId).HasName("PK__Purchase__88C328D57E3E9643");
@@ -409,7 +428,7 @@ public partial class CrmContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Users__3214EC072D748119");
+            entity.HasKey(e => e.Id).HasName("PK__Users__3214EC07E07CBC60");
 
             entity.Property(e => e.ClientId).HasMaxLength(255);
             entity.Property(e => e.CreatedDate).HasDefaultValueSql("(getdate())");

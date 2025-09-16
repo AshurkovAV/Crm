@@ -15,10 +15,10 @@ builder.Services.AddSession(options =>
 });
 
 // Add services to the container.
-builder.Services.AddControllersWithViews().AddJsonOptions(options => options.JsonSerializerOptions.PropertyNamingPolicy = null);
+builder.Services.AddControllersWithViews();
 builder.Services.AddHttpClient();
 
-// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+// Внедряем зависимость
 builder.Services.AddSingleton<ICrmRepository, CrmRepository>();
 builder.Services.AddSingleton<IUserRepository, UserRepository>();
 
@@ -26,15 +26,15 @@ builder.Services.AddSingleton<IUserRepository, UserRepository>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IProfileService, ProfileService>();
 
-// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ Application пїЅпїЅпїЅпїЅ
+// Регистрируем все обработчики команд из Application слоя
 builder.Services.AddApplication();
 
-// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+// Добавление сервисов аутентификации
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
-        options.LoginPath = "/Account/Index"; // пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
-        options.AccessDeniedPath = "/Error/401"; // пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ 401
+        options.LoginPath = "/Account/Index"; // Путь к странице входа
+        options.AccessDeniedPath = "/Error/401"; // Путь к странице 401
         options.Events = new CookieAuthenticationEvents
         {
             OnRedirectToLogin = context =>
@@ -70,7 +70,7 @@ app.MapGet("/Home/logout", async (HttpContext context) =>
     return Results.Redirect("/Account/Index");
 });
 
-// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ Account/Index
+// Изменяем маршрут по умолчанию на Account/Index
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");

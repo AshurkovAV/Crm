@@ -1,0 +1,44 @@
+﻿@model List<TaskViewModel>
+@{
+    ViewData["Title"] = "";
+}
+
+<div class="content-top-bar">
+    <h1 class="content-title">Задачи и Проекты</h1>
+    <div class="content-actions">
+        <button class="content-btn">
+            <i class="fas fa-plus"></i>
+            <span>Новая задача</span>
+        </button>
+        <button class="content-btn secondary">
+            <i class="fas fa-filter"></i>
+            <span>Фильтр</span>
+        </button>
+    </div>
+</div>
+
+<div class="content-section">
+    <h2>Мои задачи</h2>
+    <p>Управление задачами и проектами.</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Проект</th>
+                <th>Задача</th>
+                <th>Статус</th>
+                <th>Дедлайн</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var task in Model)
+            {
+                <tr>
+                    <td>@task.Project</td>
+                    <td>@task.Task</td>
+                    <td>@task.Status</td>
+                    <td>@task.Deadline</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

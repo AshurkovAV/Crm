@@ -1,0 +1,84 @@
+﻿@model string
+@using Crm.Models
+
+@{
+    var topMenuData = new Dictionary<string, List<MenuItem>>
+            {
+                ["dashboard"] = new List<MenuItem>
+        {
+            new MenuItem { Icon = "fas fa-home", Text = "Главная", Url = "/Home" },
+            new MenuItem { Icon = "fas fa-chart-line", Text = "Аналитика", Url = "/Analytics" },
+            new MenuItem { Icon = "fas fa-bell", Text = "Уведомления", Url = "/Notifications" }
+        },
+                ["projects"] = new List<MenuItem>
+        {
+            new MenuItem { Icon = "fas fa-folder", Text = "Проекты", Url = "/Project" },
+            new MenuItem { Icon = "fas fa-tasks", Text = "Задачи", Url = "/Tasks" },
+            new MenuItem { Icon = "fas fa-stream", Text = "Потоки", Url = "/Workflows" },
+            new MenuItem { Icon = "fas fa-trash", Text = "Корзина", Url = "/Trash" },
+            new MenuItem { Icon = "fas fa-ellipsis-h", Text = "Еще", Url = "/More" }
+        },
+                ["crm"] = new List<MenuItem>
+        {
+            new MenuItem { Icon = "fas fa-handshake", Text = "Сделки", Url = "/Deals" },
+            new MenuItem { Icon = "fas fa-box", Text = "Товары и Склады", Url = "/Products" },
+            new MenuItem { Icon = "fas fa-users", Text = "Клиенты", Url = "/Clients", Submenu = new[] { "Контакты", "Компании", "Поставщики" } },
+            new MenuItem { Icon = "fas fa-shopping-cart", Text = "Продажи", Url = "/Sales" }
+        },
+                ["marketing"] = new List<MenuItem>
+        {
+            new MenuItem { Icon = "fas fa-bullhorn", Text = "Кампании", Url = "/Campaigns" },
+            new MenuItem { Icon = "fas fa-envelope", Text = "Рассылки", Url = "/Mailings" },
+            new MenuItem { Icon = "fas fa-chart-pie", Text = "Аналитика", Url = "/MarketingAnalytics" }
+        }
+            };
+
+    // Определяем ключ на основе URL
+    string menuKey = Model.ToLower(); // Преобразуем в нижний регистр
+
+    var menuItems = topMenuData.ContainsKey(menuKey)
+        ? topMenuData[menuKey]
+        : topMenuData["dashboard"]; // Fallback на dashboard если ключ не найден
+}
+
+<div class="top-tabs">
+    @foreach (var item in menuItems)
+    {
+        <a href="@item.Url" class="tab @(item.Submenu.Length > 0 ? "has-submenu" : "")">
+            <i class="@item.Icon"></i>
+            <span>@item.Text</span>
+            @if (item.Submenu.Length > 0)
+            {
+                <i class="fas fa-chevron-down" style="font-size: 12px; margin-left: 8px;"></i>
+            }
+        </a>
+    }
+</div>
+
+<style>
+    .top-tabs {
+        display: flex;
+        gap: 0;
+    }
+
+        .top-tabs .tab {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            text-decoration: none;
+            color: inherit;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+            
+
+            .top-tabs .tab.has-submenu {
+                position: relative;
+            }
+
+            .top-tabs .tab.active {
+                border-bottom-color: #007bff;
+                background-color: #e8f4ff;
+            }</style>

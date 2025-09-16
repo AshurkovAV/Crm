@@ -3,13 +3,18 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.9.34728.123
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Crm", "Crm\Crm.csproj", "{87F7C726-1DA5-4491-86B0-21B39E916E2E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Crm", "Crm\Crm.csproj", "{87F7C726-1DA5-4491-86B0-21B39E916E2E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Crm.Entity", "Crm.Entity\Crm.Entity.csproj", "{474AF271-D2BA-42BF-B32A-7A933381E4C3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Crm.Entity", "Crm.Entity\Crm.Entity.csproj", "{474AF271-D2BA-42BF-B32A-7A933381E4C3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Crm.Core", "Crm.Core\Crm.Core.csproj", "{51935D8C-107C-43CA-BD12-5FED40D8DCD2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Crm.Core", "Crm.Core\Crm.Core.csproj", "{51935D8C-107C-43CA-BD12-5FED40D8DCD2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Crm.Application", "Crm.Application\Crm.Application.csproj", "{897FEABC-F4B3-4995-B476-B3BED8A32601}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Crm.Application", "Crm.Application\Crm.Application.csproj", "{897FEABC-F4B3-4995-B476-B3BED8A32601}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DevExtreme NuGet.config", "DevExtreme NuGet.config", "{7D7536DF-9C8A-4FDF-B4F2-5D07E5849B2C}"
+	ProjectSection(SolutionItems) = preProject
+		NuGet.config = NuGet.config
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
