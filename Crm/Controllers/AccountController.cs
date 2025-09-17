@@ -1,5 +1,4 @@
 ﻿using Crm.Entity.Services;
-using Crm.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
@@ -7,13 +6,12 @@ using System.Security.Claims;
 using Crm.Extensions;
 using MediatR;
 using Crm.Application.Features.Accounts.Commands.CreateUser;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 using Crm.Entity.ModelsCrm;
 using Crm.Application.Features.Accounts.Commands.Login;
 using Microsoft.AspNetCore.Authorization;
 
 namespace Crm.Controllers
-{   
+{
     public class AccountController : Controller
     {
         private ICrmRepository  _crmRepository;

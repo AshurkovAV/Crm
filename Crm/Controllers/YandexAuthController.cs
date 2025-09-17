@@ -2,11 +2,8 @@
 using Crm.Application.Features.Accounts.DTOs;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
-using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Text.Json.Serialization;
 
 namespace Crm.Controllers
 {

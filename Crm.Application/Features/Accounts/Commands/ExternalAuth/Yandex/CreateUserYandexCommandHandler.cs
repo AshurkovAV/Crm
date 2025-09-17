@@ -1,7 +1,5 @@
 ﻿using Crm.Application.Features.Accounts.Commands.CreateUser;
-using Crm.Application.Features.Accounts.DTOs;
 using Crm.Application.Features.Accounts.Services;
-using Crm.Entity.ModelsCrm;
 using Crm.Entity.Services;
 using MediatR;
 
