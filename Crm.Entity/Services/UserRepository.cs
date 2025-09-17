@@ -40,26 +40,39 @@ namespace Crm.Entity.Services
             return result;
         }
 
-        public async Task AddAsync(User user)
+        public async Task AddOrUpdateAsync(User user)
         {
             using (var db = new CrmContext())
             {
-                // Проверяем, что пользователь еще не добавлен в контекст
-                var existingEntry = db.ChangeTracker.Entries<User>()
-                    .FirstOrDefault(e => e.Entity.Id == user.Id);
+                // Проверяем существование пользователя в базе данных
+                var existingUser = await db.Users
+                    .AsNoTracking() // Чтобы не отслеживать сущность
+                    .FirstOrDefaultAsync(u => u.Id == user.Id);
 
-                if (existingEntry == null)
+                if (existingUser == null)
                 {
+                    // Пользователя нет в базе - добавляем
                     await db.Users.AddAsync(user);
                 }
                 else
                 {
-                    // Если уже отслеживается, просто обновляем состояние
-                    existingEntry.State = EntityState.Added;
+                    // Пользователь существует - обновляем
+                    db.Users.Update(user);
+
+                    // Альтернативный вариант с более контролируемым обновлением:
+                    // db.Entry(user).State = EntityState.Modified;
                 }
-                db.SaveChanges();
+
+                await db.SaveChangesAsync();
             }
-               
+        }
+        public async Task AddAsync(User user)
+        {
+            using (var db = new CrmContext())
+            {
+                var data = db.Add(user);                
+                await db.SaveChangesAsync();
+            }
         }
 
         public UserToken InsertUserToken(UserToken user)

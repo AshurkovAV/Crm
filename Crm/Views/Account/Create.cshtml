@@ -14,6 +14,7 @@
     <script src="~/js/devextreme/dx.all.js"></script>
     <script src="~/js/devextreme/localization/dx.messages.ru.js"></script>
     <script src="~/js/modules/auth/create.js"></script>
+    <script src="~/js/modules/auth/yandexauthorization.js"></script>
 </head>
 <body>
     <!-- Контейнер для фиксированных кнопок -->
@@ -52,7 +53,7 @@
                     <span>создайте с помощью</span>
                 </div>
                 <div class="social-login">
-                    <div class="social-item">
+                    @* <div class="social-item">
                         <div class="social-btn" title="VK">
                             <i class="fab fa-vk"></i>
                         </div>                        
@@ -62,19 +63,19 @@
                         <div class="social-btn" title="Mail.ru">
                             <i class="far fa-envelope"></i>
                         </div>                        
-                    </div>
+                    </div> *@
 
                     <div class="social-item">
-                        <div class="social-btn" title="Yandex">
+                        <div class="social-btn" id="yandexAuthBtn" title="Yandex">
                             <span style="font-weight: bold;">Я</span>
-                        </div>                        
+                        </div>
                     </div>
 
-                    <div class="social-item">
+                  @*   <div class="social-item">
                         <div class="social-btn" title="Google">
                             <i class="fab fa-google"></i>
                         </div>                       
-                    </div>
+                    </div> *@
                 </div>
                
             </div>

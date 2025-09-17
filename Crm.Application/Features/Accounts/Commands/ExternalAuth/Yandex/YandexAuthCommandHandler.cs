@@ -1,25 +1,23 @@
-﻿using Crm.Application.Features.Accounts.DTOs;
+﻿using Crm.Application.Features.Accounts.Commands.CreateUser;
+using Crm.Application.Features.Accounts.DTOs;
 using Crm.Entity.ModelsCrm;
 using Crm.Entity.Services;
+using MediatR;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http.Headers;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Crm.Application.Features.Accounts.Commands.Yandex
+
+namespace Crm.Application.Features.Accounts.Commands.ExternalAuth.Yandex
 {
-    public class CreateUserYandexCommandHandler
+    public class YandexAuthCommandHandler : IRequestHandler<CreateUserYandexCommand, CreateUserResult>
     {
         private IUserRepository _userRepository;
-
-        public CreateUserYandexCommandHandler(IUserRepository userRepository)
+        public YandexAuthCommandHandler(IUserRepository userRepository)
         {
             _userRepository = userRepository;
-        }
-        public async Task<UserToken> Get(string code)
+        }      
+
+        public async Task<CreateUserResult> Handle(CreateUserYandexCommand request, CancellationToken cancellationToken)
         {
             var pathBase = "https://oauth.yandex.ru";
             var client = new HttpClient();
@@ -28,7 +26,7 @@ namespace Crm.Application.Features.Accounts.Commands.Yandex
 
             var values = new List<KeyValuePair<string, string>>();
             values.Add(new KeyValuePair<string, string>("grant_type", "authorization_code"));
-            values.Add(new KeyValuePair<string, string>("code", $"{code}"));
+            values.Add(new KeyValuePair<string, string>("code", $"{request.Code}"));
             var content = new FormUrlEncodedContent(values);
 
             var base64EncodedAuthenticationString = "MzZkNTEzNDcyZDkyNGVhMjkwMTQwMWQ1MTk1OGJjNWM6N2RiYTRlMjVhN2IzNGEyMTk4MmVkZjc0NjZkMDFlZGI=";
@@ -50,7 +48,9 @@ namespace Crm.Application.Features.Accounts.Commands.Yandex
                 Scope = tookeniser.scope,
                 TokenType = tookeniser.token_type
             });
-            return usertooken;
+            return new CreateUserResult {
+            UserToken = usertooken,
+            } ;
         }
     }
 }

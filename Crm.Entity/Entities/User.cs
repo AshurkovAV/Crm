@@ -31,6 +31,8 @@
             );
         }
 
+      
+
         // Доменные методы
         public void Deactivate()
         {

@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Crm.Application.Features.Accounts.Services;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,7 +19,7 @@ namespace Crm.Application
 
             // Здесь можно зарегистрировать другие сервисы уровня приложения
             // services.AddScoped<IUserService, UserService>();
-
+            services.AddScoped<IYandexAuthService, YandexAuthService>();
             return services;
         }
     }

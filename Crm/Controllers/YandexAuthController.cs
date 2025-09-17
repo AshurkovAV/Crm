@@ -1,7 +1,8 @@
-﻿using Crm.Application.Features.Accounts.Commands.Yandex;
+﻿using Crm.Application.Features.Accounts.Commands.ExternalAuth.Yandex;
 using Crm.Application.Features.Accounts.DTOs;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -68,7 +69,7 @@ namespace Crm.Controllers
             string responseBody = await response.Content.ReadAsStringAsync();
 
             var tookeniser = JsonConvert.DeserializeObject<UserTokenJson>(responseBody);
-            var command = new CreateUserYandexCommand
+            var command = new YandexAuthCommand
             {
                 AccessToken = code
             };
@@ -92,34 +93,26 @@ namespace Crm.Controllers
                 if (!string.IsNullOrEmpty(error))
                 {
                     return RedirectToAction("Login", "Account", new { error = "yandex_auth_failed" });
-                }             
-
-                // Обмен кода на access_token
-                var tokenResponse = await ExchangeCodeForToken(code);
-
-                if (!tokenResponse.IsSuccessStatusCode)
-                {
-                    var errorContent = await tokenResponse.Content.ReadAsStringAsync();                
-                        
-                    return RedirectToAction("Login", "Account", new { error = "token_exchange_failed" });
                 }
-
-                // Чтение токена из ответа с Newtonsoft.Json
-                var tokenContent = await tokenResponse.Content.ReadAsStringAsync();
-                var tokenData = JsonConvert.DeserializeObject<YandexTokenResponse>(tokenContent);
-
-                // Получение информации о пользователе
-                var userInfo = await GetUserInfo(tokenData.AccessToken);
-
-                // Ваша логика создания/авторизации пользователя
-                // var result = await _userService.AuthenticateYandexUser(userInfo);
-
-                return RedirectToAction("YandexAuthSuccess", "Account", new
+                CreateUserYandexCommand model = new CreateUserYandexCommand 
                 {
-                    token = tokenData.AccessToken,
-                    email = userInfo.DefaultEmail,
-                    name = userInfo.DisplayName
-                });
+                    Code = code
+                };
+                var result = await _mediator.Send(model);
+
+                if (result.Succeeded)
+                {
+                    return RedirectToAction("YandexAuthSuccess", "Account", new
+                    {
+                        // token = tokenData.AccessToken,
+                        email = result.UserBase.DefaultEmail,
+                        name = result.UserBase.DisplayName
+                    });
+                }
+                else
+                {
+                    throw new Exception("internal_error");
+                }               
             }
             catch (Exception ex)
             {
@@ -163,47 +156,6 @@ namespace Crm.Controllers
             return await client.PostAsync("https://oauth.yandex.ru/token", content);
         }
     }
-
-    // Модели с атрибутами Newtonsoft.Json
-    public class YandexTokenResponse
-    {
-        [JsonProperty("access_token")]
-        public string AccessToken { get; set; }
-
-        [JsonProperty("token_type")]
-        public string TokenType { get; set; }
-
-        [JsonProperty("expires_in")]
-        public int ExpiresIn { get; set; }
-
-        [JsonProperty("refresh_token")]
-        public string RefreshToken { get; set; }
-    }
-
-    public class YandexUserInfoResponse
-    {
-        [JsonProperty("id")]
-        public string Id { get; set; }
-
-        [JsonProperty("login")]
-        public string Login { get; set; }
-
-        [JsonProperty("display_name")]
-        public string DisplayName { get; set; }
-
-        [JsonProperty("real_name")]
-        public string RealName { get; set; }
-
-        [JsonProperty("first_name")]
-        public string FirstName { get; set; }
-
-        [JsonProperty("last_name")]
-        public string LastName { get; set; }
-
-        [JsonProperty("default_email")]
-        public string DefaultEmail { get; set; }
-
-        [JsonProperty("emails")]
-        public List<string> Emails { get; set; }
-    }
+       
+    
 }

@@ -1,12 +1,6 @@
-﻿using Crm.Application.Features.Accounts.Commands.Yandex;
-using Crm.Application.Features.Accounts.DTOs;
-using Crm.Models;
-using MediatR;
+﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Text.Json.Serialization;
 using System.Web;
 
 namespace Crm.Controllers
