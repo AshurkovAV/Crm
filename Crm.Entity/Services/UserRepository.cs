@@ -1,6 +1,8 @@
 ﻿using Crm.Core.Infrastructure;
 using Crm.Entity.ModelsCrm;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 
 namespace Crm.Entity.Services
@@ -66,6 +68,139 @@ namespace Crm.Entity.Services
                 await db.SaveChangesAsync();
             }
         }
+
+        public async Task<bool> VerifyPasswordAsync(string email, string password)
+        {
+            try
+            {
+                using (var db = new CrmContext())
+                {
+                    var user = await db.Users
+                    .FirstOrDefaultAsync(u => u.DefaultEmail == email && u.IsActive);
+
+                    if (user == null || string.IsNullOrEmpty(user.PasswordHash) || string.IsNullOrEmpty(user.PasswordSalt))
+                    {
+                        return false;
+                    }
+
+                    // Хешируем введенный пароль с солью пользователя
+                    var inputHash = HashPassword(password, user.PasswordSalt);
+
+                    // Сравниваем хеши
+                    return inputHash == user.PasswordHash;
+                }
+                    
+            }
+            catch (Exception ex)
+            {               
+                return false;
+            }
+        }
+
+        public async Task<bool> SaveRememberTokenAsync(string email, string rememberToken, string deviceId)
+        {
+            try
+            {
+                using (var db = new CrmContext())
+                {
+                    // Удаляем старый токен для этого устройства (если есть)
+                    var existing = await db.RememberedDevices
+                        .FirstOrDefaultAsync(rd => rd.Email == email && rd.DeviceId == deviceId);
+
+                    if (existing != null)
+                    {
+                        db.RememberedDevices.Remove(existing);
+                    }
+
+                    var user = await db.Users
+                        .FirstOrDefaultAsync(rd => rd.DefaultEmail == email && rd.IsActive == true);
+                    if (user == null)
+                    {
+                        throw new Exception("Пользователь не найден либо не активен");
+                    }
+                    // Сохраняем новый токен
+                    var rememberedDevice = new RememberedDevice
+                    {
+                        Email = email,
+                        RememberToken = rememberToken,
+                        DeviceId = deviceId,
+                        UserId = user.Id,
+                        Expiration = DateTime.UtcNow.AddDays(30),
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    db.RememberedDevices.Add(rememberedDevice);
+                    await db.SaveChangesAsync();
+
+                    return true;
+                }
+
+            }
+            catch (Exception ex)
+            {                
+                return false;
+            }
+        }
+
+        public async Task<bool> SetPasswordAsync(string email, string password)
+        {
+            try
+            {
+                using (var db = new CrmContext())
+                {
+                    // Находим пользователя
+                    var user = await db.Users
+                    .FirstOrDefaultAsync(u => u.DefaultEmail == email && u.IsActive);
+
+                    if (user == null)
+                    {                        
+                        return false;
+                    }
+
+                    // Генерируем соль и хеш пароля
+                    var salt = GenerateSalt();
+                    var passwordHash = HashPassword(password, salt);
+
+                    // Обновляем пароль
+                    user.PasswordHash = passwordHash;
+                    user.PasswordSalt = salt;                    
+                    user.ModifiedDate = DateTime.UtcNow;
+                    user.IsValidation = true;
+                    db.Users.Update(user);
+
+                    await db.SaveChangesAsync();
+                    
+                    return true;
+                }
+                    
+            }
+            catch (Exception ex)
+            {                
+                return false;
+            }
+        }
+
+        // Вспомогательные методы для работы с паролями
+        private string GenerateSalt()
+        {
+            var saltBytes = new byte[16];
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(saltBytes);
+            }
+            return Convert.ToBase64String(saltBytes);
+        }
+
+        private string HashPassword(string password, string salt)
+        {
+            using (var sha256 = SHA256.Create())
+            {
+                var saltedPassword = password + salt;
+                var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(saltedPassword));
+                return Convert.ToBase64String(hashedBytes);
+            }
+        }
+
         public async Task AddAsync(User user)
         {
             using (var db = new CrmContext())

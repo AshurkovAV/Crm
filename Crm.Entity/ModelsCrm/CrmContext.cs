@@ -45,6 +45,8 @@ public partial class CrmContext : DbContext
 
     public virtual DbSet<PurchaseDetail> PurchaseDetails { get; set; }
 
+    public virtual DbSet<RememberedDevice> RememberedDevices { get; set; }
+
     public virtual DbSet<Shipment> Shipments { get; set; }
 
     public virtual DbSet<ShipmentDetail> ShipmentDetails { get; set; }
@@ -54,6 +56,8 @@ public partial class CrmContext : DbContext
     public virtual DbSet<User> Users { get; set; }
 
     public virtual DbSet<UserToken> UserTokens { get; set; }
+
+    public virtual DbSet<VerificationToken> VerificationTokens { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
@@ -368,6 +372,23 @@ public partial class CrmContext : DbContext
                 .HasConstraintName("FK_PurchaseDetails_Purchases");
         });
 
+        modelBuilder.Entity<RememberedDevice>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Remember__3214EC07A4311EC2");
+
+            entity.ToTable("RememberedDevice");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getutcdate())");
+            entity.Property(e => e.DeviceId).HasMaxLength(255);
+            entity.Property(e => e.Email).HasMaxLength(255);
+            entity.Property(e => e.RememberToken).HasMaxLength(255);
+
+            entity.HasOne(d => d.User).WithMany(p => p.RememberedDevices)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_RememberedDevice_Users");
+        });
+
         modelBuilder.Entity<Shipment>(entity =>
         {
             entity.HasKey(e => e.ShipmentId).HasName("PK__Shipment__5CAD378DB04D1D66");
@@ -428,7 +449,7 @@ public partial class CrmContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Users__3214EC07E07CBC60");
+            entity.HasKey(e => e.Id).HasName("PK__Users__3214EC071D51B417");
 
             entity.Property(e => e.ClientId).HasMaxLength(255);
             entity.Property(e => e.CreatedDate).HasDefaultValueSql("(getdate())");
@@ -444,6 +465,8 @@ public partial class CrmContext : DbContext
             entity.Property(e => e.LastName).HasMaxLength(255);
             entity.Property(e => e.Login).HasMaxLength(255);
             entity.Property(e => e.ModifiedDate).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.PasswordHash).HasMaxLength(255);
+            entity.Property(e => e.PasswordSalt).HasMaxLength(255);
             entity.Property(e => e.RealName).HasMaxLength(255);
             entity.Property(e => e.Role).HasMaxLength(20);
             entity.Property(e => e.Sex).HasMaxLength(10);
@@ -459,6 +482,17 @@ public partial class CrmContext : DbContext
             entity.Property(e => e.DeviceId).HasMaxLength(100);
             entity.Property(e => e.Scope).HasMaxLength(500);
             entity.Property(e => e.TokenType).HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<VerificationToken>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Verifica__3214EC077CC85B91");
+
+            entity.ToTable("VerificationToken");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getutcdate())");
+            entity.Property(e => e.Email).HasMaxLength(255);
+            entity.Property(e => e.Token).HasMaxLength(255);
         });
 
         OnModelCreatingPartial(modelBuilder);

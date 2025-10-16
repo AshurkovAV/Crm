@@ -6,6 +6,7 @@ namespace Crm.Application.Features.Accounts.Commands.Login
     public class LoginCommand : IRequest<LoginResult>
     {
         public string Email { get; set; } = string.Empty;
+        public string? Password { get; set; }
     }
 
     public class LoginResult

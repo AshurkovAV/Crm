@@ -1,0 +1,375 @@
+﻿@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Введите код подтверждения</title>
+    <link href="~/css/authorization/validate.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .code-inputs {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin: 25px 0;
+        }
+
+        .code-input {
+            width: 50px;
+            height: 60px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+            .code-input:focus {
+                border-color: #7c4dff;
+                box-shadow: 0 4px 20px rgba(124, 77, 255, 0.3);
+                transform: translateY(-2px);
+                outline: none;
+            }
+
+            .code-input.filled {
+                border-color: #69f0ae;
+                background-color: rgba(105, 240, 174, 0.1);
+            }
+
+        .verify-button {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #7c4dff, #651fff);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(124, 77, 255, 0.4);
+        }
+
+            .verify-button:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(124, 77, 255, 0.6);
+            }
+
+            .verify-button:disabled {
+                background: #ccc;
+                cursor: not-allowed;
+                transform: none;
+                box-shadow: none;
+            }
+
+        .timer {
+            text-align: center;
+            margin: 15px 0;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .success-animation {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .checkmark {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: block;
+            stroke-width: 5;
+            stroke: #fff;
+            stroke-miterlimit: 10;
+            margin: 0 auto;
+            box-shadow: 0 4px 20px rgba(105, 240, 174, 0.5);
+            animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both;
+        }
+
+        .checkmark-circle {
+            stroke-dasharray: 166;
+            stroke-dashoffset: 166;
+            stroke-width: 5;
+            stroke-miterlimit: 10;
+            stroke: #69f0ae;
+            fill: none;
+            animation: stroke .6s cubic-bezier(0.650, 0.000, 0.450, 1.000) forwards;
+        }
+
+        .checkmark-check {
+            transform-origin: 50% 50%;
+            stroke-dasharray: 48;
+            stroke-dashoffset: 48;
+            animation: stroke .3s cubic-bezier(0.650, 0.000, 0.450, 1.000) .8s forwards;
+        }
+
+        @@keyframes stroke {
+            100% {
+                stroke-dashoffset: 0;
+            }
+        }
+
+        @@keyframes scale {
+            0%, 100% {
+                transform: none;
+            }
+
+            50% {
+                transform: scale3d(1.1, 1.1, 1);
+            }
+        }
+
+        @@keyframes fill {
+            100% {
+                box-shadow: 0 0 0 30px transparent;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="circle circle-1"></div>
+        <div class="circle circle-2"></div>
+
+        <!-- Конфетти -->
+        <div class="confetti" style="background: #ff5252; top: 12%; left: 18%;"></div>
+        <div class="confetti" style="background: #ffd740; top: 8%; right: 22%;"></div>
+        <div class="confetti" style="background: #7c4dff; bottom: 18%; left: 12%;"></div>
+        <div class="confetti" style="background: #69f0ae; bottom: 12%; right: 18%;"></div>
+
+        <div class="card-header">
+            <h1>Введите код подтверждения</h1>
+            <p>
+                Мы отправили 6-значный код на вашу почту
+            </p>
+        </div>
+
+        <div class="success-animation" id="successAnimation" style="display: none;">
+            <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none" />
+                <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
+            </svg>
+        </div>
+
+        <div class="code-inputs" id="codeInputs">
+            <input type="text" class="code-input" maxlength="1" data-index="0" oninput="moveToNext(this)" onkeydown="moveToPrev(this)">
+            <input type="text" class="code-input" maxlength="1" data-index="1" oninput="moveToNext(this)" onkeydown="moveToPrev(this)">
+            <input type="text" class="code-input" maxlength="1" data-index="2" oninput="moveToNext(this)" onkeydown="moveToPrev(this)">
+            <input type="text" class="code-input" maxlength="1" data-index="3" oninput="moveToNext(this)" onkeydown="moveToPrev(this)">
+            <input type="text" class="code-input" maxlength="1" data-index="4" oninput="moveToNext(this)" onkeydown="moveToPrev(this)">
+            <input type="text" class="code-input" maxlength="1" data-index="5" oninput="moveToNext(this)" onkeydown="moveToPrev(this)">
+        </div>
+
+        <div class="message">
+            <p>Код отправлен на <span class="email" id="userEmail">@TempData["Email"]</span></p>
+        </div>
+
+        <div class="timer" id="timer">
+            Отправить код повторно через: <span id="countdown">60</span> сек.
+        </div>
+
+        <div id="resendResult" class="resend-result"></div>
+
+        <div class="d-grid gap-2">
+            <button id="verifyBtn" class="verify-button" disabled>
+                ✓ Подтвердить
+            </button>
+            <br>
+            <button id="resendBtn" class="replay-button" disabled>
+                ↻ Отправить код повторно
+            </button>
+            <br>
+            <a href="/Account/Index" class="btn btn-secondary">
+                ← Вернуться к входу
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Получаем email из URL или TempData
+        document.addEventListener('DOMContentLoaded', function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            const emailFromUrl = urlParams.get('email');
+            const emailElement = document.getElementById('userEmail');
+
+            if (emailFromUrl) {
+                emailElement.textContent = emailFromUrl;
+            } else if (!emailElement.textContent.trim()) {
+                const savedEmail = sessionStorage.getItem('pendingVerificationEmail');
+                if (savedEmail) {
+                    emailElement.textContent = savedEmail;
+                }
+            }
+
+            startTimer();
+            focusFirstInput();
+        });
+
+        function focusFirstInput() {
+            document.querySelector('.code-input[data-index="0"]').focus();
+        }
+
+        function moveToNext(input) {
+            const index = parseInt(input.dataset.index);
+            const value = input.value;
+
+            if (value) {
+                input.classList.add('filled');
+
+                if (index < 5) {
+                    document.querySelector(`.code-input[data-index="${index + 1}"]`).focus();
+                }
+            } else {
+                input.classList.remove('filled');
+            }
+
+            checkCodeComplete();
+        }
+
+        function moveToPrev(input) {
+            if (event.key === 'Backspace' && !input.value && input.dataset.index > 0) {
+                document.querySelector(`.code-input[data-index="${parseInt(input.dataset.index) - 1}"]`).focus();
+            }
+            checkCodeComplete();
+        }
+
+        function checkCodeComplete() {
+            const inputs = document.querySelectorAll('.code-input');
+            const code = Array.from(inputs).map(input => input.value).join('');
+            const verifyBtn = document.getElementById('verifyBtn');
+
+            verifyBtn.disabled = code.length !== 6;
+
+            if (code.length === 6) {
+                verifyCode(code);
+            }
+        }
+
+        function verifyCode(code) {
+            const verifyBtn = document.getElementById('verifyBtn');
+            verifyBtn.innerHTML = '⏳ Проверка...';
+            verifyBtn.disabled = true;
+
+            const email = document.getElementById('userEmail').textContent;
+
+            fetch('/Email/VerifyCode', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: email,
+                    code: code,
+                    token: new URLSearchParams(window.location.search).get('token')
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showSuccessAnimation();
+                        setTimeout(() => {
+                            window.location.href = data.redirectUrl || '/Email/ConfirmEmailSuccess';
+                        }, 2000);
+                    } else {
+                        showError(data.message);
+                        verifyBtn.innerHTML = '✓ Подтвердить';
+                        verifyBtn.disabled = false;
+                        clearInputs();
+                    }
+                })
+                .catch(error => {
+                    showError('Ошибка сети');
+                    verifyBtn.innerHTML = '✓ Подтвердить';
+                    verifyBtn.disabled = false;
+                });
+        }
+
+        function showSuccessAnimation() {
+            document.getElementById('codeInputs').style.opacity = '0.5';
+            document.getElementById('successAnimation').style.display = 'block';
+        }
+
+        function showError(message) {
+            const resendResult = document.getElementById('resendResult');
+            resendResult.innerHTML = `<div class="alert alert-danger">❌ ${message}</div>`;
+
+            setTimeout(() => {
+                resendResult.innerHTML = '';
+            }, 5000);
+        }
+
+        function clearInputs() {
+            document.querySelectorAll('.code-input').forEach(input => {
+                input.value = '';
+                input.classList.remove('filled');
+            });
+            focusFirstInput();
+        }
+
+        function startTimer() {
+            let timeLeft = 60;
+            const countdownElement = document.getElementById('countdown');
+            const resendBtn = document.getElementById('resendBtn');
+            const timerElement = document.getElementById('timer');
+
+            const timer = setInterval(() => {
+                timeLeft--;
+                countdownElement.textContent = timeLeft;
+
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    timerElement.style.display = 'none';
+                    resendBtn.disabled = false;
+                    resendBtn.innerHTML = '↻ Отправить код повторно';
+                }
+            }, 1000);
+        }
+
+        document.getElementById('resendBtn').addEventListener('click', function () {
+            const email = document.getElementById('userEmail').textContent;
+            const resendResult = document.getElementById('resendResult');
+            const button = this;
+
+            button.innerHTML = '⏳ Отправка...';
+            button.disabled = true;
+
+            fetch('/Email/SendVerificationEmail', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email: email })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        resendResult.innerHTML = `<div class="alert alert-success">✅ ${data.message}</div>`;
+                        startTimer();
+                        document.getElementById('timer').style.display = 'block';
+                    } else {
+                        resendResult.innerHTML = `<div class="alert alert-danger">❌ ${data.message}</div>`;
+                        button.disabled = false;
+                        button.innerHTML = '↻ Отправить код повторно';
+                    }
+                })
+                .catch(error => {
+                    resendResult.innerHTML = '<div class="alert alert-danger">❌ Ошибка сети</div>';
+                    button.disabled = false;
+                    button.innerHTML = '↻ Отправить код повторно';
+                })
+                .finally(() => {
+                    setTimeout(() => {
+                        resendResult.innerHTML = '';
+                    }, 5000);
+                });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,227 @@
+﻿@model Crm.Controllers.LoginModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Войти в CRM</title>
+    <link href="~/css/Site.css" rel="stylesheet" />
+    <link href="~/css/authorization/lk.css" rel="stylesheet" />
+    <link href="~/css/devextreme/dx.light.css" rel="stylesheet" />
+    <script src="~/js/devextreme/jquery.js"></script>
+    <script src="~/js/devextreme/dx.all.js"></script>
+    <script src="~/js/devextreme/localization/dx.messages.ru.js"></script>
+    <script src="~/js/modules/auth/pass.js"></script>
+    <script src="https://yastatic.net/s3/passport-sdk/autofill/v1/sdk-suggest-with-polyfills-latest.js"></script>
+    <style>
+        /* Добавляем указанные стили */
+        input[type=text], input[type=password], #loginBtn {
+            width: 85%;
+            margin: 5px auto;
+            display: block;
+        }
+
+        .password-input-container {
+            position: relative;
+            width: 85%;
+            margin: 5px auto;
+            display: block;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            width: 24px;
+            height: 24px;
+            z-index: 10;
+            background: transparent;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Стили для кастомного глаза */
+        .eye-icon {
+            position: relative;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .eye-icon::before {
+                content: '';
+                position: absolute;
+                width: 16px;
+                height: 16px;
+                border: 2px solid #666;
+                border-radius: 50%;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+            }
+
+            .eye-icon::after {
+                content: '';
+                position: absolute;
+                width: 6px;
+                height: 6px;
+                background: #666;
+                border-radius: 50%;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+            }
+
+        /* Стили для перечеркнутого глаза (когда пароль виден) */
+        .eye-slash .eye-icon::after {
+            display: none;
+        }
+
+        .eye-slash .eye-icon::before {
+            background: linear-gradient(45deg, transparent 45%, #666 45%, #666 55%, transparent 55%), linear-gradient(-45deg, transparent 45%, #666 45%, #666 55%, transparent 55%);
+        }
+
+        .password-toggle:hover .eye-icon::before {
+            border-color: #333;
+        }
+
+        .password-toggle:hover .eye-icon::after {
+            background: #333;
+        }
+
+        .password-input-container input {
+            padding-right: 45px !important;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 15px;
+            justify-content: center;
+            width: 85%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .remember-checkbox {
+            margin: 0;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .remember-label {
+            margin: 0;
+            font-size: 14px;
+            cursor: pointer;
+            color: #666;
+        }
+
+            .remember-label:hover {
+                color: #333;
+            }
+
+        /* Стили для поля ввода */
+        .fadeIn.second {
+            border: 1px solid #ccc;
+            padding: 12px 15px;
+            border-radius: 4px;
+            font-size: 14px;
+            width: 100%;
+        }
+
+        
+    </style>
+</head>
+<body>
+    <!-- Контейнер для фиксированных кнопок -->
+    <div class="fixed-buttons-container">
+        <a href="/Account/Create" class="create-account">Создать кабинет CRM</a>
+        <a href="#" class="policy-link">Политика обработки персональных данных</a>
+    </div>
+
+    <!-- Основной контент -->
+    <div class="main-content">
+        <div class="wrapper fadeInDown">
+            <div id="formContent">
+                <!-- Tabs Titles -->
+                <h2 class="active">Введите пароль</h2>
+                <!-- Login Form -->
+                <form id="loginForm" autocomplete="on">
+                    <label for="password">Пароль</label>
+                    <div class="password-input-container">
+                        <input type="password"
+                               id="passwordInput"
+                               class="fadeIn second"
+                               name="password"
+                               placeholder="Введите ваш пароль">
+                        <span class="password-toggle" onclick="togglePassword('passwordInput')">
+                            <div class="eye-icon"></div>
+                        </span>
+                    </div>
+                    <button type="submit" id="loginBtn" class="fadeIn fourth">
+                        <span class="button-text">Войти</span>
+                    </button>
+                    <div class="remember-me" style="padding-top: 35px; padding-bottom: 35px;">
+                        <input type="checkbox" class="remember-checkbox" id="rememberMe" />
+                        <label class="remember-label" for="rememberMe" style="padding-top: 0px;">Запомнить меня</label>
+                    </div>
+                </form>
+                <!-- Сообщения об ошибках -->
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="resend-result" style="margin-top: 20px;">
+                        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                        {
+                            <div class="alert alert-danger">❌ @error.ErrorMessage</div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    <script>
+        // Переключение видимости пароля
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            const toggleSpan = input.nextElementSibling;
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                toggleSpan.classList.add('eye-slash');
+            } else {
+                input.type = 'password';
+                toggleSpan.classList.remove('eye-slash');
+            }
+        }
+
+        // Автофокус на поле пароля
+        document.addEventListener('DOMContentLoaded', function () {
+            document.getElementById('passwordInput').focus();
+        });
+
+        // Анимация появления
+        document.addEventListener('DOMContentLoaded', function () {
+            const formContent = document.getElementById('formContent');
+            formContent.style.opacity = '0';
+            formContent.style.transform = 'translateY(20px)';
+
+            setTimeout(() => {
+                formContent.style.transition = 'all 0.5s ease';
+                formContent.style.opacity = '1';
+                formContent.style.transform = 'translateY(0)';
+            }, 100);
+        });
+    </script>
+</body>
+</html>

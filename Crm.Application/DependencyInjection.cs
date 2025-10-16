@@ -1,11 +1,8 @@
 ﻿using Crm.Application.Features.Accounts.Services;
+using Crm.Application.Features.Email.Services;
+using Crm.Core.Features.Email.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Crm.Application
 {
@@ -20,6 +17,8 @@ namespace Crm.Application
             // Здесь можно зарегистрировать другие сервисы уровня приложения
             // services.AddScoped<IUserService, UserService>();
             services.AddScoped<IYandexAuthService, YandexAuthService>();
+            services.AddScoped<IMailService, MailService>();
+
             return services;
         }
     }

@@ -44,6 +44,18 @@ namespace Crm.Application.Features.Accounts.Commands.Login
                     };
                 }
 
+                //var verify = _userRepository.VerifyPasswordAsync(request.Email, request.Password);
+
+                //if (!verify.Result)
+                //{
+                //    return new LoginResult
+                //    {
+                //        Succeeded = false,
+                //        UserId = verify.Id.ToString(),
+                //        Errors = new List<string> { "Пароль не верный" }
+                //    };
+                //}
+
                 // 5. Возвращаем результат
                 return new LoginResult
                 {

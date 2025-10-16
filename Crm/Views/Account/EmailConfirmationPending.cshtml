@@ -50,7 +50,7 @@
             <p>Мы отправили письмо с кодом подтверждения</p>
             <p>на <span class="email" id="userEmail">@TempData["Email"]</span></p>
         </div>
-        
+        <div id="resendResult" class="resend-result"></div>
         <div class="d-grid gap-2">
             <button id="resendBtn" class="replay-button">
                 ↻ Отправить письмо повторно
@@ -72,7 +72,7 @@
             this.innerHTML = '⏳ Отправка...';
             this.disabled = true;
 
-            fetch('/Account/ResendVerificationEmail', {
+            fetch('/Email/SendVerificationEmail', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -82,25 +82,13 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        resendResult.innerHTML = `
-                                <div class="alert alert-success">
-                                    ✅ ${data.message}
-                                </div>
-                            `;
+                        resendResult.innerHTML = `<div class="alert alert-success">✅ ${data.message}</div>`;
                     } else {
-                        resendResult.innerHTML = `
-                                <div class="alert alert-danger">
-                                    ❌ ${data.message}
-                                </div>
-                            `;
+                        resendResult.innerHTML = `<div class="alert alert-danger">❌ ${data.message}</div>`;
                     }
                 })
                 .catch(error => {
-                    resendResult.innerHTML = `
-                            <div class="alert alert-danger">
-                                ❌ Ошибка при отправке
-                            </div>
-                        `;
+                    resendResult.innerHTML = `<div class="alert alert-danger">❌ Ошибка при отправке</div>`;
                 })
                 .finally(() => {
                     // Восстанавливаем кнопку

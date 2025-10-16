@@ -1,6 +1,9 @@
 using Crm.Application;
+using Crm.Core.Features.Account.Interfaces;
+using Crm.Core.Features.Email.Interfaces;
 using Crm.Core.Implementations;
 using Crm.Core.Interfaces;
+using Crm.Entity.Infrastructure.Services;
 using Crm.Entity.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -21,6 +24,9 @@ builder.Services.AddHttpClient();
 // �������� �����������
 builder.Services.AddSingleton<ICrmRepository, CrmRepository>();
 builder.Services.AddSingleton<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IVerificationTokenRepository, VerificationTokenRepository>();
+builder.Services.AddScoped<IRememberDeviceService, RememberDeviceService>();
+
 
 
 builder.Services.AddHttpContextAccessor();

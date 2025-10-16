@@ -11,6 +11,10 @@ public partial class User
 
     public string? Login { get; set; }
 
+    public string? PasswordHash { get; set; }
+
+    public string? PasswordSalt { get; set; }
+
     public string? ClientId { get; set; }
 
     public string? DisplayName { get; set; }
@@ -44,4 +48,6 @@ public partial class User
     public DateTime CreatedDate { get; set; }
 
     public DateTime ModifiedDate { get; set; }
+
+    public virtual ICollection<RememberedDevice> RememberedDevices { get; set; } = new List<RememberedDevice>();
 }
