@@ -5,6 +5,12 @@
     const modalClose = document.querySelector('.modal-close');
     const backgroundOptions = document.querySelectorAll('.background-option');
 
+    // Загрузка сохраненного фона при загрузке страницы (ПЕРЕМЕЩЕНО В НАЧАЛО)
+    const savedBackground = localStorage.getItem('backgroundImage');
+    if (savedBackground) {
+        document.body.style.backgroundImage = `url('${savedBackground}')`;
+    }
+
     // Открытие модального окна
     changeBackgroundBtn.addEventListener('click', function (e) {
         e.preventDefault();
@@ -30,13 +36,5 @@
             // Закрываем модальное окно
             backgroundModal.style.display = 'none';
         });
-    });
-
-    // Загрузка сохраненного фона при загрузке страницы
-    document.addEventListener('DOMContentLoaded', function () {
-        const savedBackground = localStorage.getItem('backgroundImage');
-        if (savedBackground) {
-            document.body.style.backgroundImage = `url('${savedBackground}')`;
-        }
     });
 });

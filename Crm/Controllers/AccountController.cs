@@ -11,6 +11,8 @@ using Crm.Application.Features.Accounts.Commands.Login;
 using Microsoft.AspNetCore.Authorization;
 using Crm.Core.Features.Account.Interfaces;
 using System.ComponentModel.DataAnnotations;
+using Crm.Core.Features.Email.Interfaces;
+using Crm.Core.Features.Email.Models;
 
 namespace Crm.Controllers
 {
@@ -19,18 +21,23 @@ namespace Crm.Controllers
         private ICrmRepository  _crmRepository;
         private readonly IMediator _mediator;
         private readonly IRememberDeviceService _rememberDeviceService;
+        private readonly IVerificationTokenRepository _tokenRepository;
         public AccountController(ICrmRepository crmRepository,
             IRememberDeviceService rememberDeviceServicev,
+            IVerificationTokenRepository verificationTokenRepository,
             IMediator mediator)
         {
             _mediator = mediator;
             _crmRepository = crmRepository;             
             _rememberDeviceService = rememberDeviceServicev;
+            _tokenRepository = verificationTokenRepository;
         }
 
         [AllowAnonymous]
         public IActionResult Index()
         {
+            if (User.Identity.IsAuthenticated)
+                return RedirectToAction("Index", "Home");
             return View();
         }
 
@@ -64,6 +71,8 @@ namespace Crm.Controllers
         [HttpGet]
         public async Task<IActionResult> Login()
         {
+            if (User.Identity.IsAuthenticated)
+                return RedirectToAction("Index", "Home");
             // Проверяем, есть ли данные в куках для автоматического входа
             var email = Request.Cookies["remember_email"];
             var rememberToken = Request.Cookies["remember_token"];
@@ -144,13 +153,16 @@ namespace Crm.Controllers
             }
 
             // Проверяем remember cookie
-            var email = Request.Cookies["remember_email"];
+            var rememberEmail = Request.Cookies["remember_email"];
             var rememberToken = Request.Cookies["remember_token"];
             var deviceId = Request.Cookies["device_id"]; 
-            if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(rememberToken) && !string.IsNullOrEmpty(deviceId))
+            if (!string.IsNullOrEmpty(rememberEmail) 
+                && !string.IsNullOrEmpty(rememberToken) 
+                && !string.IsNullOrEmpty(deviceId)
+                && rememberEmail == model.Email)
             {
                 // Проверяем валидность токена
-                var isValid = await _rememberDeviceService.ValidateRememberTokenAsync(email, rememberToken, deviceId);
+                var isValid = await _rememberDeviceService.ValidateRememberTokenAsync(rememberEmail, rememberToken, deviceId);
 
                 if (isValid)
                 {
@@ -166,10 +178,36 @@ namespace Crm.Controllers
             }
             else
             {
+                if (result.UserBase?.PasswordHash == null)
+                {
+                    // Создаем токен в базе
+                    var token = await _tokenRepository.CreateAsync(model.Email, TimeSpan.FromHours(24));
+
+                    // Формирование URL
+                    var setPasswordUrl = Url.Action("SetPassword", "Email", new
+                    {
+                        token = token.Token,
+                        email = model.Email
+                    }, protocol: HttpContext.Request.Scheme);
+                    return Json(new
+                    {
+                        success = true,
+                        redirectUrl = setPasswordUrl,
+                        email = model.Email,
+                        message = "Ссылка для установки пароля сгенерирована"
+                    });
+                    //// Прямой редирект на страницу установки пароля                   
+                    //return RedirectToAction("SetPassword", "Email", new
+                    //{
+                    //    token = token.Token,
+                    //    email = token.Email
+                    //});
+
+                }
                 return Json(new
                 {
                     success = true,
-                    redirectUrl = Url.Action("login", "Account"),
+                    redirectUrl = Url.Action("Login", "Account"),
                     email = model.Email, // Передаем email для JS
                   //  token = verificationToken
                 });
@@ -217,7 +255,7 @@ namespace Crm.Controllers
         [Route("/Account/Password")]
         public async Task<IActionResult> Password([FromBody] VerifyPasswordCommand model)
         {
-            Console.WriteLine("/Account/Login");
+            Console.WriteLine("/Account/Password");
             if (!ModelState.IsValid)
             {
                 return Json(new { success = false, message = "invalid_credentials" });
@@ -261,45 +299,11 @@ namespace Crm.Controllers
                 return Json(new { success = false, message = "not_email" });
             }
 
-            // Проверяем remember cookie
-            var email = Request.Cookies["remember_email"];
-            var rememberToken = Request.Cookies["remember_token"];
-            var deviceId = Request.Cookies["device_id"];
-            if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(rememberToken) && !string.IsNullOrEmpty(deviceId))
-            {
-                // Проверяем валидность токена
-                var isValid = await _rememberDeviceService.ValidateRememberTokenAsync(email, rememberToken, deviceId);
-
-                if (isValid)
-                {
-                    await Authenticate(model.Email); // Аутентификация 
-                    HttpContext.Session.SetCurrentUser(result.User);
-                    return Json(new { success = true, redirectUrl = Url.Action("Index", "Home") });
-                }
-                else
-                {
-                    // Очищаем невалидные cookie
-                    ClearRememberCookies();
-                }
-            }
-            else
-            {
-                return Json(new
-                {
-                    success = true,
-                    redirectUrl = Url.Action("login", "Account"),
-                    email = model.Email, // Передаем email для JS
-                                         //  token = verificationToken
-                });
-            }
-
-
 
             await Authenticate(model.Email); // Аутентификация (если нужно)
             HttpContext.Session.SetCurrentUser(result.User);
 
             return Json(new { success = true, redirectUrl = Url.Action("Index", "Home") });
-
         }
 
 

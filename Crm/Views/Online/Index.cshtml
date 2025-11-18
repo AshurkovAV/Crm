@@ -1,0 +1,254 @@
+﻿@{
+    ViewData["Title"] = "Чат и звонки";
+    Layout = "_Layout";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/chat.css" />
+}
+
+<div class="content-section">
+    <div class="content-top-bar">
+        <h1 class="content-title">Чат и звонки</h1>
+    </div>
+
+    <div class="chat-page">
+        <!-- Боковая панель с контактами -->
+        <div class="chat-sidebar">
+            <div class="sidebar-header">
+                <h2>Чаты</h2>
+            </div>
+
+            <div class="search-container">
+                <input type="text" class="search-input" placeholder="Поиск">
+            </div>
+
+            <div class="chat-list">
+                <!-- Элементы чатов будут добавлены через JavaScript -->
+            </div>
+        </div>
+
+        <!-- Основная область чата -->
+        <div class="chat-container">
+            <div class="chat-header">
+                <div class="header-avatar" id="current-chat-avatar">ИМ</div>
+                <div class="header-info">
+                    <div class="header-name" id="current-chat-name">Выберите чат</div>
+                    <div class="header-status" id="current-chat-status">онлайн</div>
+                </div>
+            </div>
+
+            <div class="messages-container" id="messages-container">
+                <div class="message message-incoming">
+                    <div>Выберите чат для начала общения</div>
+                    <div class="message-time">16:24</div>
+                </div>
+            </div>
+
+            <div class="input-container">
+                <textarea class="message-input" id="message-input" placeholder="Введите сообщение..." rows="1"></textarea>
+                <button class="send-button" id="send-button">Отправить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Данные чатов
+        const chats = [
+            { id: 1, name: "Архив", preview: "Строитель: ХОЗЯИН, Владельц...", time: "9 мин", avatar: "А" },
+            { id: 2, name: "Большая планерка КГБ6", preview: "Владимир Игоревич: Уважаемые коллеги...", time: "16:20", avatar: "Б" },
+            { id: 3, name: "Задачи", preview: "Выс. 1343", time: "15:55", avatar: "З" },
+            { id: 4, name: "Sanatorium Chat", preview: "SanatoriumChat Создание расписания...", time: "15:44", avatar: "S" },
+            { id: 5, name: "ЕМИСЗ КО", preview: "Дмитрий Александрович: Там все рабом...", time: "15:30", avatar: "Е" },
+            { id: 6, name: "Чат пользователей developers...", preview: "Лишь где вакансии для котиков?", time: "14:22", avatar: "Ч" },
+            { id: 7, name: "Оскар Хартман", preview: "Да называется Витя Стартапов Горько Сел...", time: "13:45", avatar: "О" },
+            { id: 8, name: "Александр Химигейн", preview: "Свой юбилей Всероссийский конкурс...", time: "12:30", avatar: "А" },
+            { id: 9, name: "И. Ф. Гистология", preview: "Вадим: Найдем выход...", time: "11:15", avatar: "И" },
+            { id: 10, name: "Натащенка", preview: "Натащенка Ирина Николаевна госуслуг", time: "10:05", avatar: "Н" },
+            { id: 11, name: "Петрикова Игорь Николаевич", preview: "У нас будет вам главного Мазепияна Ирина...", time: "09:40", avatar: "П" },
+            { id: 12, name: "Хвойная Россия Chat", preview: "Светлана: Если у вас его «много» и вы на юге...", time: "вчера", avatar: "Х" },
+            { id: 13, name: "Инна Анатольевна Димакова", preview: "спасибо", time: "вчера", avatar: "И" },
+            { id: 14, name: "«Свой Гектар»", preview: "Как выбрать участок, чтобы начать...", time: "вчера", avatar: "С" },
+            { id: 15, name: "Светлана Дмитриевна Бабичева", preview: "15:44", time: "пн", avatar: "С" }
+        ];
+
+        // Сообщения для каждого чата
+        const messages = {
+            1: [
+                { text: "Строитель: ХОЗЯИН, Владельц...", time: "16:20", incoming: true }
+            ],
+            2: [
+                { text: "Владимир Игоревич: Уважаемые коллеги...", time: "16:20", incoming: true }
+            ],
+            10: [
+                { text: "обучения", time: "16:20", incoming: true },
+                { text: "Предлагаю обучить заместителей главного врача, курирующих ИТ-специалистов.", time: "16:21", incoming: true },
+                { text: "Порядок регистрации тот же.", time: "16:21", incoming: true },
+                { text: "Фамилия замов, кто будет регистрироваться присылайте мне в личном сообщении.", time: "16:21", incoming: true },
+                { text: "добрый день", time: "16:22", incoming: false },
+                { text: "надо подать заявку на обучение", time: "16:22", incoming: false },
+                { text: "Конечно", time: "16:22", incoming: true },
+                { text: "Я правильно понимаю, что тогда в службу занятости не нужно?", time: "16:23", incoming: false },
+                { text: "поже нужно будет", time: "16:23", incoming: true },
+                { text: "список им нужен чтобы контролировать", time: "16:23", incoming: true },
+                { text: "я так понял 9 изменило", time: "16:23", incoming: true },
+                { text: "Подайте меня, пожалуйста", time: "16:24", incoming: false },
+                { text: "я не смогу там нужно под вашей учеткой", time: "16:24", incoming: false },
+                { text: "госуслуг", time: "16:24", incoming: false }
+            ]
+        };
+
+        let currentChatId = null;
+
+        // Функция для отрисовки списка чатов
+        function renderChatList() {
+            const chatList = document.querySelector('.chat-list');
+            chatList.innerHTML = '';
+
+            chats.forEach(chat => {
+                const chatItem = document.createElement('div');
+                chatItem.className = 'chat-item';
+                chatItem.dataset.id = chat.id;
+
+                chatItem.innerHTML = `
+                            <div class="chat-avatar">${chat.avatar}</div>
+                            <div class="chat-info">
+                                <div class="chat-name">${chat.name}</div>
+                                <div class="chat-preview">${chat.preview}</div>
+                            </div>
+                            <div class="chat-time">${chat.time}</div>
+                        `;
+
+                chatItem.addEventListener('click', () => selectChat(chat.id));
+                chatList.appendChild(chatItem);
+            });
+        }
+
+        // Функция выбора чата
+        function selectChat(chatId) {
+            currentChatId = chatId;
+
+            // Обновляем активный элемент в списке чатов
+            document.querySelectorAll('.chat-item').forEach(item => {
+                item.classList.remove('active');
+                if (parseInt(item.dataset.id) === chatId) {
+                    item.classList.add('active');
+                }
+            });
+
+            // Обновляем заголовок чата
+            const chat = chats.find(c => c.id === chatId);
+            document.getElementById('current-chat-name').textContent = chat.name;
+            document.getElementById('current-chat-avatar').textContent = chat.avatar;
+
+            // Загружаем сообщения для выбранного чата
+            renderMessages(chatId);
+        }
+
+        // Функция для отрисовки сообщений
+        function renderMessages(chatId) {
+            const messagesContainer = document.getElementById('messages-container');
+            messagesContainer.innerHTML = '';
+
+            const chatMessages = messages[chatId] || [];
+
+            if (chatMessages.length === 0) {
+                messagesContainer.innerHTML = `
+                            <div class="message message-incoming">
+                                <div>Нет сообщений</div>
+                                <div class="message-time">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                            </div>
+                        `;
+                return;
+            }
+
+            chatMessages.forEach(msg => {
+                const messageElement = document.createElement('div');
+                messageElement.className = `message ${msg.incoming ? 'message-incoming' : 'message-outgoing'}`;
+
+                messageElement.innerHTML = `
+                            <div>${msg.text}</div>
+                            <div class="message-time">${msg.time}</div>
+                        `;
+
+                messagesContainer.appendChild(messageElement);
+            });
+
+            // Прокручиваем вниз к последнему сообщению
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Функция для отправки сообщения
+        function sendMessage() {
+            if (!currentChatId) {
+                alert('Сначала выберите чат!');
+                return;
+            }
+
+            const input = document.getElementById('message-input');
+            const text = input.value.trim();
+
+            if (text === '') return;
+
+            // Добавляем новое сообщение
+            if (!messages[currentChatId]) {
+                messages[currentChatId] = [];
+            }
+
+            const now = new Date();
+            const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            messages[currentChatId].push({
+                text: text,
+                time: time,
+                incoming: false
+            });
+
+            // Очищаем поле ввода
+            input.value = '';
+
+            // Обновляем отображение сообщений
+            renderMessages(currentChatId);
+
+            // Имитируем ответ через некоторое время
+            setTimeout(() => {
+                messages[currentChatId].push({
+                    text: 'Сообщение получено',
+                    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    incoming: true
+                });
+                renderMessages(currentChatId);
+            }, 1000);
+        }
+
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', () => {
+            renderChatList();
+
+            // Обработчик кнопки отправки
+            document.getElementById('send-button').addEventListener('click', sendMessage);
+
+            // Обработчик нажатия Enter в поле ввода
+            document.getElementById('message-input').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            // Автоматическое изменение высоты textarea
+            const messageInput = document.getElementById('message-input');
+            messageInput.addEventListener('input', function () {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
+
+            // Автоматически выбираем первый чат
+            if (chats.length > 0) {
+                selectChat(chats[0].id);
+            }
+        });
+    </script>
+}

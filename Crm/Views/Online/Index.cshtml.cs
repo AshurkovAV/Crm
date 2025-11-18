@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace Crm.Views.Online
+namespace Crm.Views.Projects
 {
     public class Index : PageModel
     {

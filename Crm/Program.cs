@@ -32,10 +32,8 @@ builder.Services.AddScoped<IRememberDeviceService, RememberDeviceService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IProfileService, ProfileService>();
 
-// ������������ ��� ����������� ������ �� Application ����
 builder.Services.AddApplication();
 
-// ���������� �������� ��������������
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
