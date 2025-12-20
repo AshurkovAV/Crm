@@ -5,6 +5,7 @@ using Crm.Core.Implementations;
 using Crm.Core.Interfaces;
 using Crm.Entity.Infrastructure.Services;
 using Crm.Entity.Services;
+using Crm.Middleware;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
@@ -13,8 +14,15 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.Name = "Crm.Session";
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Для разработки
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.MaxAge = TimeSpan.FromMinutes(30); // Явно устанавливаем время жизни
+
+    // ВАЖНО: Убедитесь, что Cookie будет отправляться обратно
+    options.Cookie.Path = "/";
 });
 
 // Add services to the container.
@@ -61,11 +69,15 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Home/Error");
 }
 
+
 app.UseStaticFiles();
 app.UseRouting();
+
+app.UseSession();
+//app.UseMiddleware<DebugCookieMiddleware>(); // 2. Диагностика куки
+//app.UseMiddleware<SessionCheckMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseSession();
 
 
 app.MapGet("/Home/logout", async (HttpContext context) =>

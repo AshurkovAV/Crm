@@ -7,7 +7,7 @@ namespace Crm.Entity.Services
     {
         TransactionResult<User> GetUser(string email);
         IEnumerable<User> GetUsers();
-        List<Project> GetProjects();
+        List<Project> GetProjects(int userId);
         TransactionResult<Project> GetProject(int id);
         TransactionResult InsertProject(Project project);
         TransactionResult UpdataProject(Project project);

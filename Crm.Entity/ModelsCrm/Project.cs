@@ -26,4 +26,6 @@ public partial class Project
     public DateTime? CreatedDate { get; set; }
 
     public DateTime? ModifiedDate { get; set; }
+
+    public virtual ICollection<ProjectUser> ProjectUsers { get; set; } = new List<ProjectUser>();
 }

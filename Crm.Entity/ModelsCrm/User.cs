@@ -49,5 +49,7 @@ public partial class User
 
     public DateTime ModifiedDate { get; set; }
 
+    public virtual ICollection<ProjectUser> ProjectUsers { get; set; } = new List<ProjectUser>();
+
     public virtual ICollection<RememberedDevice> RememberedDevices { get; set; } = new List<RememberedDevice>();
 }

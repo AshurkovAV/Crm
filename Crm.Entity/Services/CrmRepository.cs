@@ -7,12 +7,15 @@ namespace Crm.Entity.Services
 {
     public class CrmRepository : ICrmRepository
     {
-        public List<Project> GetProjects()
+        public List<Project> GetProjects(int userId)
         {
             var result = new List<Project>();
             using (var db = new CrmContext())
             {
-                result = db.Projects.ToList();
+                result = db.ProjectUsers
+                .Where(pu => pu.UserId == userId && pu.IsActive)
+                .Select(pu => pu.Project)
+                .ToList();
             }
             return result;
         }

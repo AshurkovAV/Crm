@@ -22,10 +22,11 @@ namespace Crm.Controllers
         private readonly IMediator _mediator;
         private readonly IRememberDeviceService _rememberDeviceService;
         private readonly IVerificationTokenRepository _tokenRepository;
-        public AccountController(ICrmRepository crmRepository,
-            IRememberDeviceService rememberDeviceServicev,
+        public AccountController(
+            ICrmRepository               crmRepository,
+            IRememberDeviceService       rememberDeviceServicev,
             IVerificationTokenRepository verificationTokenRepository,
-            IMediator mediator)
+            IMediator                    mediator)
         {
             _mediator = mediator;
             _crmRepository = crmRepository;             
@@ -50,6 +51,22 @@ namespace Crm.Controllers
         {
             return View();
         }
+
+
+        private IActionResult RedirectToLocal(string returnUrl = null)
+        {
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                // Если returnUrl валидный и локальный - редиректим туда
+                return Redirect(returnUrl);
+            }
+            else
+            {
+                // Иначе на главную страницу
+                return RedirectToAction("Index", "Home");
+            }
+        }
+
         [AllowAnonymous]
         public IActionResult EmailConfirmationPending()
         {
@@ -71,8 +88,10 @@ namespace Crm.Controllers
         [HttpGet]
         public async Task<IActionResult> Login()
         {
-            if (User.Identity.IsAuthenticated)
-                return RedirectToAction("Index", "Home");
+            if (HttpContext.Session.IsUserLoggedIn())
+            {
+                return RedirectToLocal();
+            }
             // Проверяем, есть ли данные в куках для автоматического входа
             var email = Request.Cookies["remember_email"];
             var rememberToken = Request.Cookies["remember_token"];
@@ -108,7 +127,14 @@ namespace Crm.Controllers
         [Route("/Account/Login")]
         public async Task<IActionResult> Login([FromBody] LoginCommand model)
         {
-            Console.WriteLine("/Account/Login");
+            Console.WriteLine("=== LOGIN PROCESS START ===");
+
+
+            if (HttpContext.Session.IsUserLoggedIn())
+            {
+                return RedirectToLocal();
+            }
+
             if (!ModelState.IsValid)
             {
                 return Json(new { success = false, message = "invalid_credentials" });

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Net;
+using Crm.Extensions;
 
 namespace Crm.Controllers
 {
@@ -16,12 +17,16 @@ namespace Crm.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private ICrmRepository _crmRepository;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public ProjectDataController(ILogger<HomeController> logger,
-            ICrmRepository crmRepository)
+        public ProjectDataController(
+            ILogger<HomeController> logger,
+            ICrmRepository crmRepository,
+            IHttpContextAccessor httpContextAccessor)
         {
             _logger = logger;
             _crmRepository = crmRepository;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public IActionResult Index()
@@ -32,7 +37,9 @@ namespace Crm.Controllers
         [HttpGet]
         public object Get(DataSourceLoadOptions loadOptions)
         {
-            return DataSourceLoader.Load(_crmRepository.GetProjects(), loadOptions);
+            var session = _httpContextAccessor.HttpContext?.Session;
+            var user = session?.GetCurrentUser();
+            return DataSourceLoader.Load(_crmRepository.GetProjects(user.Id), loadOptions);
         }
 
         [HttpPost]

@@ -43,6 +43,8 @@ public partial class CrmContext : DbContext
 
     public virtual DbSet<Project> Projects { get; set; }
 
+    public virtual DbSet<ProjectUser> ProjectUsers { get; set; }
+
     public virtual DbSet<PurchaseDetail> PurchaseDetails { get; set; }
 
     public virtual DbSet<RememberedDevice> RememberedDevices { get; set; }
@@ -345,6 +347,28 @@ public partial class CrmContext : DbContext
             entity.Property(e => e.Participants).HasMaxLength(255);
             entity.Property(e => e.Role).HasMaxLength(255);
             entity.Property(e => e.Status).HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<ProjectUser>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__ProjectU__3214EC07B8AA4E1E");
+
+            entity.ToTable("ProjectUser");
+
+            entity.HasIndex(e => new { e.ProjectId, e.UserId }, "IX_ProjectUser_ProjectId_UserId").IsUnique();
+
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.JoinedDate).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.Role).HasMaxLength(100);
+
+            entity.HasOne(d => d.Project).WithMany(p => p.ProjectUsers)
+                .HasForeignKey(d => d.ProjectId)
+                .HasConstraintName("FK_ProjectUser_Project");
+
+            entity.HasOne(d => d.User).WithMany(p => p.ProjectUsers)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ProjectUser_User");
         });
 
         modelBuilder.Entity<PurchaseDetail>(entity =>
