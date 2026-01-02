@@ -13,6 +13,7 @@ using Crm.Core.Features.Account.Interfaces;
 using System.ComponentModel.DataAnnotations;
 using Crm.Core.Features.Email.Interfaces;
 using Crm.Core.Features.Email.Models;
+using Microsoft.AspNetCore.Identity;
 
 namespace Crm.Controllers
 {
@@ -22,16 +23,19 @@ namespace Crm.Controllers
         private readonly IMediator _mediator;
         private readonly IRememberDeviceService _rememberDeviceService;
         private readonly IVerificationTokenRepository _tokenRepository;
+        private readonly IUserRepository _userRepository;
         public AccountController(
             ICrmRepository               crmRepository,
             IRememberDeviceService       rememberDeviceServicev,
             IVerificationTokenRepository verificationTokenRepository,
-            IMediator                    mediator)
+            IMediator                    mediator,
+            IUserRepository              userRepository)
         {
             _mediator = mediator;
             _crmRepository = crmRepository;             
             _rememberDeviceService = rememberDeviceServicev;
             _tokenRepository = verificationTokenRepository;
+            _userRepository = userRepository;
         }
 
         [AllowAnonymous]
@@ -88,7 +92,7 @@ namespace Crm.Controllers
         [HttpGet]
         public async Task<IActionResult> Login()
         {
-            if (HttpContext.Session.IsUserLoggedIn())
+            if (User.Identity?.IsAuthenticated == true)
             {
                 return RedirectToLocal();
             }
@@ -106,8 +110,8 @@ namespace Crm.Controllers
 
                 if (isValid)
                 {
-                    await Authenticate(email); // Аутентификация (если нужно)
-                   // HttpContext.Session.SetCurrentUser(result.UserBase);
+                    var user = _userRepository.GetUser(email);
+                    await AuthenticateWithCookies(user.Data);
 
                     return RedirectToAction("Index", "Account");
                 }
@@ -130,7 +134,7 @@ namespace Crm.Controllers
             Console.WriteLine("=== LOGIN PROCESS START ===");
 
 
-            if (HttpContext.Session.IsUserLoggedIn())
+            if (User.Identity?.IsAuthenticated == true)
             {
                 return RedirectToLocal();
             }
@@ -192,8 +196,7 @@ namespace Crm.Controllers
 
                 if (isValid)
                 {
-                    await Authenticate(model.Email); // Аутентификация 
-                    HttpContext.Session.SetCurrentUser(result.UserBase);
+                    await AuthenticateWithCookies(result.UserBase);
                     return Json(new { success = true, redirectUrl = Url.Action("Index", "Home") });
                 }
                 else
@@ -238,10 +241,19 @@ namespace Crm.Controllers
                   //  token = verificationToken
                 });
             }
-            await Authenticate(model.Email); // Аутентификация (если нужно)
-            HttpContext.Session.SetCurrentUser(result.UserBase);
+            await AuthenticateWithCookies(result.UserBase);
 
             return Json(new { success = true, redirectUrl = Url.Action("Index", "Home") });
+        }
+
+
+          
+        [Route("/Account/logout")] // Поддерживаем старый URL
+        public async Task<IActionResult> Logout()
+        {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            ClearRememberCookies();
+            return RedirectToAction("", "Account");
         }
 
         [HttpPost]
@@ -263,10 +275,8 @@ namespace Crm.Controllers
                 {
                     return Json(new { success = false, message = "invalid_credentials" });
                 }
-
-
-                await Authenticate(request.Email); // Аутентификация (если нужно)
-                HttpContext.Session.SetCurrentUser(result.User);
+                               
+                await AuthenticateWithCookies(result.User);
 
                 return Json(new { success = true, redirectUrl = Url.Action("Index", "Home") });
             }
@@ -326,8 +336,7 @@ namespace Crm.Controllers
             }
 
 
-            await Authenticate(model.Email); // Аутентификация (если нужно)
-            HttpContext.Session.SetCurrentUser(result.User);
+            await AuthenticateWithCookies(result.User);
 
             return Json(new { success = true, redirectUrl = Url.Action("Index", "Home") });
         }
@@ -347,8 +356,7 @@ namespace Crm.Controllers
 
             if (result.Succeeded)
             {
-                await Authenticate(model.Email); // Аутентификация (если нужно)
-                HttpContext.Session.SetCurrentUser(result.UserBase);
+                await AuthenticateWithCookies(result.UserBase);
 
                 return Json(new { Succeeded = true, redirectUrl = Url.Action("start", "CrmSetup") });
             }
@@ -368,9 +376,8 @@ namespace Crm.Controllers
                     DefaultEmail = email,
                     FirstName = name
                 };
-
-                await Authenticate(email);
-                HttpContext.Session.SetCurrentUser(viewModel);
+                var user = _userRepository.GetUser(email);
+                await AuthenticateWithCookies(user.Data);
 
                 // Вместо JSON возвращаем View с JavaScript для закрытия окна
                 return View("YandexAuthSuccess", new { Email = email, Name = name });
@@ -383,22 +390,59 @@ namespace Crm.Controllers
             }
         }
 
-        private async Task Authenticate(string userName)
+        private async Task AuthenticateWithCookies(User user)
         {
-            // создаем один claim
+            // Создаем claims с данными пользователя
             var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                    new Claim(ClaimTypes.Email, user.DefaultEmail ?? string.Empty),
+                    new Claim(ClaimTypes.Name, user.DisplayName ?? user.DefaultEmail ?? "User"),
+                    
+                };
+
+            // Дополнительные claims из UserBase
+            if (!string.IsNullOrEmpty(user.FirstName))
+                claims.Add(new Claim(ClaimTypes.GivenName, user.FirstName));
+
+            if (!string.IsNullOrEmpty(user.LastName))
+                claims.Add(new Claim(ClaimTypes.Surname, user.LastName));
+
+            if (!string.IsNullOrEmpty(user.Role))
+                claims.Add(new Claim("Position", user.Role));
+
+            var claimsIdentity = new ClaimsIdentity(
+                claims,
+                CookieAuthenticationDefaults.AuthenticationScheme);
+
+            var authProperties = new AuthenticationProperties
             {
-                new Claim(ClaimsIdentity.DefaultNameClaimType, userName)
+                IsPersistent = true, // или false, в зависимости от логики
+                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(2),
+                AllowRefresh = true,
+                IssuedUtc = DateTimeOffset.UtcNow
             };
-           
-            // создаем объект ClaimsIdentity
-            ClaimsIdentity id = new ClaimsIdentity(claims, "ApplicationCookie", ClaimsIdentity.DefaultNameClaimType, ClaimsIdentity.DefaultRoleClaimType);
-            // установка аутентификационных куки
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(id));          
+
+            // Выполняем аутентификацию (создаем куки)
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                new ClaimsPrincipal(claimsIdentity),
+                authProperties);
+
+            // Опционально: обновляем remember-куки если нужно
+            // await UpdateRememberCookies(user.Email);
         }
 
         private void ClearRememberCookies()
         {
+            var cookieOptions = new CookieOptions
+            {
+                Expires = DateTimeOffset.UtcNow.AddDays(-1),
+                Path = "/",
+                HttpOnly = true,
+                Secure = Request.IsHttps
+            };
+
             Response.Cookies.Delete("remember_email");
             Response.Cookies.Delete("remember_token");
             Response.Cookies.Delete("device_id");

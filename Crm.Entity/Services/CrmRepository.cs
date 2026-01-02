@@ -66,6 +66,24 @@ namespace Crm.Entity.Services
             } 
             return result;
         }
+        public TransactionResult InsertProjectUser(ProjectUser project)
+        {
+            var result = new TransactionResult();
+            try
+            {
+                using (var db = new CrmContext())
+                {
+                    var data = db.Add(project);
+                    db.SaveChanges();
+                    result.Id = project.Id;
+                }
+            }
+            catch (Exception ex)
+            {
+                result.AddError("Ошибка добавления записи в таблицу Project");
+            }
+            return result;
+        }
 
         public TransactionResult InsertProject(Project project)
         {

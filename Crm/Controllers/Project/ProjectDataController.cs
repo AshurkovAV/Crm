@@ -1,13 +1,11 @@
 using Crm.Entity.Services;
-using Crm.Models;
 using DevExtreme.AspNet.Data;
 using DevExtreme.AspNet.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
-using System.Diagnostics;
 using System.Net;
-using Crm.Extensions;
+using System.Security.Claims;
 
 namespace Crm.Controllers
 {
@@ -17,16 +15,13 @@ namespace Crm.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private ICrmRepository _crmRepository;
-        private readonly IHttpContextAccessor _httpContextAccessor;
 
         public ProjectDataController(
             ILogger<HomeController> logger,
-            ICrmRepository crmRepository,
-            IHttpContextAccessor httpContextAccessor)
+            ICrmRepository crmRepository)
         {
             _logger = logger;
             _crmRepository = crmRepository;
-            _httpContextAccessor = httpContextAccessor;
         }
 
         public IActionResult Index()
@@ -37,9 +32,12 @@ namespace Crm.Controllers
         [HttpGet]
         public object Get(DataSourceLoadOptions loadOptions)
         {
-            var session = _httpContextAccessor.HttpContext?.Session;
-            var user = session?.GetCurrentUser();
-            return DataSourceLoader.Load(_crmRepository.GetProjects(user.Id), loadOptions);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId != null) {
+                return DataSourceLoader.Load(_crmRepository.GetProjects(Convert.ToInt32(userId)), loadOptions);
+            }
+
+            return DataSourceLoader.Load("", loadOptions);
         }
 
         [HttpPost]
@@ -48,10 +46,13 @@ namespace Crm.Controllers
             Console.WriteLine(@$"Вставить новую запись {DateTime.Now}");
             var key = Convert.ToInt32(form.key);
             var values = form.values;
-            var resultData = _crmRepository.GetProject(key);
+            var resultData = _crmRepository.GetProject(key);            
 
             JsonConvert.PopulateObject(values, resultData.Data);
             var result = _crmRepository.InsertProject(resultData.Data);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            //var resultUser = _crmRepository.InsertProjectUser(new Entity.ModelsCrm.ProjectUser { ProjectId = result.Id, UserId = userId });
 
             HttpResponseMessage response = new HttpResponseMessage();
             response.StatusCode = HttpStatusCode.Created;
