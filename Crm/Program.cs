@@ -1,10 +1,13 @@
 using Crm.Application;
+using Crm.Application.Interfaces;
 using Crm.Core.Features.Account.Interfaces;
 using Crm.Core.Features.Email.Interfaces;
 using Crm.Core.Implementations;
 using Crm.Core.Interfaces;
+using Crm.Core.Services;
 using Crm.Entity.Infrastructure.Services;
 using Crm.Entity.Services;
+using Crm.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,11 +20,13 @@ builder.Services.AddHttpClient();
 builder.Services.AddHttpContextAccessor();
 
 // Регистрация репозиториев и сервисов
-builder.Services.AddSingleton<ICrmRepository, CrmRepository>();
+builder.Services.AddSingleton<ICrmRepository,  CrmRepository>();
 builder.Services.AddSingleton<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IVerificationTokenRepository, VerificationTokenRepository>();
-builder.Services.AddScoped<IRememberDeviceService, RememberDeviceService>();
-builder.Services.AddScoped<IProfileService, ProfileService>();
+builder.Services.AddScoped<IRememberDeviceService,       RememberDeviceService>();
+builder.Services.AddScoped<IProfileService,              ProfileService>();
+builder.Services.AddScoped<IUserContextService,          UserContextService>();
+builder.Services.AddScoped<IAuthenticationService,       AuthenticationService>();
 
 builder.Services.AddApplication();
 

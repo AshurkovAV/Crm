@@ -73,7 +73,8 @@ namespace Crm.Entity.Services
             {
                 using (var db = new CrmContext())
                 {
-                    var data = db.Add(project);
+                    project.IsActive = true;
+                    var data = db.Add(project);                    
                     db.SaveChanges();
                     result.Id = project.Id;
                 }

@@ -13,10 +13,14 @@
             try {
                 const password = document.getElementById('passwordInput').value;
                 const email = sessionStorage.getItem('pendingVerificationEmail');
+                const rememberMeCheckbox = document.getElementById('rememberMe');
+                // Получаем булево значение чекбокса
+                const rememberMe = rememberMeCheckbox ? rememberMeCheckbox.checked : false;
 
                 const jsonData = JSON.stringify({
                     Password: password,
-                    Email: email
+                    Email: email,
+                    RememberMe: rememberMe
                 });
 
                 const response = await fetch("/Account/VerifyPassword", {

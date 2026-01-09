@@ -1,67 +1,62 @@
-﻿using Crm.Application.Interfaces;
-using Microsoft.AspNetCore.Http;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Claims;
-using System.Text;
-using System.Threading.Tasks;
+﻿    using Crm.Application.Interfaces;
+    using Microsoft.AspNetCore.Http;
+    using System.Security.Claims;
 
-namespace Crm.Core.Services
-{
-    public class UserContextService : IUserContextService
+    namespace Crm.Core.Services
     {
-        private readonly IHttpContextAccessor _httpContextAccessor;
-
-        public UserContextService(IHttpContextAccessor httpContextAccessor)
+        public class UserContextService : IUserContextService
         {
-            _httpContextAccessor = httpContextAccessor;
-        }
+            private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public int GetCurrentUserId()
-        {
-            var userIdClaim = _httpContextAccessor.HttpContext?.User
-                .FindFirstValue(ClaimTypes.NameIdentifier);
-
-            if (string.IsNullOrEmpty(userIdClaim) ||
-                !int.TryParse(userIdClaim, out var userId))
+            public UserContextService(IHttpContextAccessor httpContextAccessor)
             {
-                throw new UnauthorizedAccessException("User ID not found");
+                _httpContextAccessor = httpContextAccessor;
             }
 
-            return userId;
-        }
-
-        public int? TryGetCurrentUserId()
-        {
-            var userIdClaim = _httpContextAccessor.HttpContext?.User
-                .FindFirstValue(ClaimTypes.NameIdentifier);
-
-            if (string.IsNullOrEmpty(userIdClaim) ||
-                !int.TryParse(userIdClaim, out var userId))
+            public int GetCurrentUserId()
             {
-                return null;
+                var userIdClaim = _httpContextAccessor.HttpContext?.User
+                    .FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                if (string.IsNullOrEmpty(userIdClaim) ||
+                    !int.TryParse(userIdClaim, out var userId))
+                {
+                    throw new UnauthorizedAccessException("User ID not found");
+                }
+
+                return userId;
             }
 
-            return userId;
-        }
+            public int? TryGetCurrentUserId()
+            {
+                var userIdClaim = _httpContextAccessor.HttpContext?.User
+                    .FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-        public string GetCurrentUserName()
-        {
-            return _httpContextAccessor.HttpContext?.User?
-                .FindFirstValue(ClaimTypes.Name) ?? string.Empty;
-        }
+                if (string.IsNullOrEmpty(userIdClaim) ||
+                    !int.TryParse(userIdClaim, out var userId))
+                {
+                    return null;
+                }
 
-        public bool IsUserInRole(string role)
-        {
-            return _httpContextAccessor.HttpContext?.User?
-                .IsInRole(role) ?? false;
-        }
+                return userId;
+            }
 
-        public IEnumerable<Claim> GetUserClaims()
-        {
-            return _httpContextAccessor.HttpContext?.User?.Claims ??
-                   Enumerable.Empty<Claim>();
+            public string GetCurrentUserName()
+            {
+                return _httpContextAccessor.HttpContext?.User?
+                    .FindFirst(ClaimTypes.Name)?.Value ?? string.Empty;
+            }
+
+            public bool IsUserInRole(string role)
+            {
+                return _httpContextAccessor.HttpContext?.User?
+                    .IsInRole(role) ?? false;
+            }
+
+            public IEnumerable<Claim> GetUserClaims()
+            {
+                return _httpContextAccessor.HttpContext?.User?.Claims ??
+                       Enumerable.Empty<Claim>();
+            }
         }
     }
-}

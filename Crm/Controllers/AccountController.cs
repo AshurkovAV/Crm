@@ -13,7 +13,7 @@ using Crm.Core.Features.Account.Interfaces;
 using System.ComponentModel.DataAnnotations;
 using Crm.Core.Features.Email.Interfaces;
 using Crm.Core.Features.Email.Models;
-using Microsoft.AspNetCore.Identity;
+
 
 namespace Crm.Controllers
 {
@@ -24,18 +24,21 @@ namespace Crm.Controllers
         private readonly IRememberDeviceService _rememberDeviceService;
         private readonly IVerificationTokenRepository _tokenRepository;
         private readonly IUserRepository _userRepository;
+        private readonly Application.Interfaces.IAuthenticationService _authenticationService;
         public AccountController(
-            ICrmRepository               crmRepository,
-            IRememberDeviceService       rememberDeviceServicev,
-            IVerificationTokenRepository verificationTokenRepository,
-            IMediator                    mediator,
-            IUserRepository              userRepository)
+            ICrmRepository                                      crmRepository,
+            IRememberDeviceService                              rememberDeviceServicev,
+            IVerificationTokenRepository                        verificationTokenRepository,
+            IMediator                                           mediator,
+            IUserRepository                                     userRepository,
+            Application.Interfaces.IAuthenticationService       authenticationService)
         {
             _mediator = mediator;
             _crmRepository = crmRepository;             
             _rememberDeviceService = rememberDeviceServicev;
             _tokenRepository = verificationTokenRepository;
             _userRepository = userRepository;
+            _authenticationService = authenticationService;
         }
 
         [AllowAnonymous]
@@ -111,14 +114,14 @@ namespace Crm.Controllers
                 if (isValid)
                 {
                     var user = _userRepository.GetUser(email);
-                    await AuthenticateWithCookies(user.Data);
+                    await _authenticationService.AuthenticateWithCookiesAsync(user.Data);
 
                     return RedirectToAction("Index", "Account");
                 }
                 else
                 {
                     // Очищаем невалидные куки
-                    ClearRememberCookies();
+                    await _authenticationService.ClearRememberTokenAsync(email);
                 }
             }
 
@@ -133,7 +136,6 @@ namespace Crm.Controllers
         {
             Console.WriteLine("=== LOGIN PROCESS START ===");
 
-
             if (User.Identity?.IsAuthenticated == true)
             {
                 return RedirectToLocal();
@@ -142,9 +144,7 @@ namespace Crm.Controllers
             if (!ModelState.IsValid)
             {
                 return Json(new { success = false, message = "invalid_credentials" });
-            }            
-
-            Console.WriteLine("Запрос в базу данных для проверки пользователя");
+            } 
 
             var result = await _mediator.Send(model);
           
@@ -196,13 +196,12 @@ namespace Crm.Controllers
 
                 if (isValid)
                 {
-                    await AuthenticateWithCookies(result.UserBase);
+                    await _authenticationService.AuthenticateWithCookiesAsync(result.UserBase);
                     return Json(new { success = true, redirectUrl = Url.Action("Index", "Home") });
                 }
                 else
                 {
-                    // Очищаем невалидные cookie
-                    ClearRememberCookies();
+                    await _authenticationService.ClearRememberTokenAsync(model.Email);
                 }
             }
             else
@@ -241,7 +240,7 @@ namespace Crm.Controllers
                   //  token = verificationToken
                 });
             }
-            await AuthenticateWithCookies(result.UserBase);
+            await _authenticationService.AuthenticateWithCookiesAsync( result.UserBase);
 
             return Json(new { success = true, redirectUrl = Url.Action("Index", "Home") });
         }
@@ -251,8 +250,7 @@ namespace Crm.Controllers
         [Route("/Account/logout")] // Поддерживаем старый URL
         public async Task<IActionResult> Logout()
         {
-            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            ClearRememberCookies();
+            await _authenticationService.SignOutAsync();          
             return RedirectToAction("", "Account");
         }
 
@@ -275,8 +273,12 @@ namespace Crm.Controllers
                 {
                     return Json(new { success = false, message = "invalid_credentials" });
                 }
-                               
-                await AuthenticateWithCookies(result.User);
+                if (request.RememberMe)
+                {
+                    await _authenticationService.CreateRememberTokenAsync(request.Email);
+                }
+
+                await _authenticationService.AuthenticateWithCookiesAsync(result.User);
 
                 return Json(new { success = true, redirectUrl = Url.Action("Index", "Home") });
             }
@@ -296,8 +298,6 @@ namespace Crm.Controllers
             {
                 return Json(new { success = false, message = "invalid_credentials" });
             }
-
-            Console.WriteLine("Запрос в базу данных для проверки пользователя");
 
             var result = await _mediator.Send(model);
 
@@ -336,7 +336,7 @@ namespace Crm.Controllers
             }
 
 
-            await AuthenticateWithCookies(result.User);
+            await _authenticationService.AuthenticateWithCookiesAsync(result.User);
 
             return Json(new { success = true, redirectUrl = Url.Action("Index", "Home") });
         }
@@ -350,13 +350,12 @@ namespace Crm.Controllers
             if (!ModelState.IsValid)
             {
                 return Json(new { Succeeded = false, message = "invalid_credentials" });
-            }
-            Console.WriteLine("Запрос в базу данных для проверки пользователя");            
+            }                
             var result = await _mediator.Send(model);
 
             if (result.Succeeded)
-            {
-                await AuthenticateWithCookies(result.UserBase);
+            {              
+                await _authenticationService.AuthenticateWithCookiesAsync(result.UserBase);
 
                 return Json(new { Succeeded = true, redirectUrl = Url.Action("start", "CrmSetup") });
             }
@@ -377,89 +376,16 @@ namespace Crm.Controllers
                     FirstName = name
                 };
                 var user = _userRepository.GetUser(email);
-                await AuthenticateWithCookies(user.Data);
+                await _authenticationService.AuthenticateWithCookiesAsync(user.Data);
 
                 // Вместо JSON возвращаем View с JavaScript для закрытия окна
                 return View("YandexAuthSuccess", new { Email = email, Name = name });
-
-
             }
             catch (Exception ex)
             {                
                 return RedirectToAction("Login", new { error = "auth_failed" });
             }
-        }
-
-        private async Task AuthenticateWithCookies(User user)
-        {
-            // Создаем claims с данными пользователя
-            var claims = new List<Claim>
-                {
-                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                    new Claim(ClaimTypes.Email, user.DefaultEmail ?? string.Empty),
-                    new Claim(ClaimTypes.Name, user.DisplayName ?? user.DefaultEmail ?? "User"),
-                    
-                };
-
-            // Дополнительные claims из UserBase
-            if (!string.IsNullOrEmpty(user.FirstName))
-                claims.Add(new Claim(ClaimTypes.GivenName, user.FirstName));
-
-            if (!string.IsNullOrEmpty(user.LastName))
-                claims.Add(new Claim(ClaimTypes.Surname, user.LastName));
-
-            if (!string.IsNullOrEmpty(user.Role))
-                claims.Add(new Claim("Position", user.Role));
-
-            var claimsIdentity = new ClaimsIdentity(
-                claims,
-                CookieAuthenticationDefaults.AuthenticationScheme);
-
-            var authProperties = new AuthenticationProperties
-            {
-                IsPersistent = true, // или false, в зависимости от логики
-                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(2),
-                AllowRefresh = true,
-                IssuedUtc = DateTimeOffset.UtcNow
-            };
-
-            // Выполняем аутентификацию (создаем куки)
-            await HttpContext.SignInAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme,
-                new ClaimsPrincipal(claimsIdentity),
-                authProperties);
-
-            // Опционально: обновляем remember-куки если нужно
-            // await UpdateRememberCookies(user.Email);
-        }
-
-        private void ClearRememberCookies()
-        {
-            var cookieOptions = new CookieOptions
-            {
-                Expires = DateTimeOffset.UtcNow.AddDays(-1),
-                Path = "/",
-                HttpOnly = true,
-                Secure = Request.IsHttps
-            };
-
-            Response.Cookies.Delete("remember_email");
-            Response.Cookies.Delete("remember_token");
-            Response.Cookies.Delete("device_id");
-        }
-    }
-
-    public class LoginModel
-    {
-        [Required(ErrorMessage = "Email обязателен")]
-        [EmailAddress(ErrorMessage = "Неверный формат email")]
-        public string Email { get; set; }
-
-        [Required(ErrorMessage = "Пароль обязателен")]
-        [DataType(DataType.Password)]
-        public string Password { get; set; }
-
-        public bool RememberMe { get; set; }
+        } 
     }
 
 
@@ -469,6 +395,7 @@ namespace Crm.Controllers
         public string UserId { get; set; }
         public string Email { get; set; }
         public string Password { get; set; }
+        public bool RememberMe { get; set; }
     }
 
     public class VerifyPasswordResponse

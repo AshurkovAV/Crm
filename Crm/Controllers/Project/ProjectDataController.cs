@@ -1,3 +1,4 @@
+using Crm.Application.Interfaces;
 using Crm.Entity.Services;
 using DevExtreme.AspNet.Data;
 using DevExtreme.AspNet.Mvc;
@@ -15,13 +16,16 @@ namespace Crm.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private ICrmRepository _crmRepository;
+        private IUserContextService _userContextService;
 
         public ProjectDataController(
             ILogger<HomeController> logger,
-            ICrmRepository crmRepository)
+            ICrmRepository crmRepository, 
+            IUserContextService userContextService)
         {
             _logger = logger;
             _crmRepository = crmRepository;
+            _userContextService = userContextService;  
         }
 
         public IActionResult Index()
@@ -32,7 +36,7 @@ namespace Crm.Controllers
         [HttpGet]
         public object Get(DataSourceLoadOptions loadOptions)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userId = _userContextService.GetCurrentUserId();// User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId != null) {
                 return DataSourceLoader.Load(_crmRepository.GetProjects(Convert.ToInt32(userId)), loadOptions);
             }
@@ -50,9 +54,13 @@ namespace Crm.Controllers
 
             JsonConvert.PopulateObject(values, resultData.Data);
             var result = _crmRepository.InsertProject(resultData.Data);
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userId = _userContextService.GetCurrentUserId();
 
-            //var resultUser = _crmRepository.InsertProjectUser(new Entity.ModelsCrm.ProjectUser { ProjectId = result.Id, UserId = userId });
+            var resultUser = _crmRepository.InsertProjectUser(new Entity.ModelsCrm.ProjectUser { 
+                ProjectId = result.Id, 
+                Role = "ProjectOwner", //Владелец проекта(создатель, полные права)
+                UserId = userId 
+            });
 
             HttpResponseMessage response = new HttpResponseMessage();
             response.StatusCode = HttpStatusCode.Created;
