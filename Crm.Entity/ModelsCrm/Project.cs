@@ -15,8 +15,6 @@ public partial class Project
 
     public string? Efficiency { get; set; }
 
-    public string? Participants { get; set; }
-
     public string? Role { get; set; }
 
     public string? AttachmentType { get; set; }

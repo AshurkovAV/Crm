@@ -12,11 +12,37 @@ namespace Crm.Entity.Services
         public List<ProjectDTO> GetProjectsWithParticipantsDTO(int userId)
         {
             using (var db = new CrmContext())
-            {
-                return db.ProjectUsers
-                .Where(pu => pu.UserId == userId && pu.IsActive)
-                .Select(pu => pu.Project)
-                .Select(p => new ProjectDTO
+            {            
+                // Сначала получаем данные из базы без string.Join
+                var projectsData = db.ProjectUsers
+                    .Where(pu => pu.UserId == userId && pu.IsActive)
+                    .Select(pu => pu.Project)
+                    .Distinct()
+                    .Select(p => new
+                    {
+                        p.Id,
+                        p.Name,
+                        p.Activity,
+                        p.Status,
+                        p.CreatedDate,
+                        p.ModifiedDate,
+                        Participants = p.ProjectUsers
+                            .Where(pu => pu.IsActive)
+                            .Select(pu => pu.UserId)
+                            .ToList(),
+                        ParticipantDetails = p.ProjectUsers
+                            .Where(pu => pu.IsActive)
+                            .Select(pu => new ParticipantDto
+                            {
+                                Id = pu.UserId,
+                                DisplayName = pu.User.DisplayName ?? pu.User.DefaultEmail ?? "Участник"
+                            })
+                            .ToList()
+                                })
+                    .ToList(); // Материализуем здесь
+
+                // Теперь формируем DTO с string.Join в памяти
+                return projectsData.Select(p => new ProjectDTO
                 {
                     Id = p.Id,
                     Name = p.Name,
@@ -24,21 +50,10 @@ namespace Crm.Entity.Services
                     Status = p.Status,
                     CreatedDate = p.CreatedDate,
                     ModifiedDate = p.ModifiedDate,
-                    Participants = p.ProjectUsers
-                        .Where(pu => pu.IsActive)
-                        .Select(pu => new Participant
-                        {
-                            UserId = pu.UserId,
-                            User = new UserInfo
-                            {
-                                Id = pu.User.Id,
-                                DisplayName = !string.IsNullOrEmpty(pu.User.LastName)
-                                    ? $"{pu.User.LastName} {pu.User.FirstName}".Trim()
-                                    : pu.User.DefaultEmail
-                            }
-                        }).ToList()
-                })
-                .ToList();
+                    Participants = p.Participants,
+                    ParticipantsDisplay = string.Join(", ", p.ParticipantDetails.Select(n => n.DisplayName)),
+                    Participantss = p.ParticipantDetails // Заполняем новое свойство
+                }).ToList();
             }
         }
 

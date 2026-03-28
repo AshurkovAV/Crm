@@ -344,7 +344,6 @@ public partial class CrmContext : DbContext
             entity.Property(e => e.Efficiency).HasMaxLength(255);
             entity.Property(e => e.ModifiedDate).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.Name).HasMaxLength(255);
-            entity.Property(e => e.Participants).HasMaxLength(255);
             entity.Property(e => e.Role).HasMaxLength(255);
             entity.Property(e => e.Status).HasMaxLength(100);
         });

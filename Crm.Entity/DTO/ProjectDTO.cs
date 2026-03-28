@@ -8,15 +8,24 @@ namespace Crm.Entity.DTO
 {
     public class ProjectDTO
     {
+
+
         public int Id { get; set; }
         public string Name { get; set; }
         public string Activity { get; set; }
         public string Status { get; set; }
         public DateTime? CreatedDate { get; set; }
         public DateTime? ModifiedDate { get; set; }
-        public List<Participant> Participants { get; set; }
-    }
+        public List<int> Participants { get; set; } = new List<int>();
+        public string ParticipantsDisplay { get; set; }
+        public List<ParticipantDto> Participantss { get; set; } = new List<ParticipantDto>();
 
+    }
+    public class ParticipantDto
+    {
+        public int Id { get; set; }
+        public string DisplayName { get; set; }
+    }
     public class Participant
     {
         public int UserId { get; set; }

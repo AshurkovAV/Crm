@@ -156,18 +156,18 @@ namespace Crm.Infrastructure.Services
         public async Task SignOutAsync()
         {
             // Удаляем remember me токен из базы
-            //var email = _httpContextAccessor.HttpContext?.Request.Cookies["remember_email"];
-            //var deviceId = _httpContextAccessor.HttpContext?.Request.Cookies["device_id"];
+            var email = _httpContextAccessor.HttpContext?.Request.Cookies["remember_email"];
+            var deviceId = _httpContextAccessor.HttpContext?.Request.Cookies["device_id"];
 
-            //if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(deviceId))
-            //{
-            //    await _rememberDeviceService.RemoveRememberTokenAsync(email, deviceId);
-            //}
+            if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(deviceId))
+            {
+                await _rememberDeviceService.RemoveRememberTokenAsync(email, deviceId);
+            }
 
-            //// Очищаем cookies
-            //_httpContextAccessor.HttpContext?.Response.Cookies.Delete("remember_email");
-            //_httpContextAccessor.HttpContext?.Response.Cookies.Delete("remember_token");
-            //_httpContextAccessor.HttpContext?.Response.Cookies.Delete("device_id");
+            // Очищаем cookies
+            _httpContextAccessor.HttpContext?.Response.Cookies.Delete("remember_email");
+            _httpContextAccessor.HttpContext?.Response.Cookies.Delete("remember_token");
+            _httpContextAccessor.HttpContext?.Response.Cookies.Delete("device_id");
 
             // Выход из системы
             await _httpContextAccessor.HttpContext?.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
