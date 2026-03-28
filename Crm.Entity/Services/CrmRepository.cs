@@ -2,11 +2,46 @@
 using Crm.Core.Infrastructure;
 using System.Net.Sockets;
 using Microsoft.EntityFrameworkCore;
+using Crm.Entity.DTO;
 
 namespace Crm.Entity.Services
 {
     public class CrmRepository : ICrmRepository
     {
+
+        public List<ProjectDTO> GetProjectsWithParticipantsDTO(int userId)
+        {
+            using (var db = new CrmContext())
+            {
+                return db.ProjectUsers
+                .Where(pu => pu.UserId == userId && pu.IsActive)
+                .Select(pu => pu.Project)
+                .Select(p => new ProjectDTO
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Activity = p.Activity,
+                    Status = p.Status,
+                    CreatedDate = p.CreatedDate,
+                    ModifiedDate = p.ModifiedDate,
+                    Participants = p.ProjectUsers
+                        .Where(pu => pu.IsActive)
+                        .Select(pu => new Participant
+                        {
+                            UserId = pu.UserId,
+                            User = new UserInfo
+                            {
+                                Id = pu.User.Id,
+                                DisplayName = !string.IsNullOrEmpty(pu.User.LastName)
+                                    ? $"{pu.User.LastName} {pu.User.FirstName}".Trim()
+                                    : pu.User.DefaultEmail
+                            }
+                        }).ToList()
+                })
+                .ToList();
+            }
+        }
+
         public List<Project> GetProjects(int userId)
         {
             var result = new List<Project>();
@@ -18,6 +53,34 @@ namespace Crm.Entity.Services
                 .ToList();
             }
             return result;
+        }
+
+        public List<ProjectUser> GetProjectUsers(int projectId)
+        {
+            using (var db = new CrmContext())
+            {
+                return db.ProjectUsers
+                .Where(pu => pu.ProjectId == projectId)
+                .ToList();
+            }                
+        }
+
+        public void AddProjectUser(ProjectUser projectUser)
+        {
+            using (var db = new CrmContext())
+            {
+                db.ProjectUsers.Add(projectUser);
+                db.SaveChanges();
+            }                
+        }
+
+        public void UpdateProjectUser(ProjectUser projectUser)
+        {
+            using (var db = new CrmContext())
+            {
+                db.Entry(projectUser).State = EntityState.Modified;
+                db.SaveChanges();
+            }
         }
 
         public TransactionResult DeleteProject(int id)

@@ -1,4 +1,5 @@
 ﻿@using Crm.Entity.ModelsCrm
+
 @{
     ViewData["Title"] = "Проекты";
 }
@@ -51,8 +52,8 @@
                 .Popup(p => p
                 .Title("Редактирование проекта")
                 .ShowTitle(true)
-                .Width(800)
-                .Height(550)
+                .Width(860)
+                .Height(800)
                 .Position(pos => pos
                 .My(HorizontalAlignment.Center, VerticalAlignment.Center)
                 .At(HorizontalAlignment.Center, VerticalAlignment.Center)
@@ -65,92 +66,129 @@
                 .LabelLocation(FormLabelLocation.Top)
                 .Items(items =>
                 {
-                    // Первая колонка
-                    items.AddGroup()
-                .Caption("Основная информация")
-                .ColSpan(1)
-                .Items(groupItems =>
+                        // Первая колонка
+                        items.AddGroup()
+                    .Caption("Основная информация")
+                    .ColSpan(1)
+                    .Items(groupItems =>
+                    {                                     
+
+                                    groupItems.AddSimpleFor(m => m.Name)
+                                        .Label(l => l.Text("Название проекта*"))
+                                        .Editor(editor => editor
+                                        .TextBox()
+                                        .Placeholder("Введите название проекта")
+                                    );
+                                     groupItems.AddSimpleFor(m => m.Activity)
+                                        .Label(l => l.Text("Описание проекта"))
+                                        .Editor(editor => editor
+                                        .TextArea()
+                                        .Height(80)
+                                        .Placeholder("Опишите проект")
+                                    );
+
+                                       
+                                    });
+
+                                // Вторая колонка
+                                items.AddGroup()
+                            .Caption("Дополнительная информация")
+                            .ColSpan(1)
+                            .Items(groupItems =>
+                            {
+                                    groupItems.AddSimpleFor(m => m.Status)
+                                    .Label(l => l.Text("Статус*"))
+                                    .Editor(editor => editor
+                                    .SelectBox()
+                                    .DataSource(new[] {
+                                            "В работе",
+                                            "Завершен",
+                                            "На паузе",
+                                            "Планируется",
+                                            "Черновик",
+                                            "Отменен"
+                                                })
+                                    .Placeholder("Выберите статус")
+                                    );
+                                    // Поле для выбора участников
+                                    groupItems.AddSimpleFor(m => m.Participants)
+                                    .Label(l => l.Text("Текущие участники"))
+                                    .Editor(editor => editor
+                                            .TagBox()
+                                            .DataSource(d => d.Mvc()
+                                            .Controller("ProjectUserData")
+                                            .LoadAction("GetParticipants")
+                                            .LoadMode(DataSourceLoadMode.Processed)) // Изменено на Processed
+                                    .ValueExpr("Id")
+                                    .DisplayExpr("DisplayName")
+                                    .Placeholder("Выберите участников")
+                                    .SearchEnabled(true)
+                                    .ShowSelectionControls(true)
+                                    .ShowClearButton(true)
+                                    .Width("100%")
+                                    )
+                                    .ColSpan(2);
+                                    
+                    groupItems.AddGroup()
+                .Caption("Участники")
+                .ColCount(2)
+                .Items(items =>
                 {
-                    groupItems.AddSimpleFor(m => m.Number)
-                .Label(l => l.Text("Номер проекта"))
-                                .Editor(editor => editor
-                                .NumberBox()
-                                .ShowSpinButtons(true)
-                                .Min(1)
-                                .Placeholder("Введите номер")
-                );
+                   
 
-                    groupItems.AddSimpleFor(m => m.Name)
-                .Label(l => l.Text("Название проекта*"))
-                .Editor(editor => editor
-                .TextBox()
-                .Placeholder("Введите название проекта")
-                );
+                    // Кнопка для добавления нового участника
+                    items.AddSimple()
+                .Label(l => l.Text("Пригласить по ссылке"))
+                .Template(@"
+                        <div style='padding: 5px 0;'>
+                        <button type='button'
+                        onclick='showInviteModal()'
+                        style='width: 100%;
+                        padding: 10px 15px;
+                        background: #1976d2;
+                        color: white;
+                        border: none;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 8px;'>
+                        <i class='dx-icon-user'></i>
+                        <span>Добавить участника</span>
+                        </button>
+                        </div>
+                        ")
+                .ColSpan(2);
 
-                    groupItems.AddSimpleFor(m => m.Status)
-                .Label(l => l.Text("Статус*"))
-                .Editor(editor => editor
-                .SelectBox()
-                .DataSource(new[] {
-        "В работе",
-        "Завершен",
-        "На паузе",
-        "Планируется",
-        "Черновик",
-        "Отменен"
-            })
-                .Placeholder("Выберите статус")
-                );
+                    // Скрытое поле для отображения ссылки
+                    items.AddSimple()
+                .Label(l => l.Text("Ссылка для приглашения"))
+                .Template(@"
+                            <div id='inviteLinkContainer' style=' margin-top: 10px; padding: 15px; background: #f5f5f5; border-radius: 5px; border: 1px dashed #ddd;'>
+                            <div style='display: flex; align-items: center; gap: 10px;'>
+                            <div style='flex: 1; font-family: monospace; padding: 8px; background: white; border: 1px solid #ccc; border-radius: 3px; word-break: break-all;'>
+                            <span id='inviteLinkText'>https://ваш-сайт.ru/invite/XXXXXXXXXXXX</span>
+                            </div>
+                            <div style='display: flex; gap: 5px;'>
+                            <button onclick='copyInviteLink()' style='padding: 6px 12px; background: white; border: 1px solid #ccc; border-radius: 3px; cursor: pointer;'>
+                            <i class='dx-icon-copy' style='margin-right: 5px;'></i>
+                            Копировать
+                            </button>
+                            <button onclick='sendInviteLink()' style='padding: 6px 12px; background: #1976d2; color: white; border: none; border-radius: 3px; cursor: pointer;'>
+                            <i class='dx-icon-email' style='margin-right: 5px;'></i>
+                            Отправить
+                            </button>
+                            </div>
+                            </div>
+                            <div style='margin-top: 10px; font-size: 12px; color: #666;'>
+                            <i class='dx-icon-info'></i> Ссылка действительна 7 дней
+                            </div>
+                            </div>
+                            ")
+                .ColSpan(2);
                 });
-
-                    // Вторая колонка
-                    items.AddGroup()
-                .Caption("Дополнительная информация")
-                .ColSpan(1)
-                .Items(groupItems =>
-                {
-                    groupItems.AddSimpleFor(m => m.Activity)
-                .Label(l => l.Text("Деятельность"))
-                .Editor(editor => editor
-                .TextArea()
-                .Height(80)
-                .Placeholder("Опишите деятельность проекта")
-                );
-
-                    groupItems.AddSimpleFor(m => m.Efficiency)
-                .Label(l => l.Text("Эффективность"))
-                .Editor(editor => editor
-                .TextBox()
-                .Placeholder("Оцените эффективность")
-                );
-
-                    groupItems.AddSimpleFor(m => m.Participants)
-                .Label(l => l.Text("Участники"))
-                .Editor(editor => editor
-                .TextBox()
-                .Placeholder("Укажите участников")
-                );
-
-                    groupItems.AddSimpleFor(m => m.Role)
-                .Label(l => l.Text("Роль"))
-                .Editor(editor => editor
-                .TextBox()
-                .Placeholder("Укажите роль")
-                );
-
-                    groupItems.AddSimpleFor(m => m.AttachmentType)
-                .Label(l => l.Text("Тип прикрепления"))
-                .Editor(editor => editor
-                .SelectBox()
-                .DataSource(new[] {
-        "Постоянный",
-        "Временный",
-        "Контрактный",
-        "Внешний",
-        "Внутренний"
-            })
-                .Placeholder("Выберите тип")
-                );
+                  
                 });
                 })
                 )
@@ -158,40 +196,36 @@
                 .Columns(columns =>
                 {
                     columns.Add()
-                        .DataField("Number")
-                        .Caption("Номер")
-                        .Width(80);
-
-                    columns.Add()
                         .DataField("Name")
-                        .Caption("Название проекта")
-                        ;
+                        .Caption("Название проекта");
 
                     columns.Add()
                             .DataField("Activity")
-                            .Caption("Деятельность")
+                            .Caption("Описание")
                             .Visible(true);
-
                     columns.Add()
-                        .DataField("Efficiency")
-                        .Caption("Эффективность")
-                        .Visible(true);
-
-                    columns.Add()
-                        .DataField("Participants")
-                        .Caption("Участники")
-                        .Visible(true);
-
-                    columns.Add()
-                .DataField("Role")
-                .Caption("Роль")
-                .Visible(true);
-
-                    columns.Add()
-                        .DataField("AttachmentType")
-                        .Caption("Тип прикрепления")
-                        .Visible(false);
-
+                .DataField("Participants")
+                .Caption("Участники")
+                .Visible(true)
+                .CellTemplate(@<text>
+            <div>
+                <%= value && value.length > 0 ?
+                value.map(function(p) {
+                return p.User ? p.User.DisplayName || p.User.FullName || 'Участник' : 'Участник';
+                }).join(', ') : 'Нет участников' %>
+            </div>
+        </text>)
+                .CalculateDisplayValue(new JS(@"
+        function(data) {
+        // Формируем строку для отображения
+        if(data.Participants && data.Participants.length > 0) {
+        return data.Participants.map(function(p) {
+        return p.User ? p.User.DisplayName || p.User.FullName || 'Участник' : 'Участник';
+        }).join(', ');
+        }
+        return 'Нет участников';
+        }
+        "));
                     columns.Add()
                             .DataField("Status")
                             .Caption("Статус")
