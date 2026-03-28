@@ -1,18 +1,12 @@
 ﻿using Crm.Entity.Services;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
-using Crm.Extensions;
 using MediatR;
 using Crm.Application.Features.Accounts.Commands.CreateUser;
 using Crm.Entity.ModelsCrm;
 using Crm.Application.Features.Accounts.Commands.Login;
 using Microsoft.AspNetCore.Authorization;
 using Crm.Core.Features.Account.Interfaces;
-using System.ComponentModel.DataAnnotations;
 using Crm.Core.Features.Email.Interfaces;
-using Crm.Core.Features.Email.Models;
 
 
 namespace Crm.Controllers
