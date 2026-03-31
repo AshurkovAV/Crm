@@ -20,8 +20,9 @@ builder.Services.AddHttpClient();
 builder.Services.AddHttpContextAccessor();
 
 // Регистрация репозиториев и сервисов
-builder.Services.AddSingleton<ICrmRepository,  CrmRepository>();
-builder.Services.AddSingleton<IUserRepository, UserRepository>();
+builder.Services.AddSingleton<ICrmRepository,            CrmRepository>();
+builder.Services.AddSingleton<IUserRepository,           UserRepository>();
+builder.Services.AddSingleton<INsiRepository,            NsiRepository>();
 builder.Services.AddScoped<IVerificationTokenRepository, VerificationTokenRepository>();
 builder.Services.AddScoped<IRememberDeviceService,       RememberDeviceService>();
 builder.Services.AddScoped<IProfileService,              ProfileService>();

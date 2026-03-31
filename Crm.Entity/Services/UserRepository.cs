@@ -42,6 +42,29 @@ namespace Crm.Entity.Services
             return result;
         }
 
+        public TransactionResult<User> GetUserById(int id)
+        {
+            var result = new TransactionResult<User>();
+            try
+            {
+                using (var db = new CrmContext())
+                {
+                    var user = db.Users.Where(x => x.Id == id && x.IsActive == true).FirstOrDefault();
+                    if (user == null)
+                    {
+                        throw new Exception("Пользователь не найден, либо не активен");
+                    }
+                    result.Data = user;
+                }
+            }
+            catch (Exception ex)
+            {
+                result.AddError(ex);
+            }
+
+            return result;
+        }
+
         public async Task AddOrUpdateAsync(User user)
         {
             using (var db = new CrmContext())

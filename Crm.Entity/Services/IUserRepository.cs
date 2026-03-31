@@ -9,6 +9,7 @@ namespace Crm.Entity.Services
         Task AddAsync(User user);
         Task AddOrUpdateAsync(User user);
         TransactionResult<User> GetUser(string email);
+        TransactionResult<User> GetUserById(int id);
         IEnumerable<User> GetUsers();
         UserToken InsertUserToken(UserToken user);
         Task<bool> SetPasswordAsync(string email, string password);

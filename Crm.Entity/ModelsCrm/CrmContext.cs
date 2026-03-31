@@ -47,6 +47,8 @@ public partial class CrmContext : DbContext
 
     public virtual DbSet<PurchaseDetail> PurchaseDetails { get; set; }
 
+    public virtual DbSet<RefStatus> RefStatuses { get; set; }
+
     public virtual DbSet<RememberedDevice> RememberedDevices { get; set; }
 
     public virtual DbSet<Shipment> Shipments { get; set; }
@@ -54,6 +56,8 @@ public partial class CrmContext : DbContext
     public virtual DbSet<ShipmentDetail> ShipmentDetails { get; set; }
 
     public virtual DbSet<Supplier> Suppliers { get; set; }
+
+    public virtual DbSet<TaskCrm> TaskCrms { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
 
@@ -395,6 +399,18 @@ public partial class CrmContext : DbContext
                 .HasConstraintName("FK_PurchaseDetails_Purchases");
         });
 
+        modelBuilder.Entity<RefStatus>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Ref_Stat__3214EC076DFB1AB0");
+
+            entity.ToTable("Ref_Statuses");
+
+            entity.HasIndex(e => e.Name, "UQ__Ref_Stat__737584F684CC72A7").IsUnique();
+
+            entity.Property(e => e.Name).HasMaxLength(50);
+            entity.Property(e => e.SortOrder).HasDefaultValue(0);
+        });
+
         modelBuilder.Entity<RememberedDevice>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Remember__3214EC07A4311EC2");
@@ -468,6 +484,47 @@ public partial class CrmContext : DbContext
             entity.Property(e => e.Name).HasMaxLength(100);
             entity.Property(e => e.Phone).HasMaxLength(20);
             entity.Property(e => e.TaxNumber).HasMaxLength(20);
+        });
+
+        modelBuilder.Entity<TaskCrm>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__TaskCrm__3214EC07698711A5");
+
+            entity.ToTable("TaskCrm", tb => tb.HasComment("Таблица задач проекта. Содержит все задачи, назначенные на сотрудников, с указанием сроков и статусов."));
+
+            entity.Property(e => e.Id).HasComment("Уникальный идентификатор задачи. Автоинкрементное поле (IDENTITY). Первичный ключ таблицы.");
+            entity.Property(e => e.Activity).HasComment("Дата и время последней активности по задаче. Обновляется при любом изменении: комментарий, смена статуса, редактирование. Формат: YYYY-MM-DD HH:MI:SS");
+            entity.Property(e => e.Assignee).HasComment("Исполнитель задачи. ФИО сотрудника, ответственного за выполнение. Отображается в столбце \"Исполнитель\" интерфейса.");
+            entity.Property(e => e.Author).HasComment("Постановщик задачи. ФИО сотрудника, создавшего задачу. Отображается в столбце \"Постановщик\" интерфейса.");
+            entity.Property(e => e.Comments).HasComment("Комментарии к задаче. Текстовое поле неограниченной длины (MAX). Хранит обсуждения, уточнения и историю выполнения задачи.");
+            entity.Property(e => e.CreatedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasComment("Дата и время создания задачи. Автоматически устанавливается при вставке записи. Значение по умолчанию - GETDATE().");
+            entity.Property(e => e.Deadline).HasComment("Крайний срок выполнения задачи. Используется для контроля просрочек и планирования. При превышении текущей даты задача считается просроченной.");
+            entity.Property(e => e.IsOverdue)
+                .HasDefaultValue(false)
+                .HasComment("Флаг просрочки задачи. Вычисляемое поле: TRUE, если Deadline < текущей даты и статус не \"Завершена\". Используется для быстрой фильтрации просроченных задач.");
+            entity.Property(e => e.ModifiedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasComment("Дата и время последнего изменения задачи. Автоматически обновляется при изменении записи. Значение по умолчанию - GETDATE().");
+            entity.Property(e => e.Name)
+                .HasMaxLength(255)
+                .HasComment("Название задачи. Обязательное поле. Отображается в списке задач как основное описание.");
+            entity.Property(e => e.Priority)
+                .HasMaxLength(50)
+                .HasComment("Приоритет задачи. Возможные значения: \"Высокий\", \"Средний\", \"Низкий\". Используется для сортировки задач по важности.");
+            entity.Property(e => e.ProjectId).HasComment("Внешний ключ на таблицу Project. Определяет принадлежность задачи к конкретному проекту. Может быть NULL, если задача не привязана к проекту. При удалении проекта значение становится NULL (ON DELETE SET NULL).");
+            entity.Property(e => e.Status)
+                .HasDefaultValue(1)
+                .HasComment("Статус выполнения задачи. Возможные значения: \"Новая\", \"В работе\", \"Просрочена\", \"Завершена\", \"Отменена\". По умолчанию - \"Новая\".");
+            entity.Property(e => e.Tags)
+                .HasMaxLength(500)
+                .HasComment("Теги задачи. Хранятся в виде строки с разделителями (например: \"срочно,важно,клиент\"). Используются для категоризации и фильтрации задач. Максимальная длина - 500 символов.");
+
+            entity.HasOne(d => d.Project).WithMany(p => p.TaskCrms)
+                .HasForeignKey(d => d.ProjectId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("FK_Task_Project");
         });
 
         modelBuilder.Entity<User>(entity =>

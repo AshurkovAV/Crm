@@ -23,12 +23,12 @@
         @(Html.DevExtreme().DataGrid<ProjectDTO>()
                         .ID("projectsGrid")
                         .DataSource(ds => ds.Mvc()
-                        .Controller("ProjectData")
-                        .LoadAction("Get")
-                        .InsertAction("Post")
-                        .UpdateAction("Put")
-                        .DeleteAction("Delete")
-                        .Key("Id")
+                                .Controller("ProjectData")
+                                .LoadAction("Get")
+                                .InsertAction("Post")
+                                .UpdateAction("Put")
+                                .DeleteAction("Delete")
+                                .Key("Id")
                         )
                 .ShowBorders(true)
                 .ColumnAutoWidth(true)
@@ -68,24 +68,24 @@
                 {                  
                     // Первая колонка
                     items.AddGroup()
-                .Caption("Основная информация")
-                .ColSpan(1)
-                .Items(groupItems =>
-                {
-                    groupItems.AddSimpleFor(m => m.Name)
-                .Label(l => l.Text("Название проекта*"))
-                .Editor(editor => editor
-                .TextBox()
-                .Placeholder("Введите название проекта")
-                );
+                            .Caption("Основная информация")
+                            .ColSpan(1)
+                            .Items(groupItems =>
+                            {
+                                groupItems.AddSimpleFor(m => m.Name)
+                                        .Label(l => l.Text("Название проекта*"))
+                                        .Editor(editor => editor
+                                        .TextBox()
+                                        .Placeholder("Введите название проекта")
+                            );
 
                     groupItems.AddSimpleFor(m => m.Activity)
-                .Label(l => l.Text("Описание проекта"))
-                .Editor(editor => editor
-                .TextArea()
-                .Height(80)
-                .Placeholder("Опишите проект")
-                );
+                                            .Label(l => l.Text("Описание проекта"))
+                                            .Editor(editor => editor
+                                            .TextArea()
+                                            .Height(80)
+                                            .Placeholder("Опишите проект")
+                                            );
                 });
 
                     // Вторая колонка
@@ -95,39 +95,39 @@
                 .Items(groupItems =>
                 {
                     groupItems.AddSimpleFor(m => m.Status)
-                .Label(l => l.Text("Статус*"))
-                .Editor(editor => editor
-                .SelectBox()
-                .DataSource(new[] {
-                                "В работе",
-                                "Завершен",
-                                "На паузе",
-                                "Планируется",
-                                "Черновик",
-                                "Отменен"
-                                    })
-                .Placeholder("Выберите статус")
-                );
+                    .Label(l => l.Text("Статус*"))
+                    .Editor(editor => editor
+                    .SelectBox()
+                    .DataSource(new[] {
+                                    "В работе",
+                                    "Завершен",
+                                    "На паузе",
+                                    "Планируется",
+                                    "Черновик",
+                                    "Отменен"
+                                        })
+                    .Placeholder("Выберите статус")
+                    );
 
                     // Поле для выбора участников
                     items.AddSimple()
                             .DataField("Participants")  // Явно указываем DataField
                             .Label(l => l.Text("Текущие участники"))
                             .Editor(editor => editor
-                            .TagBox()
-                            .DataSource(d => d.Mvc()
-                            .Controller("ProjectUserData")
-                            .LoadAction("GetParticipants")
-                            .LoadMode(DataSourceLoadMode.Processed)
+                                        .TagBox()
+                                        .DataSource(d => d.Mvc()
+                                                .Controller("ProjectUserData")
+                                                .LoadAction("GetParticipants")
+                                                .LoadMode(DataSourceLoadMode.Processed)
                             )
-                            .ValueExpr("Id")
-                            .DisplayExpr("DisplayName")
-                            .Placeholder("Выберите участников")
-                            .SearchEnabled(true)
-                            .ShowSelectionControls(true)
-                            .ShowClearButton(true)
-                            .Width("100%")
-                            )
+                                        .ValueExpr("Id")
+                                        .DisplayExpr("DisplayName")
+                                        .Placeholder("Выберите участников")
+                                        .SearchEnabled(true)
+                                        .ShowSelectionControls(true)
+                                        .ShowClearButton(true)
+                                        .Width("100%")
+                                        )
                             .ColSpan(2);
                 });
                 })

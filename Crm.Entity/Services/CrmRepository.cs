@@ -8,7 +8,71 @@ namespace Crm.Entity.Services
 {
     public class CrmRepository : ICrmRepository
     {
+        public List<TaskDTO> GetTasksWithAccess(int userId)
+        {
+            using (var db = new CrmContext())
+            {
+                var tasksData = db.TaskCrms                    
+                    .Where(t =>
+                        // Доступ через проект
+                        db.ProjectUsers.Any(pu => pu.UserId == userId && pu.IsActive && pu.ProjectId == t.ProjectId)
+                        // ИЛИ пользователь назначен исполнителем
+                        || t.Assignee == userId
+                        // ИЛИ пользователь автор задачи
+                        || t.Author == userId
+                    )
+                    .Select(t => new
+                    {
+                        t.Id,
+                        t.Name,
+                        t.Activity,
+                        t.Deadline,
+                        t.Author,
+                        t.Assignee,
+                        t.ProjectId,
+                        t.Tags,
+                        t.Status,
+                        t.Priority,
+                        t.Comments,
+                        t.Description,
+                        t.CreatedDate,
+                        t.ModifiedDate,
+                        t.IsOverdue,
+                        ProjectName = t.Project != null ? t.Project.Name : null,
+                        ProjectParticipants = t.Project.ProjectUsers
+                            .Where(pu => pu.IsActive)
+                            .Select(pu => new ParticipantDto
+                            {
+                                Id = pu.UserId,
+                                DisplayName = pu.User.DisplayName ?? pu.User.DefaultEmail ?? "Участник"
+                            })
+                            .ToList()
+                    })
+                    .ToList();
 
+                return tasksData.Select(t => new TaskDTO
+                {
+                    Id = t.Id,
+                    Name = t.Name,
+                    Activity = t.Activity,
+                    Deadline = t.Deadline,
+                    Author = t.Author,
+                    Assignee = t.Assignee,
+                    ProjectId = t.ProjectId,
+                    ProjectName = t.ProjectName,
+                    Tags = t.Tags,
+                    Status = t.Status,
+                    Priority = t.Priority,
+                    Comments = t.Comments,
+                    Description = t.Description,
+                    CreatedDate = t.CreatedDate,
+                    ModifiedDate = t.ModifiedDate,
+                    IsOverdue = t.IsOverdue,
+                    ProjectParticipants = t.ProjectParticipants,
+                    ProjectParticipantsDisplay = string.Join(", ", t.ProjectParticipants.Select(p => p.DisplayName))
+                }).ToList();
+            }
+        }
         public List<ProjectDTO> GetProjectsWithParticipantsDTO(int userId)
         {
             using (var db = new CrmContext())
@@ -55,7 +119,7 @@ namespace Crm.Entity.Services
                     Participantss = p.ParticipantDetails // Заполняем новое свойство
                 }).ToList();
             }
-        }
+        }       
 
         public List<Project> GetProjects(int userId)
         {
@@ -125,6 +189,26 @@ namespace Crm.Entity.Services
             return result;
         }
 
+        public TransactionResult UpdataTaskCrm(TaskCrm taskcrm)
+        {
+            var result = new TransactionResult();
+            try
+            {
+                using (var db = new CrmContext())
+                {
+                    // 3. Помечаем запись как измененную и сохраняем
+                    db.Entry(taskcrm).State = EntityState.Modified;
+                    db.SaveChanges();
+                }
+            }
+            catch (Exception ex)
+            {
+                result.AddError(ex.Message);
+
+            }
+            return result;
+        }
+
         public TransactionResult UpdataProject(Project project)
         {
             var result = new TransactionResult();
@@ -164,6 +248,25 @@ namespace Crm.Entity.Services
             return result;
         }
 
+        public TransactionResult InsertTaskCrm(TaskCrm taskcrm)
+        {
+            var result = new TransactionResult();
+            try
+            {
+                using (var db = new CrmContext())
+                {
+                    var data = db.Add(taskcrm);
+                    db.SaveChanges();
+                    result.Id = taskcrm.Id;
+                }
+            }
+            catch (Exception ex)
+            {
+                result.AddError("Ошибка добавления записи в таблицу Задачи");
+            }
+            return result;
+        }
+
         public TransactionResult InsertProject(Project project)
         {
             var result = new TransactionResult();
@@ -182,6 +285,31 @@ namespace Crm.Entity.Services
             }
             return result;
         }
+
+        public TransactionResult<TaskCrm> GetTaskCrm(int id)
+        {
+            var result = new TransactionResult<TaskCrm>();
+
+            using (var db = new CrmContext())
+            {
+                try
+                {
+                    var resultProject = db.TaskCrms.FirstOrDefault(x => x.Id == id);
+                    if (resultProject == null)
+                    {
+                        result.Data = new TaskCrm();
+                        throw new Exception("Задача не найдена");
+                    }
+                    result.Data = resultProject;
+                }
+                catch (Exception ex)
+                {
+                    result.AddError(ex.Message);
+                }
+            }
+            return result;
+        }
+
 
         public TransactionResult<Project> GetProject(int id)
         {
