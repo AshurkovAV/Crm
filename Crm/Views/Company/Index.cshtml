@@ -1,0 +1,257 @@
+﻿@using Crm.Entity.DTO
+
+@{
+    ViewData["Title"] = "Сотрудники";
+}
+
+<div class="content-top-bar">
+    <h1 class="content-title">Сотрудники</h1>
+    <div class="content-actions">
+        <button class="content-btn" onclick="showCreateProjectModal()">
+            <i class="fas fa-plus"></i>
+            <span>Новый сотрудник</span>
+        </button>
+        <button class="content-btn secondary">
+            <i class="fas fa-filter"></i>
+            <span>Фильтр</span>
+        </button>
+    </div>
+</div>
+
+<div class="content-section">
+    <div class="dx-grid-container">
+        @(Html.DevExtreme().DataGrid<ProjectDTO>()
+                        .ID("projectsGrid")
+                        .DataSource(ds => ds.Mvc()
+                                .Controller("ProjectData")
+                                .LoadAction("Get")
+                                .InsertAction("Post")
+                                .UpdateAction("Put")
+                                .DeleteAction("Delete")
+                                .Key("Id")
+                        )
+                .ShowBorders(true)
+                .ColumnAutoWidth(true)
+                .WordWrapEnabled(true)
+                .ShowColumnLines(true)
+                .ShowRowLines(true)
+                .RowAlternationEnabled(true)
+                .Grouping(g => g.AutoExpandAll(false))
+                .Pager(p => p
+                .ShowPageSizeSelector(true)
+                .AllowedPageSizes(new[] { 10, 20, 50 })
+                .ShowInfo(true)
+                )
+                .Paging(p => p.PageSize(10))
+                .Editing(e => e
+                .Mode(GridEditMode.Popup)
+           
+                .AllowAdding(true)
+                .AllowUpdating(true)
+                .AllowDeleting(true)
+                .UseIcons(true)
+                .Popup(p => p
+                .Title("Редактирование проекта")
+                .ShowTitle(true)
+                .Width(860)
+                .Height(800)
+                .Position(pos => pos
+                .My(HorizontalAlignment.Center, VerticalAlignment.Center)
+                .At(HorizontalAlignment.Center, VerticalAlignment.Center)
+                .Of(new JS("window"))
+                )          
+                )
+                .Form(f => f
+                .ColCount(2)
+                .LabelLocation(FormLabelLocation.Top)
+                .Items(items =>
+                {                  
+                    // Первая колонка
+                    items.AddGroup()
+                            .Caption("Основная информация")
+                            .ColSpan(1)
+                            .Items(groupItems =>
+                            {
+                                groupItems.AddSimpleFor(m => m.Name)
+                                        .Label(l => l.Text("Название проекта*"))
+                                        .Editor(editor => editor
+                                        .TextBox()
+                                        .Placeholder("Введите название проекта")
+                            );
+
+                    groupItems.AddSimpleFor(m => m.Activity)
+                                            .Label(l => l.Text("Описание проекта"))
+                                            .Editor(editor => editor
+                                            .TextArea()
+                                            .Height(80)
+                                            .Placeholder("Опишите проект")
+                                            );
+                });
+
+                    // Вторая колонка
+                    items.AddGroup()
+                .Caption("Дополнительная информация")
+                .ColSpan(1)
+                .Items(groupItems =>
+                {
+                    groupItems.AddSimpleFor(m => m.Status)
+                    .Label(l => l.Text("Статус*"))
+                    .Editor(editor => editor
+                    .SelectBox()
+                    .DataSource(new[] {
+                                    "В работе",
+                                    "Завершен",
+                                    "На паузе",
+                                    "Планируется",
+                                    "Черновик",
+                                    "Отменен"
+                                        })
+                    .Placeholder("Выберите статус")
+                    );
+
+                    // Поле для выбора участников
+                    items.AddSimple()
+                            .DataField("Participants")  // Явно указываем DataField
+                            .Label(l => l.Text("Текущие участники"))
+                            .Editor(editor => editor
+                                        .TagBox()
+                                        .DataSource(d => d.Mvc()
+                                                .Controller("ProjectUserData")
+                                                .LoadAction("GetParticipants")
+                                                .LoadMode(DataSourceLoadMode.Processed)
+                            )
+                                        .ValueExpr("Id")
+                                        .DisplayExpr("DisplayName")
+                                        .Placeholder("Выберите участников")
+                                        .SearchEnabled(true)
+                                        .ShowSelectionControls(true)
+                                        .ShowClearButton(true)
+                                        .Width("100%")
+                                        )
+                            .ColSpan(2);
+                });
+                })
+                )
+                )
+                .Columns(columns =>
+                {
+                    columns.Add().DataField("Name").Caption("Название проекта");
+                    columns.Add().DataField("Activity").Caption("Описание").Visible(true);
+                    columns.Add().DataField("ParticipantsDisplay").Caption("Участники").Visible(true);
+                    columns.Add()
+                    .DataField("Status")
+                    .Caption("Статус")
+                    .CellTemplate(@<text>
+                                    <span class="status-badge status-<%= getStatusClass(value) %>">
+                                        <%= value %>
+                                    </span>
+                                </text>);
+                    columns.Add().DataField("CreatedDate").Caption("Создан").DataType(GridColumnDataType.DateTime).Format("dd.MM.yyyy HH:mm").Width(120).AllowEditing(false);
+                    columns.Add().DataField("ModifiedDate").Caption("Изменен").DataType(GridColumnDataType.DateTime).Format("dd.MM.yyyy HH:mm").Width(120).Visible(false);
+                    columns.Add().DataField("Participants").Visible(false);
+                    columns.Add()
+            .Type(GridCommandColumnType.Buttons)
+            .Width(120)
+            .Buttons(b =>
+            {
+                    b.Add().Name(GridColumnButtonName.Edit).Hint("Редактировать").Icon("edit");
+                    b.Add().Name(GridColumnButtonName.Delete).Hint("Удалить").Icon("trash").OnClick("deleteButtonClick");
+                });
+                })
+            .OnContentReady("function(e) { e.component.option('loadPanel.enabled', false); }")
+            .AllowColumnReordering(true)
+            .AllowColumnResizing(true)
+            .Selection(s => s.Mode(SelectionMode.Single))
+            )
+    </div>
+</div>
+
+<script>
+    function deleteButtonClick(e) {
+        const dataGrid = $("#projectsGrid").dxDataGrid("instance");
+        const selectedRowData = dataGrid.getSelectedRowsData();
+
+        if (selectedRowData.length > 0) {
+            DevExpress.ui.dialog.confirm("Вы уверены, что хотите удалить эту запись?", "Подтверждение удаления")
+                .done(function (dialogResult) {
+                    if (dialogResult) {
+                        const id = selectedRowData[0].Id; // Получаем ID выбранной строки
+
+                        // AJAX запрос на удаление
+                        $.ajax({
+                            url: '/ProjectData/' + id,
+                            type: 'DELETE',
+                            contentType: 'application/json',
+                            success: function () {
+                                dataGrid.refresh();
+                                DevExpress.ui.notify("Удаление выполнено успешно", "success", 2000);
+                            },
+                            error: function (error) {
+                                DevExpress.ui.notify("Ошибка при удалении: " + error.responseText, "error", 4000);
+                            }
+                        });
+
+
+                    }
+                });
+        } else {
+            DevExpress.ui.notify("Выберите строку для удаления", "warning", 2000);
+        }
+    }
+</script>
+
+
+<script>
+    function editButtonClick(e) {
+        const dataGrid = $("#projectsGrid").dxDataGrid("instance");
+        const selectedRowData = dataGrid.getSelectedRowsData();
+
+        if (selectedRowData.length > 0) {
+            console.log(selectedRowData[0].Id);
+            // Получаем ключ выбранной строки
+            const rowKey = selectedRowData[0].Id;
+           
+            // Открываем редактирование в popup режиме
+            dataGrid.option('editing.mode', 'popup');
+            dataGrid.editRow(rowKey);
+
+        } else {
+            DevExpress.ui.notify("Выберите строку для редактирования", "warning", 2000);
+        }
+    }
+</script>
+
+@section Scripts {
+    <script>
+        function getStatusClass(status) {
+            const statusMap = {
+                'В работе': 'active',
+                'Завершен': 'completed',
+                'На паузе': 'paused',
+                'Планируется': 'planned',
+                'Черновик': 'draft',
+                'Отменен': 'cancelled'
+            };
+            return statusMap[status] || 'default';
+        }
+
+        function showCreateProjectModal() {
+            const dataGrid = $('#projectsGrid').dxDataGrid('instance');
+            dataGrid.addRow();
+        }       
+
+        function refreshGrid() {
+            $('#projectsGrid').dxDataGrid('instance').refresh();
+        }
+
+        $(document).ready(function () {
+            setTimeout(function () {
+                const dataGrid = $('#projectsGrid').dxDataGrid('instance');
+                if (dataGrid) {
+                    console.log('DataGrid initialized successfully');
+                }
+            }, 1000);
+        });
+    </script>
+}
+
