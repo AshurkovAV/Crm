@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Crm.Controllers.Nsi
 {
-    
+    [Authorize]
     public class StatusDataController : Controller
     {
         private readonly INsiRepository _nsiRepository; // замените на ваш DbContext

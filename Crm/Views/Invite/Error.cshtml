@@ -1,0 +1,36 @@
+﻿@* Views/Invite/Error.cshtml *@
+@model Crm.Models.Company.InvitationErrorViewModel
+
+@{
+    ViewData["Title"] = Model.Title;
+    Layout = "_Layout";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-danger text-white">
+                    <h3 class="mb-0">@Model.Title</h3>
+                </div>
+                <div class="card-body text-center">
+                    <i class="fas fa-exclamation-triangle fa-4x text-warning mb-3"></i>
+                    <h4>@Model.Error</h4>
+
+                    @if (!string.IsNullOrEmpty(Model.Code))
+                    {
+                        <p class="text-muted mt-3">Код приглашения: @Model.Code</p>
+                    }
+
+                    <hr />
+
+                    <p>Если вы считаете, что это ошибка, обратитесь к администратору системы.</p>
+
+                    <a href="/" class="btn btn-primary mt-3">
+                        <i class="fas fa-home"></i> На главную
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

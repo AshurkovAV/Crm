@@ -6,7 +6,7 @@ namespace Crm.Entity.Services
 {
     public interface IUserRepository
     {
-        Task AddAsync(User user);
+        Task AddAsync(User user);        
         Task AddOrUpdateAsync(User user);
         TransactionResult<User> GetUser(string email);
         TransactionResult<User> GetUserById(int id);

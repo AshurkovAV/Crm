@@ -1,7 +1,9 @@
+using Crm.Entity.Services;
 using Crm.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
+using System.Security.Claims;
 
 namespace Crm.Controllers
 {
@@ -9,14 +11,25 @@ namespace Crm.Controllers
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
-
-        public HomeController(ILogger<HomeController> logger)
+        private ICompanyRepository _companyRepository;
+        public HomeController(
+            ICompanyRepository companyRepository,
+            ILogger<HomeController> logger)
         {
+            _companyRepository = companyRepository;
             _logger = logger;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            // Проверяем, создавал ли пользователь компанию (является владельцем хотя бы одной компании)
+            bool hasOwnCompany = await _companyRepository.UserHasOwnCompanyAsync(int.Parse(userId));
+            // Проверяем, состоит ли пользователь в любой компании (включая ту, где он не владелец)
+            bool hasAnyCompany = await _companyRepository.UserHasAnyCompanyAsync(int.Parse(userId));
+
+            ViewBag.HasOwnCompany = hasOwnCompany;
+            ViewBag.HasAnyCompany = hasAnyCompany;
             return View();
         }
 

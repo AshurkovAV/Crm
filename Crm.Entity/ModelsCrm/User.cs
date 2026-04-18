@@ -49,6 +49,12 @@ public partial class User
 
     public DateTime ModifiedDate { get; set; }
 
+    public int? CurrentCompanyId { get; set; }
+
+    public virtual ICollection<Company> Companies { get; set; } = new List<Company>();
+
+    public virtual ICollection<CompanyUser> CompanyUsers { get; set; } = new List<CompanyUser>();
+
     public virtual ICollection<ProjectUser> ProjectUsers { get; set; } = new List<ProjectUser>();
 
     public virtual ICollection<RememberedDevice> RememberedDevices { get; set; } = new List<RememberedDevice>();

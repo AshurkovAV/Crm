@@ -17,15 +17,18 @@ namespace Crm.Controllers
         private readonly ILogger<ProjectUserDataController> _logger;
         private ICrmRepository _crmRepository;
         private IUserContextService _userContextService;
+        private readonly ICompanyRepository _companyRepository;
 
         public ProjectUserDataController(
             ILogger<ProjectUserDataController> logger,
-            ICrmRepository crmRepository, 
-            IUserContextService userContextService)
+            ICrmRepository crmRepository,
+            ICompanyRepository companyRepository,
+        IUserContextService userContextService)
         {
             _logger = logger;
             _crmRepository = crmRepository;
             _userContextService = userContextService;  
+            _companyRepository = companyRepository;
         }
 
         public IActionResult Index()
@@ -36,17 +39,19 @@ namespace Crm.Controllers
         [HttpGet]
         public object GetParticipants(DataSourceLoadOptions loadOptions)
         {
-            var userId = _userContextService.GetCurrentUserId();
+            var userId = _userContextService.GetCurrentUserId();           
+            
+            
             if (userId != null)
             {
                 // Добавить поле DisplayName для отображения
-                var users = _crmRepository.GetUsers()
+                var users = _companyRepository.GetCompanyUsersByUserIdAsync(userId).Result
                     .Select(u => new {
-                        Id = u.Id,
-                        DisplayName = (u.DisplayName?.Trim() ?? u.DefaultEmail?.Trim()) ?? string.Empty,
+                        Id = u.UserId,
+                        DisplayName = (u.DisplayName?.Trim() ?? u.Email?.Trim()) ?? string.Empty,
                         FirstName = u.FirstName,
                         LastName = u.LastName,                        
-                        Email = u.DefaultEmail
+                        Email = u.Email
                     });
                 return DataSourceLoader.Load(users, loadOptions);
             }

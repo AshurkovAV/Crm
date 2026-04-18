@@ -1,0 +1,264 @@
+﻿<script>
+    // ==================== МОДАЛЬНОЕ ОКНО ПРИГЛАШЕНИЯ ====================
+
+    function showInvitationModal() {
+        $('#invitationModal').show();
+        // Очищаем поля при открытии
+        $('#emailAddresses').val('');
+        $('#departmentSelect').val('');
+        $('#emailMessage').val('');
+        $('#expiryDays').val('7');
+    }
+
+    function closeInvitationModal() {
+        $('#invitationModal').hide();
+    }
+
+    function isValidEmail(email) {
+        var re = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
+        return re.test(email.trim());
+    }
+
+    function parseEmailAddresses(input) {
+        if (!input) return [];
+
+        // Разбиваем по запятым, точкам с запятой и переносам строк
+        var emails = input.split(/[,;\n]+/);
+        var validEmails = [];
+
+        for (var i = 0; i < emails.length; i++) {
+            var email = emails[i].trim();
+            if (email && isValidEmail(email)) {
+                validEmails.push(email);
+            }
+        }
+
+        return validEmails;
+    }
+
+    function sendEmailInvitations() {
+        // Получаем значения напрямую из DOM элементов
+        var emailInput = document.getElementById('emailAddresses');
+        var departmentSelect = document.getElementById('departmentSelect');
+        var messageInput = document.getElementById('emailMessage');
+        var expiryInput = document.getElementById('expiryDays');
+
+        if (!emailInput) {
+            console.error('Email input not found');
+            return;
+        }
+
+        var emailText = emailInput.value || '';
+        var department = departmentSelect ? departmentSelect.value : '';
+        var message = messageInput ? messageInput.value : '';
+        var expiryDays = expiryInput ? parseInt(expiryInput.value) : 7;
+
+        // Парсим email адреса
+        var emails = parseEmailAddresses(emailText);
+
+        // Валидация
+        if (emails.length === 0) {
+            alert('Введите хотя бы один корректный email адрес');
+            return;
+        }
+
+        // Показываем индикатор загрузки на кнопке
+        var btn = document.querySelector('.send-invite-btn');
+        var originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Отправка...</span>';
+        btn.disabled = true;
+
+        var requestData = {
+            emails: emails,
+            department: department || null,
+            message: message || null,
+            expiryDays: expiryDays || 7
+        };
+
+        console.error('Sending invitations:', requestData);
+
+        $.ajax({
+            url: '@Url.Action("SendEmail", "Invitation")',
+            type: 'POST',
+            data: JSON.stringify(requestData),
+            contentType: 'application/json',
+            success: function (response) {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+
+                if (response.Success) {
+                    alert('Приглашения успешно отправлены (' + response.count + ' шт.)');
+                    closeInvitationModal();
+                    refreshGrid();
+                } else {
+                    alert(response.message || 'Ошибка при отправке');
+                }
+            },
+            error: function (xhr) {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+
+                var errorMessage = 'Ошибка при отправке приглашений';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                }
+                alert(errorMessage);
+            }
+        });
+    }
+
+    // ==================== ФУНКЦИИ ДЛЯ ГРИДА ====================
+
+    function avatarCellTemplate(cellElement, cellInfo) {
+        var avatarUrl = cellInfo.value;
+        var container = $('<div>').css({
+            'display': 'flex',
+            'justify-content': 'center',
+            'align-items': 'center',
+            'padding': '5px'
+        });
+
+        if (avatarUrl) {
+            $('<img>')
+                .attr('src', avatarUrl)
+                .css({
+                    'width': '45px',
+                    'height': '45px',
+                    'border-radius': '50%',
+                    'object-fit': 'cover',
+                    'border': '1px solid #ddd'
+                })
+                .on('error', function () {
+                    $(this).replaceWith(getDefaultAvatar(45));
+                })
+                .appendTo(container);
+        } else {
+            container.append(getDefaultAvatar(45));
+        }
+
+        $(cellElement).append(container);
+    }
+
+    function avatarUploaderTemplate(data, itemElement) {
+        var container = $('<div>').css({
+            'display': 'flex',
+            'flex-direction': 'column',
+            'align-items': 'center',
+            'gap': '15px',
+            'margin-bottom': '10px'
+        });
+
+        var avatarContainer = $('<div>').css({
+            'display': 'flex',
+            'justify-content': 'center'
+        });
+
+        var currentAvatarUrl = data.component.option("formData")?.AvatarUrl;
+
+        function updateAvatarPreview(url) {
+            avatarContainer.empty();
+            if (url) {
+                $('<img>')
+                    .attr('src', url)
+                    .css({
+                        'width': '100px',
+                        'height': '100px',
+                        'border-radius': '50%',
+                        'object-fit': 'cover',
+                        'border': '2px solid #ddd'
+                    })
+                    .on('error', function () {
+                        $(this).replaceWith(getDefaultAvatar(100));
+                    })
+                    .appendTo(avatarContainer);
+            } else {
+                avatarContainer.append(getDefaultAvatar(100));
+            }
+        }
+
+        updateAvatarPreview(currentAvatarUrl);
+        container.append(avatarContainer);
+
+        var uploaderDiv = $('<div>').attr('id', 'avatarFileUploader');
+        container.append(uploaderDiv);
+
+        $(itemElement).append(container);
+
+        uploaderDiv.dxFileUploader({
+            selectButtonText: 'Выбрать аватар',
+            accept: 'image/*',
+            uploadMode: 'useForm',
+            uploadUrl: '@Url.Action("UploadAvatar", "Company")',
+            name: 'file',
+            multiple: false,
+            onUploaded: function (e) {
+                if (e.request.status === 200) {
+                    try {
+                        var response = JSON.parse(e.request.responseText);
+                        var avatarUrl = response.avatarUrl;
+                        updateAvatarPreview(avatarUrl);
+                        var form = data.component;
+                        form.updateData("AvatarUrl", avatarUrl);
+                        DevExpress.ui.notify("Аватар успешно загружен", "success", 2000);
+                    } catch (error) {
+                        DevExpress.ui.notify("Ошибка при обработке ответа", "error", 2000);
+                    }
+                } else {
+                    DevExpress.ui.notify("Ошибка при загрузке аватара", "error", 2000);
+                }
+            },
+            onUploadError: function (e) {
+                DevExpress.ui.notify("Ошибка при загрузке: " + e.error, "error", 4000);
+            }
+        });
+
+        data.component.on("optionChanged", function (e) {
+            if (e.name === "formData" && e.value) {
+                updateAvatarPreview(e.value.AvatarUrl);
+            }
+        });
+    }
+
+    function getDefaultAvatar(size) {
+        size = size || 45;
+        return $('<div>').css({
+            'width': size + 'px',
+            'height': size + 'px',
+            'border-radius': '50%',
+            'background-color': '#e0e0e0',
+            'display': 'flex',
+            'justify-content': 'center',
+            'align-items': 'center',
+            'color': '#757575',
+            'font-size': (size * 0.4) + 'px'
+        }).html('<i class="fas fa-user"></i>');
+    }
+
+    function deleteButtonClick(e) {
+        var dataGrid = $("#projectsGrid").dxDataGrid("instance");
+
+        DevExpress.ui.dialog.confirm("Вы уверены, что хотите удалить эту запись?", "Подтверждение удаления")
+            .done(function (dialogResult) {
+                if (dialogResult) {
+                    dataGrid.deleteRow(e.row.key);
+                    DevExpress.ui.notify("Удаление выполнено успешно", "success", 2000);
+                }
+            });
+    }
+
+    function refreshGrid() {
+        var dataGrid = $('#projectsGrid').dxDataGrid('instance');
+        if (dataGrid) {
+            dataGrid.refresh();
+        }
+    }
+
+    // Закрытие модального окна при клике вне его
+    $(document).ready(function () {
+        $(window).click(function (event) {
+            if (event.target.id === 'invitationModal') {
+                closeInvitationModal();
+            }
+        });
+    });
+</script>

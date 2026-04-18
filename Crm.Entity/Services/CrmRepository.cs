@@ -119,8 +119,34 @@ namespace Crm.Entity.Services
                     Participantss = p.ParticipantDetails // Заполняем новое свойство
                 }).ToList();
             }
-        }       
+        }
 
+        public async Task<IEnumerable<CompanyInfoDto>> GetMyCompanies(int userId)
+        {
+            using (var db = new CrmContext())
+            {
+                var currentCompanyId = await db.Users
+                    .Where(u => u.Id == userId)
+                    .Select(u => u.CurrentCompanyId)
+                    .FirstOrDefaultAsync();
+
+                var s = await db.CompanyUsers
+                    .Where(cu => cu.UserId == userId && cu.IsActive == true)
+                    .Include(cu => cu.Company)
+                    .Select(cu => new CompanyInfoDto
+                    {
+                        Id = cu.Company.Id,
+                        Name = cu.Company.Name,
+                        Description = cu.Company.Description,
+                        Role = cu.Role,
+                        JoinedDate = cu.JoinedDate,
+                        IsCurrent = cu.Company.Id == currentCompanyId
+                    })
+                    .ToListAsync();
+
+                return s;
+            }            
+        }
         public List<Project> GetProjects(int userId)
         {
             var result = new List<Project>();

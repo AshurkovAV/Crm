@@ -1,61 +1,336 @@
 ﻿@{
-    ViewData["Title"] = "Рабочий стол";
+    ViewData["Title"] = "Главная";
+    bool hasOwnCompany = ViewBag.HasOwnCompany ?? false;
+    bool hasAnyCompany = ViewBag.HasAnyCompany ?? false;
 }
 
-<div class="content-top-bar">
-    <h1 class="content-title">Рабочий стол</h1>
-    <div class="content-actions">
-        <button class="content-btn">
-            <i class="fas fa-plus"></i>
-            <span>Создать</span>
-        </button>
-        <button class="content-btn secondary">
-            <i class="fas fa-filter"></i>
-            <span>Фильтр</span>
-        </button>
+<div class="dashboard-company-section">
+    @if (!hasAnyCompany)
+    {
+        <div class="company-welcome">
+            <h1>Добро пожаловать в CRM-систему!</h1>
+            <p>Чтобы начать работу, создайте компанию или присоединитесь по приглашению.</p>
+        </div>
+
+        <div class="company-actions-row">
+            <!-- Блок "Создать компанию" -->
+            <div class="company-card" id="createCompanyCard">
+                <div class="company-icon">🏢</div>
+                <h3>Создать компанию</h3>
+                <p>Станьте владельцем компании, управляйте проектами и приглашайте сотрудников.</p>
+                <button class="btn-company btn-primary" id="createCompanyBtn">Создать компанию</button>
+            </div>
+
+            <!-- Блок "Присоединиться" -->
+            <div class="company-card" id="joinCompanyCard">
+                <div class="company-icon">🔗</div>
+                <h3>Присоединиться к компании</h3>
+                <p>У вас есть код приглашения? Введите его, чтобы стать участником компании.</p>
+                <button class="btn-company btn-secondary" id="joinCompanyBtn">Ввести код</button>
+            </div>
+        </div>
+    }
+    else if (hasAnyCompany && !hasOwnCompany)
+    {
+        <h1>Последние активности</h1>
+        <p>Здесь будут ваши задачи и события.</p>
+
+        <div class="company-actions-row" style="margin-top: 30px;">
+            <div class="company-card" id="joinCompanyCardOnly">
+                <div class="company-icon">🔗</div>
+                <h3>Присоединиться к другой компании</h3>
+                <p>Вас пригласили в другую компанию? Введите код.</p>
+                <button class="btn-company btn-secondary" id="joinCompanyBtnOnly">Ввести код</button>
+            </div>
+        </div>
+    }
+    else if (hasOwnCompany)
+    {
+        <h1>Новости</h1>
+        <p>Ваши задачи и события.</p>
+
+        <div class="company-actions-row" style="margin-top: 30px;">
+            <div class="company-card" id="joinCompanyCardOwn">
+                <div class="company-icon">🔗</div>
+                <h3>Присоединиться к другой компании</h3>
+                <p>Вас пригласили в другую компанию? Введите код.</p>
+                <button class="btn-company btn-secondary" id="joinCompanyBtnOwn">Ввести код</button>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Модальное окно для ввода кода (без изменений) -->
+<div id="inviteModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h3>Введите код приглашения</h3>
+        <input type="text" id="inviteCode" placeholder="Код приглашения (например, a1b2c3d4)" />
+        <div class="modal-buttons">
+            <button class="btn-company btn-primary" id="submitInviteBtn">Присоединиться</button>
+            <button class="btn-company btn-secondary" id="cancelModalBtn">Отмена</button>
+        </div>
+        <div id="inviteError" class="error-message" style="display: none;"></div>
     </div>
 </div>
 
-<div class="content-section">
-    <h2>Рабочий стол</h2>
-    <p>Добро пожаловать в CRM! Выберите раздел в левом меню для работы.</p>
-</div>
+<style>
+    /* Общий блок страницы - в стиле patients-import-section */
+    .dashboard-company-section {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        border: 1px solid #dee2e6;
+        margin-bottom: 30px;
+    }
 
-<div class="content-section">
-    <h2>Последние активности</h2>
-    <p>Здесь будет отображаться ваша последняя активность в системе.</p>
-</div>
+    .company-welcome {
+        margin-bottom: 30px;
+    }
 
-<div class="content-section">
-    <h2>Мои задачи</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Задача</th>
-                <th>Приоритет</th>
-                <th>Срок</th>
-                <th>Статус</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>Подготовить отчет по продажам</td>
-                <td>Высокий</td>
-                <td>15.05.2023</td>
-                <td>В работе</td>
-            </tr>
-            <tr>
-                <td>Созвать собрание отдела</td>
-                <td>Средний</td>
-                <td>12.05.2023</td>
-                <td>Завершено</td>
-            </tr>
-            <tr>
-                <td>Обновить контакты клиентов</td>
-                <td>Низкий</td>
-                <td>20.05.2023</td>
-                <td>Не начато</td>
-            </tr>
-        </tbody>
-    </table>
-</div>
+        .company-welcome h1 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .company-welcome p {
+            color: #5a6e7c;
+        }
+
+    /* Горизонтальный контейнер для карточек */
+    .company-actions-row {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        gap: 30px;
+        justify-content: center;
+        overflow-x: auto;
+        padding-bottom: 10px;
+    }
+
+    /* Карточка компании – стиль как у .report-block */
+    .company-card {
+        background: white;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        padding: 25px 20px;
+        width: 320px;
+        min-width: 280px;
+        text-align: center;
+        transition: box-shadow 0.2s, transform 0.2s;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+        .company-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+    .company-icon {
+        font-size: 48px;
+        margin-bottom: 15px;
+    }
+
+    .company-card h3 {
+        font-size: 1.3rem;
+        margin-bottom: 12px;
+        color: #2c3e50;
+    }
+
+    .company-card p {
+        color: #5a6e7c;
+        font-size: 0.9rem;
+        line-height: 1.4;
+        margin-bottom: 20px;
+    }
+
+    /* Кнопки – в точности как в примере */
+    .btn-company {
+        padding: 8px 20px;
+        border: none;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: background 0.2s;
+        font-weight: 500;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        color: white;
+    }
+
+        .btn-primary:hover {
+            background-color: #0069d9;
+        }
+
+    .btn-secondary {
+        background-color: #28a745;
+        color: white;
+    }
+
+        .btn-secondary:hover {
+            background-color: #218838;
+        }
+
+    /* Модальное окно – минимальные стили (можно оставить как есть) */
+    .modal {
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-content {
+        background: white;
+        padding: 25px;
+        border-radius: 8px;
+        width: 450px;
+        max-width: 90%;
+        position: relative;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .close {
+        position: absolute;
+        top: 12px;
+        right: 18px;
+        font-size: 24px;
+        cursor: pointer;
+        color: #aaa;
+    }
+
+        .close:hover {
+            color: black;
+        }
+
+    .modal-content h3 {
+        margin-bottom: 20px;
+        color: #2c3e50;
+    }
+
+    .modal-content input {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 20px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+    }
+
+    .modal-buttons {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+    }
+
+    .error-message {
+        color: #dc3545;
+        margin-top: 15px;
+        font-size: 0.85rem;
+        text-align: center;
+    }
+
+    /* Адаптив */
+    @@media (max-width: 768px) {
+        .company-actions-row {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .company-card {
+            width: 100%;
+            max-width: 350px;
+        }
+    }
+</style>
+
+<script>
+    // Обработчики для кнопок "Ввести код"
+    const joinBtns = ['joinCompanyBtn', 'joinCompanyBtnOnly', 'joinCompanyBtnOwn'];
+    joinBtns.forEach(btnId => {
+        const btn = document.getElementById(btnId);
+        if (btn) {
+            btn.addEventListener('click', () => {
+                document.getElementById('inviteModal').style.display = 'flex';
+            });
+        }
+    });
+
+    // Закрытие модального окна
+    const modal = document.getElementById('inviteModal');
+    const closeModal = document.querySelector('.close');
+    const cancelBtn = document.getElementById('cancelModalBtn');
+    function closeModalFunc() {
+        modal.style.display = 'none';
+    }
+    if (closeModal) closeModal.addEventListener('click', closeModalFunc);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeModalFunc);
+    window.addEventListener('click', (e) => {
+        if (e.target === modal) closeModalFunc();
+    });
+
+    // Отправка кода приглашения
+    const submitInvite = document.getElementById('submitInviteBtn');
+    if (submitInvite) {
+        submitInvite.addEventListener('click', async () => {
+            const code = document.getElementById('inviteCode').value.trim();
+            const errorDiv = document.getElementById('inviteError');
+            if (!code) {
+                errorDiv.textContent = 'Введите код приглашения';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            try {
+                const response = await fetch(`/api/invitations/${code}/accept`, {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('accessToken') || '') }
+                });
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    const error = await response.json();
+                    errorDiv.textContent = error.message || 'Неверный код или приглашение истекло';
+                    errorDiv.style.display = 'block';
+                }
+            } catch (err) {
+                errorDiv.textContent = 'Ошибка сети';
+                errorDiv.style.display = 'block';
+            }
+        });
+    }
+
+    // Создание компании
+    const createBtn = document.getElementById('createCompanyBtn');
+    if (createBtn) {
+        createBtn.addEventListener('click', async () => {
+            const companyName = prompt('Введите название компании:', 'Моя компания');
+            if (!companyName) return;
+            try {
+                const response = await fetch('/api/companies', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + (localStorage.getItem('accessToken') || '')
+                    },
+                    body: JSON.stringify({ name: companyName, description: '' })
+                });
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    const error = await response.json();
+                    alert('Ошибка: ' + (error.message || 'Не удалось создать компанию'));
+                }
+            } catch (err) {
+                alert('Ошибка сети: ' + err.message);
+            }
+        });
+    }
+</script>

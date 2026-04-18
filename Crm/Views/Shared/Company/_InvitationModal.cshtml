@@ -1,0 +1,66 @@
+﻿@* Views/Shared/Company/_InvitationModal.cshtml *@
+
+<div id="invitationModal" class="modal" style="display: none;">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Приглашение сотрудников</h2>
+                <button type="button" class="close" onclick="closeInvitationModal()">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="invitation-header">
+                    <h3>Приглашение по email</h3>
+                    <p class="description">Отправьте приглашения на email адреса сотрудников</p>
+                </div>
+
+                <div class="email-form">
+                    <div class="form-group">
+                        <label>Email адреса</label>
+                        <textarea id="emailAddresses"
+                                  class="form-control"
+                                  rows="3"
+                                  placeholder="Введите email адреса через запятую или с новой строки"></textarea>
+                        <small class="hint">Например: user1@mail.ru, user2@mail.ru</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Выберите отдел</label>
+                        <select id="departmentSelect" class="form-control">
+                            <option value="">Выберите отдел</option>
+                            <option value="Разработка">Разработка</option>
+                            <option value="Маркетинг">Маркетинг</option>
+                            <option value="Продажи">Продажи</option>
+                            <option value="HR">HR</option>
+                            <option value="Поддержка">Поддержка</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Сообщение (необязательно)</label>
+                        <textarea id="emailMessage"
+                                  class="form-control"
+                                  rows="4"
+                                  placeholder="Напишите сообщение для приглашения..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Срок действия (дней)</label>
+                        <input type="number"
+                               id="expiryDays"
+                               class="form-control"
+                               value="7"
+                               min="1"
+                               max="30" />
+                    </div>
+
+                    <button type="button" class="send-invite-btn" onclick="sendEmailInvitations()">
+                        <i class="fas fa-paper-plane"></i>
+                        <span>Отправить приглашения</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,84 @@
+﻿@* Views/Invite/Accept.cshtml *@
+@model Crm.Models.Company.AcceptInvitationViewModel
+
+@{
+    ViewData["Title"] = "Принять приглашение";
+    Layout = "_Layout";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">Приглашение в компанию</h3>
+                </div>
+                <div class="card-body">
+                    @if (Model.Errors.Any())
+                    {
+                        <div class="alert alert-danger">
+                            <ul class="mb-0">
+                                @foreach (var error in Model.Errors)
+                                {
+                                    <li>@error</li>
+                                }
+                            </ul>
+                        </div>
+                    }
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        @if (!string.IsNullOrEmpty(Model.DepartmentName))
+                        {
+                            <span>Вы приглашены в отдел: <strong>@Model.DepartmentName</strong></span>
+                        }
+                        else
+                        {
+                            <span>Вы приглашены присоединиться к компании</span>
+                        }
+                    </div>
+
+                    <form asp-action="Index" asp-route-code="@Model.Code" method="post">
+                        <input type="hidden" name="Code" value="@Model.Code" />
+
+                        <div class="form-group mb-3">
+                            <label asp-for="DisplayName">Имя и фамилия *</label>
+                            <input type="text" class="form-control" name="DisplayName"
+                                   value="@Model.Email?.Split("@@")[0]" required>
+                            <small class="form-text text-muted">Как к вам обращаться</small>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label asp-for="Email">Email</label>
+                            <input type="email" class="form-control" name="Email"
+                                   value="@Model.Email" readonly>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label asp-for="Phone">Телефон (необязательно)</label>
+                            <input type="tel" class="form-control" name="Phone"
+                                   value="@Model.Phone" placeholder="+7 (999) 123-45-67">
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label asp-for="Password">Пароль *</label>
+                            <input type="password" class="form-control" name="Password"
+                                   required minlength="6">
+                            <small class="form-text text-muted">Минимум 6 символов</small>
+                        </div>
+
+                        <div class="form-group mb-4">
+                            <label asp-for="ConfirmPassword">Подтверждение пароля *</label>
+                            <input type="password" class="form-control" name="ConfirmPassword"
+                                   required>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-block">
+                            <i class="fas fa-check"></i> Принять приглашение
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

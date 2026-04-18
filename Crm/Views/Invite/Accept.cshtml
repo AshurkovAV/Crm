@@ -1,0 +1,278 @@
+﻿@* Views/Invite/Accept.cshtml *@
+@model Crm.Models.Company.AcceptInvitationViewModel
+
+@{
+    ViewData["Title"] = Model.PageTitle;
+    Layout = "_Layout";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg border-0 rounded-lg">
+                <div class="card-header bg-gradient-primary text-white py-4">
+                    <h3 class="mb-0 text-center">
+                        <i class="fas fa-envelope-open-text me-2"></i>
+                        @Model.PageTitle
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    @* Отображение ошибок *@
+                    @if (Model.HasErrors)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            <ul class="mb-0">
+                                @foreach (var error in Model.Errors)
+                                {
+                                    <li>@error</li>
+                                }
+                            </ul>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+
+                    @* Информация о существующем пользователе *@
+                    @if (Model.IsExistingUser)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-user-check me-2"></i>
+                            <strong>Вы уже зарегистрированы!</strong><br>
+                            @if (!string.IsNullOrEmpty(Model.Message))
+                            {
+                                <span>@Model.Message</span>
+                            }
+                            else
+                            {
+                                <span>Вы будете добавлены в компанию как существующий пользователь.</span>
+                            }
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info alert-dismissible fade show" role="alert">
+                            <i class="fas fa-info-circle me-2"></i>
+                            @if (!string.IsNullOrEmpty(Model.DepartmentName))
+                            {
+                                <span>Вы приглашены в отдел: <strong>@Model.DepartmentName</strong></span>
+                            }
+                            else
+                            {
+                                <span>Вы приглашены присоединиться к компании</span>
+                            }
+                            @if (!string.IsNullOrEmpty(Model.CompanyName))
+                            {
+                                <span> <strong>@Model.CompanyName</strong></span>
+                            }
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+
+                    @* Информация о сроке действия *@
+                    @if (Model.DaysLeft.HasValue)
+                    {
+                        var alertClass = Model.DaysLeft <= 2 ? "alert-warning" : "alert-light";
+                        <div class="alert @alertClass" role="alert">
+                            <i class="fas fa-clock me-2"></i>
+                            <strong>@Model.ExpiryMessage</strong>
+                            @if (Model.ExpiresAt.HasValue)
+                            {
+                                <br>
+                                <small>Действительно до: @Model.ExpiresAt.Value.ToString("dd.MM.yyyy HH:mm")</small>
+                            }
+                        </div>
+                    }
+
+                    <form asp-action="Accept" asp-route-code="@Model.Code" method="post" id="acceptForm">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="Code" value="@Model.Code" />
+                        <input type="hidden" name="ExistingUserId" value="@Model.ExistingUserId" />
+
+                        @* Поле для имени *@
+                        @if (Model.ShowDisplayNameField)
+                        {
+                            <div class="form-floating mb-3">
+                                <input type="text"
+                                       class="form-control"
+                                       id="DisplayName"
+                                       name="DisplayName"
+                                       value="@Model.GetSuggestedDisplayName()"
+                                       placeholder="Иван Петров"
+                                       required>
+                                <label for="DisplayName">
+                                    <i class="fas fa-user me-1"></i>Имя и фамилия *
+                                </label>
+                                <div class="form-text">Как к вам обращаться</div>
+                            </div>
+                        }
+
+                        @* Email *@
+                        <div class="form-floating mb-3">
+                            <input type="email"
+                                   class="form-control bg-light"
+                                   id="Email"
+                                   name="Email"
+                                   value="@Model.Email"
+                                   readonly>
+                            <label for="Email">
+                                <i class="fas fa-envelope me-1"></i>Email
+                            </label>
+                        </div>
+
+                        @* Телефон *@
+                        <div class="form-floating mb-3">
+                            <input type="tel"
+                                   class="form-control"
+                                   id="Phone"
+                                   name="Phone"
+                                   value="@Model.Phone"
+                                   placeholder="+7 (999) 123-45-67">
+                            <label for="Phone">
+                                <i class="fas fa-phone me-1"></i>Телефон (необязательно)
+                            </label>
+                        </div>
+
+                        @* Должность *@
+                        <div class="form-floating mb-3">
+                            <input type="text"
+                                   class="form-control"
+                                   id="Position"
+                                   name="Position"
+                                   value="@Model.Position"
+                                   placeholder="Разработчик">
+                            <label for="Position">
+                                <i class="fas fa-briefcase me-1"></i>Должность (необязательно)
+                            </label>
+                        </div>
+
+                        @* Пароль (только для новых пользователей) *@
+                        @if (Model.ShowPasswordFields)
+                        {
+                            <div class="form-floating mb-3">
+                                <input type="password"
+                                       class="form-control"
+                                       id="Password"
+                                       name="Password"
+                                       placeholder="Пароль"
+                                       required
+                                       minlength="6">
+                                <label for="Password">
+                                    <i class="fas fa-lock me-1"></i>Пароль *
+                                </label>
+                                <div class="form-text">Минимум 6 символов</div>
+                            </div>
+
+                            <div class="form-floating mb-4">
+                                <input type="password"
+                                       class="form-control"
+                                       id="ConfirmPassword"
+                                       name="ConfirmPassword"
+                                       placeholder="Подтверждение пароля"
+                                       required>
+                                <label for="ConfirmPassword">
+                                    <i class="fas fa-lock me-1"></i>Подтверждение пароля *
+                                </label>
+                            </div>
+                        }
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <span>@Model.SubmitButtonText</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-muted text-center py-3">
+                    <small>
+                        <i class="fas fa-shield-alt me-1"></i>
+                        Принимая приглашение, вы соглашаетесь с правилами компании
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .bg-gradient-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .card {
+            border-radius: 1rem;
+        }
+
+        .form-floating > .form-control:focus ~ label,
+        .form-floating > .form-control:not(:placeholder-shown) ~ label {
+            color: #667eea;
+        }
+
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 12px 24px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+            .btn-primary:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            }
+
+            .btn-primary:disabled {
+                background: #cbd5e1;
+                transform: none;
+                box-shadow: none;
+            }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Валидация формы
+            $('#acceptForm').on('submit', function (e) {
+                var password = $('#Password').val();
+                var confirmPassword = $('#ConfirmPassword').val();
+
+                if (password && confirmPassword && password !== confirmPassword) {
+                    e.preventDefault();
+                    alert('Пароли не совпадают!');
+                    return false;
+                }
+
+                // Блокируем кнопку при отправке
+                $('#submitBtn').prop('disabled', true);
+                $('#submitBtn').html('<i class="fas fa-spinner fa-spin me-2"></i><span>Обработка...</span>');
+            });
+
+            // Маска для телефона (опционально)
+            $('#Phone').on('input', function () {
+                var value = $(this).val().replace(/\D/g, '');
+                if (value.length > 0) {
+                    if (value.length <= 1) {
+                        value = '+7 (' + value;
+                    } else if (value.length <= 4) {
+                        value = '+7 (' + value.substring(1, 4) + ') ' + value.substring(4);
+                    } else if (value.length <= 7) {
+                        value = '+7 (' + value.substring(1, 4) + ') ' + value.substring(4, 7) + '-' + value.substring(7);
+                    } else if (value.length <= 9) {
+                        value = '+7 (' + value.substring(1, 4) + ') ' + value.substring(4, 7) + '-' + value.substring(7, 9) + '-' + value.substring(9);
+                    } else {
+                        value = '+7 (' + value.substring(1, 4) + ') ' + value.substring(4, 7) + '-' + value.substring(7, 9) + '-' + value.substring(9, 11);
+                    }
+                    $(this).val(value);
+                }
+            });
+        });
+    </script>
+}

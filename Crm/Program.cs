@@ -8,6 +8,8 @@ using Crm.Core.Services;
 using Crm.Entity.Infrastructure.Services;
 using Crm.Entity.Services;
 using Crm.Infrastructure.Services;
+using Crm.Services.Email;
+using Crm.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,11 +25,16 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<ICrmRepository,            CrmRepository>();
 builder.Services.AddSingleton<IUserRepository,           UserRepository>();
 builder.Services.AddSingleton<INsiRepository,            NsiRepository>();
+builder.Services.AddSingleton<IInvitationRepository,     InvitationRepository>();
+builder.Services.AddSingleton<ICompanyRepository,        CompanyRepository>();
 builder.Services.AddScoped<IVerificationTokenRepository, VerificationTokenRepository>();
 builder.Services.AddScoped<IRememberDeviceService,       RememberDeviceService>();
 builder.Services.AddScoped<IProfileService,              ProfileService>();
 builder.Services.AddScoped<IUserContextService,          UserContextService>();
 builder.Services.AddScoped<IAuthenticationService,       AuthenticationService>();
+
+builder.Services.AddScoped<IInvitationService,           InvitationService>();
+builder.Services.AddScoped<IEmailService,                EmailService>();
 
 builder.Services.AddApplication();
 

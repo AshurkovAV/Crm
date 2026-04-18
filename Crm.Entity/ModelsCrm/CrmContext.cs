@@ -19,9 +19,15 @@ public partial class CrmContext : DbContext
 
     public virtual DbSet<ClientInteraction> ClientInteractions { get; set; }
 
+    public virtual DbSet<Company> Companies { get; set; }
+
+    public virtual DbSet<CompanyUser> CompanyUsers { get; set; }
+
     public virtual DbSet<CustomerOrder> CustomerOrders { get; set; }
 
     public virtual DbSet<Employee> Employees { get; set; }
+
+    public virtual DbSet<Invitation> Invitations { get; set; }
 
     public virtual DbSet<Material> Materials { get; set; }
 
@@ -112,6 +118,46 @@ public partial class CrmContext : DbContext
                 .HasConstraintName("FK_Interactions_Employees");
         });
 
+        modelBuilder.Entity<Company>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Company__3214EC07AA7E0F81");
+
+            entity.ToTable("Company");
+
+            entity.Property(e => e.InviteCode).HasMaxLength(50);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.MaxProjects).HasDefaultValue(10);
+            entity.Property(e => e.Name).HasMaxLength(255);
+
+            entity.HasOne(d => d.Owner).WithMany(p => p.Companies)
+                .HasForeignKey(d => d.OwnerId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Company_User");
+        });
+
+        modelBuilder.Entity<CompanyUser>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__CompanyU__3214EC07ED2B4E6D");
+
+            entity.ToTable("CompanyUser");
+
+            entity.HasIndex(e => new { e.CompanyId, e.UserId }, "UK_CompanyUser").IsUnique();
+
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.JoinedDate).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.Position).HasMaxLength(255);
+            entity.Property(e => e.Role).HasMaxLength(50);
+
+            entity.HasOne(d => d.Company).WithMany(p => p.CompanyUsers)
+                .HasForeignKey(d => d.CompanyId)
+                .HasConstraintName("FK_CompanyUser_Company");
+
+            entity.HasOne(d => d.User).WithMany(p => p.CompanyUsers)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_CompanyUser_User");
+        });
+
         modelBuilder.Entity<CustomerOrder>(entity =>
         {
             entity.HasKey(e => e.OrderId).HasName("PK__Customer__C3905BAFC640B9EE");
@@ -152,6 +198,23 @@ public partial class CrmContext : DbContext
             entity.Property(e => e.LastName).HasMaxLength(50);
             entity.Property(e => e.Phone).HasMaxLength(20);
             entity.Property(e => e.Position).HasMaxLength(50);
+        });
+
+        modelBuilder.Entity<Invitation>(entity =>
+        {
+            entity.HasIndex(e => e.Code, "UQ_Invitations_Code").IsUnique();
+
+            entity.Property(e => e.Code).HasMaxLength(16);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getutcdate())");
+            entity.Property(e => e.Email).HasMaxLength(100);
+            entity.Property(e => e.InvitationType)
+                .HasMaxLength(20)
+                .HasDefaultValue("Email");
+            entity.Property(e => e.Message).HasMaxLength(500);
+            entity.Property(e => e.Phone).HasMaxLength(20);
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .HasDefaultValue("Pending");
         });
 
         modelBuilder.Entity<Material>(entity =>

@@ -233,6 +233,8 @@ namespace Crm.Entity.Services
             }
         }
 
+       
+
         public UserToken InsertUserToken(UserToken user)
         {
             using (var db = new CrmContext())

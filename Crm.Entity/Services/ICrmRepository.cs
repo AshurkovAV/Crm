@@ -10,6 +10,7 @@ namespace Crm.Entity.Services
         List<ProjectDTO> GetProjectsWithParticipantsDTO(int userId);
         TransactionResult<User> GetUser(string email);
         IEnumerable<User> GetUsers();
+        Task<IEnumerable<CompanyInfoDto>> GetMyCompanies(int userId);
         List<Project> GetProjects(int userId);
         List<ProjectUser> GetProjectUsers(int projectId);
         void AddProjectUser(ProjectUser projectUser);
