@@ -1,0 +1,70 @@
+﻿@model Crm.Models.Compan.AcceptInvitationViewModel
+
+@{
+    ViewData["Title"] = "Подтверждение приглашения";
+    Layout = "_Layout";
+}
+
+<div class="content-section">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg border-0 rounded-lg">
+                <div class="card-header bg-gradient-success text-white py-4">
+                    <h3 class="mb-0 text-center">
+                        <i class="fas fa-question-circle me-2"></i>
+                        Подтверждение
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-user-check fa-3x text-success mb-3"></i>
+                        <h4>Присоединиться к компании?</h4>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-building me-2"></i>
+                        <strong>@Model.CompanyName</strong>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.Message))
+                    {
+                        <div class="alert alert-warning">
+                            @Model.Message
+                        </div>
+                    }
+
+                    @if (Model.HasErrors)
+                    {
+                        <div class="alert alert-danger">
+                            @foreach (var error in Model.Errors)
+                            {
+                                <div>@error</div>
+                            }
+                        </div>
+                    }
+
+                    <form method="post" asp-action="Confirm" asp-controller="Invite">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="Code" value="@Model.Code" />
+                        <input type="hidden" name="Position" value="@Model.Position" />
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-check-circle me-2"></i>Да, присоединиться
+                            </button>
+                            <a href="/" class="btn btn-secondary">
+                                <i class="fas fa-times-circle me-2"></i>Отмена
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-gradient-success {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    }
+</style>

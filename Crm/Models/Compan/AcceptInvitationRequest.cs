@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Crm.Models.Company
+namespace Crm.Models.Compan
 {
     public class AcceptInvitationRequest
     {

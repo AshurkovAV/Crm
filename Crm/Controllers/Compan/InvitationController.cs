@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
-namespace Crm.Controllers.Company
+namespace Crm.Controllers.Compan
 {
     [Authorize]
     [Route("[controller]")]

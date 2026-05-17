@@ -27,12 +27,35 @@
         /// </summary>
         public int? DepartmentId { get; set; }
 
+        /// <summary>
+        /// ID компании
+        /// </summary>
         public int? CompanyId { get; set; }
+
+        /// <summary>
+        /// Название компании
+        /// </summary>
+        public string CompanyName { get; set; }
 
         /// <summary>
         /// Название отдела
         /// </summary>
         public string DepartmentName { get; set; }
+
+        /// <summary>
+        /// Должность, на которую приглашают
+        /// </summary>
+        public string Position { get; set; }
+
+        /// <summary>
+        /// Роль, которая будет назначена
+        /// </summary>
+        public string Role { get; set; }
+
+        /// <summary>
+        /// Тип приглашения (Email, SMS, Link)
+        /// </summary>
+        public string InvitationType { get; set; }
 
         /// <summary>
         /// Дата создания приглашения
@@ -44,9 +67,13 @@
         /// </summary>
         public DateTime? ExpiresAt { get; set; }
 
-        public DateTime? AcceptedAt { get; set; }
         /// <summary>
-        /// Статус приглашения
+        /// Дата принятия приглашения
+        /// </summary>
+        public DateTime? AcceptedAt { get; set; }
+
+        /// <summary>
+        /// Статус приглашения (Pending, Accepted, Expired, Cancelled)
         /// </summary>
         public string Status { get; set; }
 
@@ -61,5 +88,10 @@
         /// Просрочено ли приглашение
         /// </summary>
         public bool IsExpired => ExpiresAt.HasValue && ExpiresAt.Value < DateTime.UtcNow;
+
+        /// <summary>
+        /// Может ли приглашение быть принято
+        /// </summary>
+        public bool CanBeAccepted => Valid && !IsExpired && Status == "Pending";
     }
 }

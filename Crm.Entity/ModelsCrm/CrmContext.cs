@@ -141,7 +141,7 @@ public partial class CrmContext : DbContext
 
             entity.ToTable("CompanyUser");
 
-            entity.HasIndex(e => new { e.CompanyId, e.UserId }, "UK_CompanyUser").IsUnique();
+            entity.HasIndex(e => new { e.CompanyId, e.UserId, e.IsActive }, "UK_CompanyUser").IsUnique();
 
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.JoinedDate).HasDefaultValueSql("(getdate())");
@@ -594,11 +594,21 @@ public partial class CrmContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("PK__Users__3214EC071D51B417");
 
+            entity.Property(e => e.Address).HasMaxLength(500);
+            entity.Property(e => e.AlternativeEmail)
+                .HasMaxLength(255)
+                .HasComment("Альтернативный email");
+            entity.Property(e => e.AlternativePhone).HasMaxLength(50);
+            entity.Property(e => e.Bio).HasMaxLength(1000);
+            entity.Property(e => e.BirthPlace)
+                .HasMaxLength(500)
+                .HasComment("Место рождения");
             entity.Property(e => e.ClientId).HasMaxLength(255);
             entity.Property(e => e.CreatedDate).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.DefaultAvatarId).HasMaxLength(255);
             entity.Property(e => e.DefaultEmail).HasMaxLength(255);
             entity.Property(e => e.DefaultPhone).HasMaxLength(50);
+            entity.Property(e => e.Department).HasMaxLength(255);
             entity.Property(e => e.DeviceId).HasMaxLength(255);
             entity.Property(e => e.DisplayName).HasMaxLength(255);
             entity.Property(e => e.FirstName).HasMaxLength(255);
@@ -606,13 +616,26 @@ public partial class CrmContext : DbContext
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.IsAvatarEmpty).HasMaxLength(10);
             entity.Property(e => e.LastName).HasMaxLength(255);
+            entity.Property(e => e.LinkedIn).HasMaxLength(255);
             entity.Property(e => e.Login).HasMaxLength(255);
+            entity.Property(e => e.MiddleName)
+                .HasMaxLength(255)
+                .HasComment("Отчество пользователя");
             entity.Property(e => e.ModifiedDate).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.PasswordHash).HasMaxLength(255);
             entity.Property(e => e.PasswordSalt).HasMaxLength(255);
+            entity.Property(e => e.Position)
+                .HasMaxLength(255)
+                .HasComment("Должность");
             entity.Property(e => e.RealName).HasMaxLength(255);
             entity.Property(e => e.Role).HasMaxLength(20);
             entity.Property(e => e.Sex).HasMaxLength(10);
+            entity.Property(e => e.Telegram)
+                .HasMaxLength(100)
+                .HasComment("Telegram username");
+            entity.Property(e => e.Website).HasMaxLength(255);
+            entity.Property(e => e.WhatsApp).HasMaxLength(50);
+            entity.Property(e => e.WorkPhone).HasMaxLength(50);
         });
 
         modelBuilder.Entity<UserToken>(entity =>

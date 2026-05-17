@@ -29,7 +29,7 @@ public partial class User
 
     public string? DefaultEmail { get; set; }
 
-    public DateOnly? Birthday { get; set; }
+    public DateTime? Birthday { get; set; }
 
     public string? DefaultAvatarId { get; set; }
 
@@ -50,6 +50,47 @@ public partial class User
     public DateTime ModifiedDate { get; set; }
 
     public int? CurrentCompanyId { get; set; }
+
+    /// <summary>
+    /// Отчество пользователя
+    /// </summary>
+    public string? MiddleName { get; set; }
+
+    /// <summary>
+    /// Место рождения
+    /// </summary>
+    public string? BirthPlace { get; set; }
+
+    /// <summary>
+    /// Альтернативный email
+    /// </summary>
+    public string? AlternativeEmail { get; set; }
+
+    public string? AlternativePhone { get; set; }
+
+    public string? WorkPhone { get; set; }
+
+    /// <summary>
+    /// Telegram username
+    /// </summary>
+    public string? Telegram { get; set; }
+
+    public string? WhatsApp { get; set; }
+
+    /// <summary>
+    /// Должность
+    /// </summary>
+    public string? Position { get; set; }
+
+    public string? Department { get; set; }
+
+    public string? Address { get; set; }
+
+    public string? Bio { get; set; }
+
+    public string? Website { get; set; }
+
+    public string? LinkedIn { get; set; }
 
     public virtual ICollection<Company> Companies { get; set; } = new List<Company>();
 

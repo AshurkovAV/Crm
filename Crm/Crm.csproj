@@ -17,4 +17,7 @@
     <ProjectReference Include="..\Crm.Infrastructure\Crm.Infrastructure.csproj" />
     <PackageReference Include="DevExtreme.AspNet.Core" Version="22.2.5" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="wwwroot\js\company\" />
+  </ItemGroup>
 </Project>

@@ -4,11 +4,12 @@ using Crm.Models;
 using Crm.Entity.ModelsCrm;
 using Crm.Entity.Services;
 using Crm.Services.Email;
-using Crm.Models.Company;
+using Crm.Models.Compan;
 using Microsoft.EntityFrameworkCore;
 using Crm.Entity;
 using Crm.Entity.DTO;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Crm.Models.Results;
 
 namespace Crm.Services
 {
@@ -163,7 +164,74 @@ namespace Crm.Services
             }
         }
 
+        public async Task<AcceptInvitationResult> AcceptInvitationForExistingUserAsync(string code, int userId)
+        {
+            var invitation = _invitationRepository.GetInvitationToCode(code).Result;
 
+            if (invitation == null)
+            {
+                return new AcceptInvitationResult
+                {
+                    Success = false,
+                    Message = "Приглашение не найдено или уже использовано"
+                };
+            }
+
+            if (invitation.ExpiresAt < DateTime.UtcNow)
+            {
+                return new AcceptInvitationResult
+                {
+                    Success = false,
+                    Message = "Срок действия приглашения истёк"
+                };
+            }
+
+            // Проверяем, не состоит ли уже пользователь в компании
+            var existingCompanyUser = await _companyRepository.GetCompanyUserToUserId(userId, invitation.CompanyId);
+                
+
+            if (existingCompanyUser.Success)
+            {
+                return new AcceptInvitationResult
+                {
+                    Success = false,
+                    Message = "Вы уже состоите в этой компании"
+                };
+            }
+
+            // Добавляем пользователя в компанию
+            var companyUser = new CompanyUser
+            {
+                CompanyId = (int)invitation.CompanyId,
+                UserId = userId,
+                Role = "Member",                
+                JoinedDate = DateTime.UtcNow,
+                IsActive = true
+            };
+            _companyRepository.AddAsync(companyUser);
+
+            // Обновляем статус приглашения
+            invitation.Status = "Accepted";
+            invitation.AcceptedAt = DateTime.UtcNow;
+
+            // Если у пользователя нет текущей компании - устанавливаем
+            var user = _userRepository.GetUserById(userId).Data;
+            if (user != null && user.CurrentCompanyId == null)
+            {
+                user.CurrentCompanyId = invitation.CompanyId;
+                await _userRepository.AddOrUpdateAsync(user);
+            }
+          
+
+            var company = _companyRepository.GetCompanyUsersAsync((int)invitation.CompanyId).Result;
+
+            return new AcceptInvitationResult
+            {
+                Success = true,
+                CompanyName = company?.FirstOrDefault().CompanyName,
+                CompanyId = invitation.CompanyId
+            };
+        }
         public async Task<InvitationCheckResponse> CheckInvitationAsync(string code)
         {
             try

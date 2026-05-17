@@ -35,6 +35,7 @@ builder.Services.AddScoped<IAuthenticationService,       AuthenticationService>(
 
 builder.Services.AddScoped<IInvitationService,           InvitationService>();
 builder.Services.AddScoped<IEmailService,                EmailService>();
+builder.Services.AddScoped<UserService>();
 
 builder.Services.AddApplication();
 
@@ -50,7 +51,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         // Настройки куки
         options.Cookie.Name = ".AspNetCore.Crm.Auth"; // Уникальное имя
         options.Cookie.HttpOnly = true; // Защита от XSS
-        options.Cookie.SameSite = SameSiteMode.Strict; // Защита от CSRF
+        options.Cookie.SameSite = SameSiteMode.Lax; // Защита от CSRF
 
         // ВРЕМЯ ЖИЗНИ и БЕЗОПАСНОСТЬ
         options.ExpireTimeSpan = TimeSpan.FromDays(7); // Авторизация на 7 дней

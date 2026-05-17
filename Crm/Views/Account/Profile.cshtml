@@ -1,0 +1,766 @@
+﻿@model Crm.Models.UserProfileViewModel
+@{
+    ViewData["Title"] = "Мой профиль";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="content-section">
+    <div class="dx-grid-container">
+        <div class="profile-layout">
+            <!-- Левая колонка - профиль пользователя -->
+            <div class="profile-left">
+                <div class="profile-card">
+                    <div class="profile-card-body text-center">
+                        <!-- Аватар -->
+                        <div class="profile-avatar-wrapper">
+                            <div class="profile-avatar-circle">
+                                <span class="profile-avatar-initial">
+                                    @(Model.DisplayName?.FirstOrDefault().ToString().ToUpper() ?? "U")
+                                </span>
+                            </div>
+                        </div>
+
+                        <h3 class="profile-name">@Model.DisplayName</h3>
+                        @if (!string.IsNullOrEmpty(Model.RealName) && Model.RealName != Model.DisplayName)
+                        {
+                            <p class="profile-realname">@Model.RealName</p>
+                        }
+
+                        <div class="profile-badges">
+                            <span class="profile-badge profile-badge-primary">
+                                <i class="fas fa-user-tag"></i> @Model.Role
+                            </span>
+                           
+                        </div>
+
+                        <div class="profile-info-list">
+                            <div class="profile-info-item">
+                                <div class="profile-info-icon">
+                                    <i class="fas fa-envelope"></i>
+                                </div>
+                                <div class="profile-info-content">
+                                    <small>Email</small>
+                                    <span>@Model.Email</span>
+                                </div>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(Model.Phone))
+                            {
+                                <div class="profile-info-item">
+                                    <div class="profile-info-icon">
+                                        <i class="fas fa-phone"></i>
+                                    </div>
+                                    <div class="profile-info-content">
+                                        <small>Телефон</small>
+                                        <span>@Model.Phone</span>
+                                    </div>
+                                </div>
+                            }
+
+                            @if (Model.Birthday.HasValue)
+                            {
+                                <div class="profile-info-item">
+                                    <div class="profile-info-icon">
+                                        <i class="fas fa-calendar-alt"></i>
+                                    </div>
+                                    <div class="profile-info-content">
+                                        <small>Дата рождения</small>
+                                        <span>@Model.Birthday.Value.ToString("dd MMMM yyyy")</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Действия -->
+                <div class="profile-actions">
+                    <a href="#" class="profile-btn profile-btn-outline" id="editProfileBtn">
+                        <i class="fas fa-pencil-alt"></i> Редактировать профиль
+                    </a>
+                    <a href="#" class="profile-btn profile-btn-primary" id="createCompanyBtn">
+                        <i class="fas fa-building"></i> Создать компанию
+                    </a>
+                    <a href="#" class="profile-btn profile-btn-success" id="joinCompanyBtn">
+                        <i class="fas fa-user-plus"></i> Присоединиться к компании
+                    </a>
+                  
+                </div>
+            </div>
+
+            <!-- Правая колонка - компании -->
+            <div class="profile-right">
+                <!-- Текущая компания -->
+                @if (Model.CurrentCompany != null)
+                {
+                    <div class="current-company-card">
+                        <div class="current-company-header">
+                            <div>
+                                <h6 class="current-company-label">
+                                    <i class="fas fa-star text-warning"></i> ТЕКУЩАЯ КОМПАНИЯ
+                                </h6>
+                                <h3 class="current-company-name">@Model.CurrentCompany.CompanyName</h3>
+                                @if (!string.IsNullOrEmpty(Model.CurrentCompany.CompanyDescription))
+                                {
+                                    <p class="current-company-desc">@Model.CurrentCompany.CompanyDescription</p>
+                                }
+                            </div>
+                            @if (Model.CurrentCompany.IsOwner)
+                            {
+                                <span class="owner-badge">
+                                    <i class="fas fa-crown"></i> Владелец
+                                </span>
+                            }
+                        </div>
+
+                        <div class="current-company-stats">
+                            <div class="stat-card">
+                                <small><i class="fas fa-user-tag"></i> Ваша роль</small>
+                                <span>@Model.CurrentCompany.UserRole</span>
+                            </div>
+                            <div class="stat-card">
+                                <small><i class="fas fa-briefcase"></i> Должность</small>
+                                <span>@(string.IsNullOrEmpty(Model.CurrentCompany.Position) ? "—" : Model.CurrentCompany.Position)</span>
+                            </div>
+                            <div class="stat-card">
+                                <small><i class="fas fa-calendar-check"></i> Дата присоединения</small>
+                                <span>@(Model.CurrentCompany.JoinedDate?.ToString("dd.MM.yyyy") ?? "—")</span>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert-warning-card">
+                        <i class="fas fa-info-circle"></i>
+                        <div>
+                            <strong>Внимание!</strong> У вас не выбрана текущая компания.<br />
+                            <small>Выберите компанию из списка ниже или создайте новую.</small>
+                        </div>
+                    </div>
+                }
+
+                <!-- Мои компании -->
+                <div class="companies-card">
+                    <div class="companies-header">
+                        <h4>
+                            <i class="fas fa-building"></i> Мои компании
+                        </h4>
+                        <span class="companies-count">@Model.Companies.Count</span>
+                    </div>
+
+                    @if (Model.Companies.Any())
+                    {
+                        <div class="companies-list">
+                            @foreach (var company in Model.Companies)
+                            {
+                                <div class="company-item @(company.CompanyId == Model.CurrentCompanyId ? "company-item-active" : "")">
+                                    <div class="company-item-main">
+                                        <div class="company-icon">
+                                            <i class="fas @(company.IsOwner ? "fa-trophy" : "fa-building")"></i>
+                                        </div>
+                                        <div class="company-details">
+                                            <h5 class="company-name">@company.CompanyName</h5>
+                                            @if (!string.IsNullOrEmpty(company.CompanyDescription))
+                                            {
+                                                <p class="company-description">@company.CompanyDescription</p>
+                                            }
+                                            <div class="company-meta">
+                                                <span class="meta-badge meta-badge-info">
+                                                    <i class="fas fa-user-tag"></i> @company.UserRole
+                                                </span>
+                                                @if (company.IsOwner)
+                                                {
+                                                    <span class="meta-badge meta-badge-warning">
+                                                        <i class="fas fa-crown"></i> Владелец
+                                                    </span>
+                                                }
+                                                <span class="meta-badge meta-badge-secondary">
+                                                    <i class="fas fa-calendar-plus"></i> @(company.JoinedDate?.ToString("dd.MM.yyyy") ?? "—")
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="company-actions">
+                                        @if (company.CompanyId != Model.CurrentCompanyId)
+                                        {
+                                            <form method="post" action="@Url.Action("SwitchCompany", "Profile")">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="companyId" value="@company.CompanyId" />
+                                                <button type="submit" class="btn-switch">
+                                                    <i class="fas fa-arrow-right"></i> Сделать текущей
+                                                </button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <span class="current-badge">
+                                                <i class="fas fa-check-circle"></i> Текущая
+                                            </span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-companies">
+                            <i class="fas fa-building-slash"></i>
+                            <h5>Нет компаний</h5>
+                            <p>Вы пока не состоите ни в одной компании</p>
+                            <a href="@Url.Action("Create", "Company")" class="profile-btn profile-btn-primary">
+                                <i class="fas fa-plus-circle"></i> Создать первую компанию
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Подключаем общее модальное окно -->
+@await Html.PartialAsync("/Views/Shared/Company/_InviteModal.cshtml")
+@await Html.PartialAsync("/Views/Shared/Company/_CreateCompanyModal.cshtml")
+@await Html.PartialAsync("/Views/Shared/Company/_EditProfileModal.cshtml")
+<!-- Стили для профиля -->
+<style>
+    .profile-layout {
+        display: grid;
+        grid-template-columns: 360px 1fr;
+        gap: 24px;
+    }
+
+    /* Левая колонка */
+    .profile-left {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+    }
+
+    .profile-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+    }
+
+    .profile-card-body {
+        padding: 32px 24px;
+    }
+
+    .profile-avatar-wrapper {
+        margin-bottom: 20px;
+    }
+
+    .profile-avatar-circle {
+        width: 120px;
+        height: 120px;
+        margin: 0 auto;
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+        transition: transform 0.3s;
+    }
+
+        .profile-avatar-circle:hover {
+            transform: scale(1.05);
+        }
+
+    .profile-avatar-initial {
+        font-size: 48px;
+        font-weight: 600;
+        color: white;
+    }
+
+    .profile-name {
+        font-size: 24px;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 8px;
+    }
+
+    .profile-realname {
+        color: #64748b;
+        font-size: 14px;
+        margin-bottom: 16px;
+    }
+
+    .profile-badges {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+    }
+
+    .profile-badge {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .profile-badge-primary {
+        background: rgba(99, 102, 241, 0.1);
+        color: #6366f1;
+    }
+
+    .profile-badge-success {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+    }
+
+    .profile-info-list {
+        border-top: 1px solid #f1f5f9;
+        padding-top: 20px;
+    }
+
+    .profile-info-item {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 12px 0;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .profile-info-icon {
+        width: 40px;
+        height: 40px;
+        background: #f8fafc;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #6366f1;
+    }
+
+    .profile-info-content {
+        flex: 1;
+    }
+
+        .profile-info-content small {
+            display: block;
+            font-size: 11px;
+            color: #94a3b8;
+            margin-bottom: 2px;
+        }
+
+        .profile-info-content span {
+            font-size: 14px;
+            color: #334155;
+            font-weight: 500;
+        }
+
+    /* Кнопки действий */
+    .profile-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .profile-btn {
+        padding: 12px 20px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+        text-align: center;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .profile-btn-primary {
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        color: white;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+    }
+
+        .profile-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.35);
+        }
+
+    .profile-btn-outline {
+        background: white;
+        color: #6366f1;
+        border: 1px solid #e2e8f0;
+    }
+
+        .profile-btn-outline:hover {
+            background: #f8fafc;
+            transform: translateY(-2px);
+        }
+
+    .profile-btn-success {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+    }
+
+        .profile-btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.35);
+        }
+
+    /* Правая колонка */
+    .profile-right {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+    }
+
+    /* Текущая компания */
+    .current-company-card {
+        background: linear-gradient(135deg, #f8f9ff 0%, #f0f2ff 100%);
+        border-radius: 16px;
+        padding: 24px;
+        border: 1px solid rgba(99, 102, 241, 0.1);
+    }
+
+    .current-company-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .current-company-label {
+        color: #64748b;
+        font-size: 12px;
+        margin-bottom: 8px;
+    }
+
+    .current-company-name {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 8px;
+    }
+
+    .current-company-desc {
+        color: #64748b;
+        font-size: 14px;
+    }
+
+    .owner-badge {
+        background: #fef3c7;
+        color: #d97706;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .current-company-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 16px;
+        text-align: center;
+        transition: all 0.3s;
+    }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .stat-card small {
+            display: block;
+            font-size: 11px;
+            color: #94a3b8;
+            margin-bottom: 8px;
+        }
+
+        .stat-card span {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+    /* Предупреждение */
+    .alert-warning-card {
+        background: #fef3c7;
+        border-left: 4px solid #f59e0b;
+        border-radius: 12px;
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+        .alert-warning-card i {
+            font-size: 24px;
+            color: #f59e0b;
+        }
+
+    /* Компании */
+    .companies-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+    }
+
+    .companies-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+        .companies-header h4 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+    .companies-count {
+        background: #f1f5f9;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #64748b;
+    }
+
+    .companies-list {
+        max-height: 500px;
+        overflow-y: auto;
+    }
+
+    .company-item {
+        padding: 20px 24px;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.3s;
+    }
+
+        .company-item:hover {
+            background: #f8fafc;
+        }
+
+    .company-item-active {
+        background: rgba(99, 102, 241, 0.05);
+    }
+
+    .company-item-main {
+        display: flex;
+        gap: 16px;
+        flex: 1;
+    }
+
+    .company-icon {
+        width: 48px;
+        height: 48px;
+        background: #f1f5f9;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #6366f1;
+        font-size: 20px;
+    }
+
+    .company-details {
+        flex: 1;
+    }
+
+    .company-name {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 4px;
+    }
+
+    .company-description {
+        font-size: 13px;
+        color: #64748b;
+        margin-bottom: 8px;
+    }
+
+    .company-meta {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .meta-badge {
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .meta-badge-info {
+        background: rgba(99, 102, 241, 0.1);
+        color: #6366f1;
+    }
+
+    .meta-badge-warning {
+        background: rgba(245, 158, 11, 0.1);
+        color: #d97706;
+    }
+
+    .meta-badge-secondary {
+        background: #f1f5f9;
+        color: #64748b;
+    }
+
+    .btn-switch {
+        background: none;
+        border: 1px solid #e2e8f0;
+        padding: 8px 16px;
+        border-radius: 8px;
+        color: #6366f1;
+        cursor: pointer;
+        font-size: 13px;
+        transition: all 0.3s;
+    }
+
+        .btn-switch:hover {
+            background: #6366f1;
+            color: white;
+            border-color: #6366f1;
+        }
+
+    .current-badge {
+        background: #10b981;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .empty-companies {
+        text-align: center;
+        padding: 60px 24px;
+    }
+
+        .empty-companies i {
+            font-size: 48px;
+            color: #cbd5e1;
+            margin-bottom: 16px;
+        }
+
+        .empty-companies h5 {
+            font-size: 18px;
+            color: #475569;
+            margin-bottom: 8px;
+        }
+
+        .empty-companies p {
+            color: #94a3b8;
+            margin-bottom: 24px;
+        }
+
+    /* Адаптивность */
+    @@media (max-width: 1000px) {
+        .profile-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .current-company-stats {
+            grid-template-columns: 1fr;
+        }
+
+        .company-item {
+            flex-direction: column;
+            gap: 16px;
+            align-items: flex-start;
+        }
+    }
+</style>
+
+
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Автоматическое скрытие сообщений через 5 секунд
+            setTimeout(function () {
+                const alerts = document.querySelectorAll('.alert-warning-card');
+                alerts.forEach(function (alert) {
+                    if (!alert.closest('.alert-permanent')) {
+                        alert.style.transition = 'opacity 0.5s';
+                        alert.style.opacity = '0';
+                        setTimeout(function () {
+                            if (alert.parentNode) alert.remove();
+                        }, 500);
+                    }
+                });
+            }, 5000);
+        });
+    </script>
+}
+<script>
+    // Функция для открытия модального окна редактирования профиля
+    document.getElementById('editProfileBtn')?.addEventListener('click', function (e) {
+        e.preventDefault();
+
+        // Данные пользователя из ViewBag
+        const userData = @Html.Raw(ViewBag.UserJson ?? "{}");
+
+        // Открываем модальное окно с данными
+        if (typeof window.openEditModal === 'function') {
+            window.openEditModal(userData);
+        } else {
+            console.error('Функция openEditModal не найдена');
+            // Если функция не найдена, пробуем открыть напрямую
+            const modal = document.getElementById('editProfileModal');
+            if (modal) {
+                // Заполняем поля вручную
+                document.getElementById('editDisplayName').value = userData.displayName || '';
+                document.getElementById('editRealName').value = userData.realName || '';
+                document.getElementById('editFirstName').value = userData.firstName || '';
+                document.getElementById('editLastName').value = userData.lastName || '';
+                document.getElementById('editMiddleName').value = userData.middleName || '';
+                document.getElementById('editSex').value = userData.sex || '';
+                document.getElementById('editBirthday').value = userData.birthday || '';
+                document.getElementById('editBirthPlace').value = userData.birthPlace || '';
+                document.getElementById('editDefaultEmail').value = userData.defaultEmail || '';
+                document.getElementById('editAlternativeEmail').value = userData.alternativeEmail || '';
+                document.getElementById('editDefaultPhone').value = userData.defaultPhone || '';
+                document.getElementById('editAlternativePhone').value = userData.alternativePhone || '';
+                document.getElementById('editWorkPhone').value = userData.workPhone || '';
+                document.getElementById('editTelegram').value = userData.telegram || '';
+                document.getElementById('editWhatsApp').value = userData.whatsApp || '';
+                document.getElementById('editPosition').value = userData.position || '';
+                document.getElementById('editDepartment').value = userData.department || '';
+                document.getElementById('editAddress').value = userData.address || '';
+                document.getElementById('editBio').value = userData.bio || '';
+                document.getElementById('editWebsite').value = userData.website || '';
+                document.getElementById('editLinkedIn').value = userData.linkedIn || '';
+
+                modal.style.display = 'flex';
+            }
+        }
+    });
+</script>

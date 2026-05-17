@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
-namespace Crm.Controllers.Company
+namespace Crm.Controllers.Compan
 {
     [Route("api/[controller]")]
     [Authorize]

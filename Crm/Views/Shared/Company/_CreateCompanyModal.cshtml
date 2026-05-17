@@ -1,0 +1,183 @@
+﻿<!-- Модальное окно для создания компании -->
+<div id="createCompanyModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h3>Создать компанию</h3>
+        <form id="createCompanyForm">
+            <input type="text" id="companyName" placeholder="Название компании" required />
+            <textarea id="companyDescription" placeholder="Описание компании (необязательно)" rows="3"></textarea>
+            <div class="modal-buttons">
+                <button type="submit" class="btn btn-primary" id="submitCreateCompanyBtn">Создать</button>
+                <button type="button" class="btn btn-secondary" id="cancelCreateModalBtn">Отмена</button>
+            </div>
+            <div id="createCompanyError" class="error-message" style="display: none;"></div>
+        </form>
+    </div>
+</div>
+
+<style>
+    /* Дополнительные стили для textarea в модальном окне */
+    .modal-content textarea {
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 20px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.2s;
+        box-sizing: border-box;
+        font-family: inherit;
+        resize: vertical;
+    }
+
+        .modal-content textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Получаем элементы
+        const createModal = document.getElementById('createCompanyModal');
+        const companyNameInput = document.getElementById('companyName');
+        const companyDescriptionInput = document.getElementById('companyDescription');
+        const createErrorDiv = document.getElementById('createCompanyError');
+        const submitCreateBtn = document.getElementById('submitCreateCompanyBtn');
+        const cancelCreateBtn = document.getElementById('cancelCreateModalBtn');
+
+        // Проверяем существование элементов
+        if (!createModal || !companyNameInput || !createErrorDiv || !submitCreateBtn) {
+            console.error('Элементы модального окна создания компании не найдены');
+            return;
+        }
+
+        // Функции для работы с модальным окном
+        function openCreateModal() {
+            createModal.style.display = 'flex';
+            companyNameInput.value = '';
+            if (companyDescriptionInput) companyDescriptionInput.value = '';
+            clearCreateMessage();
+            companyNameInput.focus();
+        }
+
+        function closeCreateModal() {
+            createModal.style.display = 'none';
+            companyNameInput.value = '';
+            if (companyDescriptionInput) companyDescriptionInput.value = '';
+            clearCreateMessage();
+        }
+
+        function showCreateMessage(message, isError = true) {
+            createErrorDiv.textContent = message;
+            createErrorDiv.style.display = 'block';
+            createErrorDiv.className = 'error-message ' + (isError ? 'error' : 'success');
+        }
+
+        function clearCreateMessage() {
+            createErrorDiv.style.display = 'none';
+            createErrorDiv.textContent = '';
+        }
+
+        // Закрытие модального окна
+        const closeModalBtn = createModal.querySelector('.close');
+        if (closeModalBtn) closeModalBtn.addEventListener('click', closeCreateModal);
+        if (cancelCreateBtn) cancelCreateBtn.addEventListener('click', closeCreateModal);
+
+        window.addEventListener('click', (e) => {
+            if (e.target === createModal) closeCreateModal();
+        });
+
+        // Отправка формы создания компании
+        async function handleCreateCompany(event) {
+            event.preventDefault();
+
+            const companyName = companyNameInput.value.trim();
+
+            if (!companyName) {
+                showCreateMessage('Введите название компании');
+                return;
+            }
+
+            // Блокируем кнопку
+            submitCreateBtn.disabled = true;
+            const originalText = submitCreateBtn.textContent;
+            submitCreateBtn.textContent = 'Создание...';
+            clearCreateMessage();
+
+            try {
+                const response = await fetch('/api/companies', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + (localStorage.getItem('accessToken') || '')
+                    },
+                    body: JSON.stringify({
+                        name: companyName,
+                        description: companyDescriptionInput ? companyDescriptionInput.value.trim() : ''
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showCreateMessage(data.message || 'Компания успешно создана!', false);
+
+                    // Закрываем модальное окно через 1 секунду
+                    setTimeout(() => {
+                        closeCreateModal();
+                        setTimeout(() => {
+                            location.reload();
+                        }, 500);
+                    }, 1000);
+                } else {
+                    let errorMessage = 'Не удалось создать компанию';
+                    try {
+                        const error = await response.json();
+                        errorMessage = error.message || errorMessage;
+                    } catch (e) { }
+                    showCreateMessage(errorMessage);
+                }
+            } catch (err) {
+                console.error('Error:', err);
+                showCreateMessage('Ошибка сети. Проверьте подключение к интернету.');
+            } finally {
+                submitCreateBtn.disabled = false;
+                submitCreateBtn.textContent = originalText;
+            }
+        }
+
+        // Добавляем обработчик на форму
+        const form = document.getElementById('createCompanyForm');
+        if (form) {
+            form.addEventListener('submit', handleCreateCompany);
+        }
+
+        // Разрешаем отправку по Enter
+        companyNameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !submitCreateBtn.disabled) {
+                e.preventDefault();
+                handleCreateCompany(e);
+            }
+        });
+
+        // Делаем функцию открытия глобальной
+        window.openCreateCompanyModal = openCreateModal;
+    });
+
+
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const createCompanyBtn = document.getElementById('createCompanyBtn');
+        if (createCompanyBtn && typeof window.openCreateCompanyModal === 'function') {
+            // Удаляем старые обработчики, чтобы не было дублирования
+            const newBtn = createCompanyBtn.cloneNode(true);
+            createCompanyBtn.parentNode.replaceChild(newBtn, createCompanyBtn);
+
+            newBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.openCreateCompanyModal();
+            });
+        }
+    });
+</script>

@@ -3,6 +3,7 @@ using Crm.Entity.DTO;
 using Crm.Entity.ModelsCrm;
 using Microsoft.EntityFrameworkCore;
 
+
 namespace Crm.Entity.Services
 {
     public class CompanyRepository : ICompanyRepository
@@ -60,16 +61,21 @@ namespace Crm.Entity.Services
         {
             using (var db = new CrmContext())
             {
-                // Находим активную компанию пользователя
-                var userCompany = await db.CompanyUsers
-                    .Where(cu => cu.UserId == userId && cu.IsActive == true)
-                    .Include(cu => cu.Company)
+                // Получаем текущего пользователя с его CurrentCompanyId
+                var currentUser = await db.Users
+                    .Where(u => u.Id == userId)
+                    .Select(u => new { u.Id, u.CurrentCompanyId })
                     .FirstOrDefaultAsync();
 
-                if (userCompany == null)
+                if (currentUser == null)
                 {
-                    // У пользователя нет компании - возвращаем только его самого
-                    var currentUser = await db.Users
+                    return new List<CompanyUserDto>();
+                }
+
+                // Если у пользователя нет CurrentCompanyId - возвращаем только его самого
+                if (!currentUser.CurrentCompanyId.HasValue)
+                {
+                    var userOnly = await db.Users
                         .Where(u => u.Id == userId)
                         .Select(u => new CompanyUserDto
                         {
@@ -81,23 +87,27 @@ namespace Crm.Entity.Services
                             Email = u.DefaultEmail,
                             Phone = u.DefaultPhone,
                             Role = "Владелец аккаунта",
-                            Position = null,                            
+                            Position = null,
                             IsActive = true,
                             IsOwner = true,
+                            IsCurrentUser = true,
                             AvatarUrl = u.DefaultAvatarId != null && u.IsAvatarEmpty != "true"
                                 ? $"/api/avatars/{u.DefaultAvatarId}"
                                 : null
                         })
                         .ToListAsync();
 
-                    return currentUser;
+                    return userOnly;
                 }
 
-                var companyId = userCompany.CompanyId;
-                var company = userCompany.Company;
+                var companyId = currentUser.CurrentCompanyId.Value;
 
-                // Проверяем, активна ли компания
-                if (company == null || !company.IsActive)
+                // Проверяем, существует ли компания и активна ли она
+                var company = await db.Companies
+                    .Where(c => c.Id == companyId && c.IsActive == true)
+                    .FirstOrDefaultAsync();
+
+                if (company == null)
                 {
                     return new List<CompanyUserDto>();
                 }
@@ -134,6 +144,78 @@ namespace Crm.Entity.Services
                     .ToListAsync();
 
                 return companyUsers;
+            }
+        }
+
+        /// <summary>
+        /// Получить пользователя со всеми его компаниями (активными)
+        /// </summary>
+        public ModelsCrm.User GetUserWithCompanies(int userId)
+        {
+            using (var _context = new CrmContext())
+            {
+                var user = _context.Users
+                .Include(u => u.CompanyUsers) // Загружаем связи с компаниями
+                .FirstOrDefault(u => u.Id == userId);
+
+                if (user == null)
+                    return null;
+
+                // Загружаем детали компаний отдельно (опционально через Include)
+                var companyIds = user.CompanyUsers.Where(cu => cu.IsActive == true).Select(cu => cu.CompanyId).ToList();
+
+                if (companyIds.Any())
+                {
+                    // Принудительно загружаем компании, чтобы EF их подтянул
+                    _context.Companies
+                        .Where(c => companyIds.Contains(c.Id))
+                        .Load();
+                }
+
+                return user;
+            }
+        }
+
+        /// <summary>
+        /// Получить список активных компаний пользователя
+        /// </summary>
+        public List<CompanyUser> GetUserActiveCompanies(int userId)
+        {
+            using (var _context = new CrmContext())
+            {
+                return _context.CompanyUsers
+                .Include(cu => cu.Company)
+                .Where(cu => cu.UserId == userId && cu.IsActive == true)
+                .OrderByDescending(cu => cu.JoinedDate)
+                .ToList();
+            }
+        }
+
+        /// <summary>
+        /// Переключить текущую компанию пользователя
+        /// </summary>
+        public bool UpdateUserCurrentCompany(int userId, int companyId)
+        {
+            using (var _context = new CrmContext())
+            {
+                // Проверяем, принадлежит ли компания пользователю и активна ли она
+                var companyUser = _context.CompanyUsers
+                .FirstOrDefault(cu => cu.UserId == userId
+                    && cu.CompanyId == companyId
+                    && cu.IsActive == true);
+
+                if (companyUser == null)
+                    return false;
+
+                var user = _context.Users.Find(userId);
+                if (user == null)
+                    return false;
+
+                user.CurrentCompanyId = companyId;
+                user.ModifiedDate = DateTime.Now;
+
+                _context.SaveChanges();
+                return true;
             }
         }
 
@@ -275,7 +357,7 @@ namespace Crm.Entity.Services
             }
         }
 
-        public async Task AddAsync(Company company)
+        public async Task AddAsync(ModelsCrm.Company company)
         {
             using (var db = new CrmContext())
             {
@@ -311,5 +393,6 @@ namespace Crm.Entity.Services
                 await db.SaveChangesAsync();
             }
         }
+       
     }
 }

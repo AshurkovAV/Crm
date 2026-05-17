@@ -20,5 +20,8 @@ namespace Crm.Entity.Services
         Task<bool> UserHasOwnCompanyAsync(int userId);
         Task AddAsync(Company company);
         Task<TransactionResult<bool>> AddAsync(CompanyUser companyUser);
+        User GetUserWithCompanies(int userId);
+        List<CompanyUser> GetUserActiveCompanies(int userId);
+        bool UpdateUserCurrentCompany(int userId, int companyId);
     }
 }

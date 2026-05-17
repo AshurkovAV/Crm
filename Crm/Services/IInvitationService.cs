@@ -1,6 +1,7 @@
-﻿using Crm.Models.Company;
+﻿using Crm.Models.Compan;
 using Crm.Models.Requests;
 using Crm.Models.Responses;
+using Crm.Models.Results;
 
 namespace Crm.Services
 {
@@ -11,6 +12,7 @@ namespace Crm.Services
         //Task<InvitationResponse> SendSmsInvitationsAsync(SmsInvitationRequest request);
         Task<InvitationCheckResponse> CheckInvitationAsync(string code);
         Task<InvitationResponse> AcceptInvitationAsync(string code, AcceptInvitationRequest request);
+        Task<AcceptInvitationResult> AcceptInvitationForExistingUserAsync(string code, int userId);
         Task<bool> UpdateStatusAsync(string code, string newStatus);
         //Task<InvitationStatsResponse> GetStatsAsync();
     }

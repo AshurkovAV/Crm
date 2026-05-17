@@ -1,0 +1,681 @@
+﻿<!-- Модальное окно для редактирования профиля -->
+<div id="editProfileModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="modal-header-left">
+                <i class="fas fa-user-edit"></i>
+                <h3>Редактирование профиля</h3>
+            </div>
+            <span class="close">&times;</span>
+        </div>
+        
+        <form id="editProfileForm">
+            <!-- Основная информация -->
+            <div class="form-section">
+                <div class="section-title">
+                    <i class="fas fa-user-circle"></i>
+                    <span>Основная информация</span>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Отображаемое имя <span class="required">*</span></label>
+                        <input type="text" id="editDisplayName" placeholder="Как вас видеть другим" required />
+                    </div>
+                    <div class="form-group">
+                        <label>Реальное имя</label>
+                        <input type="text" id="editRealName" placeholder="Ваше настоящее имя" />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Имя</label>
+                        <input type="text" id="editFirstName" placeholder="Имя" />
+                    </div>
+                    <div class="form-group">
+                        <label>Фамилия</label>
+                        <input type="text" id="editLastName" placeholder="Фамилия" />
+                    </div>
+                    <div class="form-group">
+                        <label>Отчество</label>
+                        <input type="text" id="editMiddleName" placeholder="Отчество" />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Пол</label>
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="sex" value="male" id="sexMale">
+                                <span>👨 Мужской</span>
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="sex" value="female" id="sexFemale">
+                                <span>👩 Женский</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Дата рождения</label>
+                        <input type="date" id="editBirthday" />
+                    </div>
+                    <div class="form-group">
+                        <label>Место рождения</label>
+                        <input type="text" id="editBirthPlace" placeholder="Город, страна" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Контактная информация -->
+            <div class="form-section">
+                <div class="section-title">
+                    <i class="fas fa-address-card"></i>
+                    <span>Контактная информация</span>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Основной email</label>
+                        <input type="email" id="editDefaultEmail" placeholder="example@mail.com" />
+                    </div>
+                    <div class="form-group">
+                        <label>Альтернативный email</label>
+                        <input type="email" id="editAlternativeEmail" placeholder="backup@mail.com" />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Основной телефон</label>
+                        <input type="tel" id="editDefaultPhone" placeholder="+7 (XXX) XXX-XX-XX" />
+                    </div>
+                    <div class="form-group">
+                        <label>Альтернативный телефон</label>
+                        <input type="tel" id="editAlternativePhone" placeholder="+7 (XXX) XXX-XX-XX" />
+                    </div>
+                    <div class="form-group">
+                        <label>Рабочий телефон</label>
+                        <input type="tel" id="editWorkPhone" placeholder="+7 (XXX) XXX-XX-XX" />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Telegram</label>
+                        <div class="input-icon">
+                            <i class="fab fa-telegram"></i>
+                            <input type="text" id="editTelegram" placeholder="@@username" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>WhatsApp</label>
+                        <div class="input-icon">
+                            <i class="fab fa-whatsapp"></i>
+                            <input type="text" id="editWhatsApp" placeholder="+7 (XXX) XXX-XX-XX" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Работа -->
+            <div class="form-section">
+                <div class="section-title">
+                    <i class="fas fa-briefcase"></i>
+                    <span>Работа</span>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Должность</label>
+                        <input type="text" id="editPosition" placeholder="Ваша должность" />
+                    </div>
+                    <div class="form-group">
+                        <label>Отдел</label>
+                        <input type="text" id="editDepartment" placeholder="Отдел" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Личное -->
+            <div class="form-section">
+                <div class="section-title">
+                    <i class="fas fa-heart"></i>
+                    <span>Личное</span>
+                </div>
+                <div class="form-row">
+                    <div class="form-group full-width">
+                        <label>Адрес</label>
+                        <input type="text" id="editAddress" placeholder="Город, улица, дом" />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group full-width">
+                        <label>О себе</label>
+                        <textarea id="editBio" rows="4" placeholder="Расскажите о себе, своих интересах, навыках..."></textarea>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Сайт / Портфолио</label>
+                        <div class="input-icon">
+                            <i class="fas fa-globe"></i>
+                            <input type="url" id="editWebsite" placeholder="https://example.com" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>LinkedIn</label>
+                        <div class="input-icon">
+                            <i class="fab fa-linkedin"></i>
+                            <input type="url" id="editLinkedIn" placeholder="https://linkedin.com/in/username" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-buttons">
+                <button type="button" class="btn btn-secondary" id="cancelEditModalBtn">
+                    <i class="fas fa-times"></i> Отмена
+                </button>
+                <button type="submit" class="btn btn-primary" id="submitEditProfileBtn">
+                    <i class="fas fa-save"></i> Сохранить изменения
+                </button>
+            </div>
+            <div id="editProfileError" class="error-message" style="display: none;"></div>
+        </form>
+    </div>
+</div>
+
+<style>
+    /* Красивые стили для модального окна */
+    .modal {
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(4px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 24px;
+        width: 700px;
+        max-width: 90%;
+        max-height: 85vh;
+        position: relative;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        animation: modalFadeIn 0.3s ease;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    @@keyframes modalFadeIn {
+        from {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    /* Заголовок */
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 24px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .modal-header-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .modal-header-left i {
+        font-size: 24px;
+    }
+
+    .modal-header-left h3 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+    .close {
+        font-size: 28px;
+        cursor: pointer;
+        color: white;
+        transition: transform 0.2s;
+        line-height: 1;
+    }
+
+    .close:hover {
+        transform: rotate(90deg);
+    }
+
+    /* Форма с прокруткой */
+    #editProfileForm {
+        overflow-y: auto;
+        padding: 0 24px;
+        max-height: calc(85vh - 140px);
+    }
+
+    /* Секции */
+    .form-section {
+        margin: 24px 0;
+        padding-bottom: 24px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .form-section:last-child {
+        border-bottom: none;
+        margin-bottom: 16px;
+    }
+
+    .section-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 20px;
+        font-size: 16px;
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    .section-title i {
+        font-size: 18px;
+        color: #667eea;
+    }
+
+    .section-title span {
+        font-size: 15px;
+    }
+
+    /* Строки формы */
+    .form-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-group.full-width {
+        grid-column: 1 / -1;
+    }
+
+    .form-group label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #64748b;
+        margin-bottom: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .form-group .required {
+        color: #e53e3e;
+    }
+
+    /* Поля ввода */
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        padding: 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        font-size: 14px;
+        transition: all 0.2s;
+        font-family: inherit;
+        background: #f8fafc;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #667eea;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    /* Поля с иконками */
+    .input-icon {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .input-icon i {
+        position: absolute;
+        left: 12px;
+        color: #94a3b8;
+        font-size: 16px;
+    }
+
+    .input-icon input {
+        padding-left: 36px;
+        width: 100%;
+    }
+
+    /* Радио кнопки */
+    .radio-group {
+        display: flex;
+        gap: 20px;
+        padding: 8px 0;
+    }
+
+    .radio-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        color: #475569;
+    }
+
+    .radio-label input[type="radio"] {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        accent-color: #667eea;
+    }
+
+    /* Кнопки */
+    .modal-buttons {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        padding: 16px 0 24px 0;
+        border-top: 1px solid #f0f0f0;
+        margin-top: 8px;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-primary:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .btn-secondary {
+        background: #f1f5f9;
+        color: #475569;
+    }
+
+    .btn-secondary:hover {
+        background: #e2e8f0;
+    }
+
+    /* Сообщения об ошибках */
+    .error-message {
+        margin-top: 16px;
+        font-size: 13px;
+        text-align: center;
+        padding: 12px;
+        border-radius: 12px;
+    }
+
+    .error-message.error {
+        color: #e53e3e;
+        background-color: #fff5f5;
+        border: 1px solid #feb2b2;
+    }
+
+    .error-message.success {
+        color: #38a169;
+        background-color: #f0fff4;
+        border: 1px solid #9ae6b4;
+    }
+
+    /* Адаптивность */
+    @@media (max-width: 768px) {
+        .form-row {
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .modal-content {
+            width: 95%;
+            max-height: 90vh;
+        }
+
+        .modal-header {
+            padding: 16px 20px;
+        }
+
+        #editProfileForm {
+            padding: 0 20px;
+        }
+
+        .modal-buttons {
+            flex-direction: column;
+        }
+
+        .modal-buttons .btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Получаем элементы
+        const editModal = document.getElementById('editProfileModal');
+        const editErrorDiv = document.getElementById('editProfileError');
+        const submitEditBtn = document.getElementById('submitEditProfileBtn');
+        const cancelEditBtn = document.getElementById('cancelEditModalBtn');
+        
+        // Поля формы
+        const fields = {
+            displayName: document.getElementById('editDisplayName'),
+            realName: document.getElementById('editRealName'),
+            firstName: document.getElementById('editFirstName'),
+            lastName: document.getElementById('editLastName'),
+            middleName: document.getElementById('editMiddleName'),
+            birthday: document.getElementById('editBirthday'),
+            birthPlace: document.getElementById('editBirthPlace'),
+            defaultEmail: document.getElementById('editDefaultEmail'),
+            alternativeEmail: document.getElementById('editAlternativeEmail'),
+            defaultPhone: document.getElementById('editDefaultPhone'),
+            alternativePhone: document.getElementById('editAlternativePhone'),
+            workPhone: document.getElementById('editWorkPhone'),
+            telegram: document.getElementById('editTelegram'),
+            whatsApp: document.getElementById('editWhatsApp'),
+            position: document.getElementById('editPosition'),
+            department: document.getElementById('editDepartment'),
+            address: document.getElementById('editAddress'),
+            bio: document.getElementById('editBio'),
+            website: document.getElementById('editWebsite'),
+            linkedIn: document.getElementById('editLinkedIn')
+        };
+        
+        if (!editModal || !fields.displayName || !editErrorDiv || !submitEditBtn) {
+            console.error('Элементы модального окна не найдены');
+            return;
+        }
+        
+        function openEditModal(userData) {
+            // Заполняем все поля
+            fields.displayName.value = userData.displayName || '';
+            fields.realName.value = userData.realName || '';
+            fields.firstName.value = userData.firstName || '';
+            fields.lastName.value = userData.lastName || '';
+            fields.middleName.value = userData.middleName || '';
+            
+            // Радио кнопки
+            const sex = userData.sex || '';
+            document.getElementById('sexMale').checked = (sex === 'male');
+            document.getElementById('sexFemale').checked = (sex === 'female');
+            
+            fields.birthday.value = userData.birthday || '';
+            fields.birthPlace.value = userData.birthPlace || '';
+            fields.defaultEmail.value = userData.defaultEmail || '';
+            fields.alternativeEmail.value = userData.alternativeEmail || '';
+            fields.defaultPhone.value = userData.defaultPhone || '';
+            fields.alternativePhone.value = userData.alternativePhone || '';
+            fields.workPhone.value = userData.workPhone || '';
+            fields.telegram.value = userData.telegram || '';
+            fields.whatsApp.value = userData.whatsApp || '';
+            fields.position.value = userData.position || '';
+            fields.department.value = userData.department || '';
+            fields.address.value = userData.address || '';
+            fields.bio.value = userData.bio || '';
+            fields.website.value = userData.website || '';
+            fields.linkedIn.value = userData.linkedIn || '';
+            
+            editModal.style.display = 'flex';
+            clearEditMessage();
+            fields.displayName.focus();
+        }
+        
+        function closeEditModal() {
+            editModal.style.display = 'none';
+            clearEditMessage();
+        }
+        
+        function getSexValue() {
+            if (document.getElementById('sexMale').checked) return 'male';
+            if (document.getElementById('sexFemale').checked) return 'female';
+            return '';
+        }
+        
+        function showEditMessage(message, isError = true) {
+            editErrorDiv.textContent = message;
+            editErrorDiv.style.display = 'block';
+            editErrorDiv.className = 'error-message ' + (isError ? 'error' : 'success');
+        }
+        
+        function clearEditMessage() {
+            editErrorDiv.style.display = 'none';
+            editErrorDiv.textContent = '';
+        }
+        
+        // Закрытие модального окна
+        const closeModalBtn = editModal.querySelector('.close');
+        if (closeModalBtn) closeModalBtn.addEventListener('click', closeEditModal);
+        if (cancelEditBtn) cancelEditBtn.addEventListener('click', closeEditModal);
+        
+        window.addEventListener('click', (e) => {
+            if (e.target === editModal) closeEditModal();
+        });
+        
+        // Отправка формы
+        async function handleEditProfile(event) {
+            event.preventDefault();
+            
+            const displayName = fields.displayName.value.trim();
+            
+            if (!displayName) {
+                showEditMessage('Введите отображаемое имя');
+                return;
+            }
+            
+            submitEditBtn.disabled = true;
+            const originalText = submitEditBtn.innerHTML;
+            submitEditBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Сохранение...';
+            clearEditMessage();
+            
+            try {
+                const response = await fetch('/api/profile/edit', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + (localStorage.getItem('accessToken') || '')
+                    },
+                    body: JSON.stringify({
+                        displayName: displayName,
+                        realName: fields.realName.value.trim(),
+                        firstName: fields.firstName.value.trim(),
+                        lastName: fields.lastName.value.trim(),
+                        middleName: fields.middleName.value.trim(),
+                        sex: getSexValue(),
+                        birthday: fields.birthday.value || null,
+                        birthPlace: fields.birthPlace.value.trim(),
+                        defaultEmail: fields.defaultEmail.value.trim(),
+                        alternativeEmail: fields.alternativeEmail.value.trim(),
+                        defaultPhone: fields.defaultPhone.value.trim(),
+                        alternativePhone: fields.alternativePhone.value.trim(),
+                        workPhone: fields.workPhone.value.trim(),
+                        telegram: fields.telegram.value.trim(),
+                        whatsApp: fields.whatsApp.value.trim(),
+                        position: fields.position.value.trim(),
+                        department: fields.department.value.trim(),
+                        address: fields.address.value.trim(),
+                        bio: fields.bio.value.trim(),
+                        website: fields.website.value.trim(),
+                        linkedIn: fields.linkedIn.value.trim()
+                    })
+                });
+                
+                if (response.ok) {
+                    showEditMessage('✓ Профиль успешно обновлен!', false);
+                    setTimeout(() => {
+                        closeEditModal();
+                        setTimeout(() => location.reload(), 500);
+                    }, 1000);
+                } else {
+                    const error = await response.json();
+                    showEditMessage(error.message || 'Не удалось обновить профиль');
+                }
+            } catch (err) {
+                console.error('Error:', err);
+                showEditMessage('Ошибка сети. Проверьте подключение.');
+            } finally {
+                submitEditBtn.disabled = false;
+                submitEditBtn.innerHTML = originalText;
+            }
+        }
+        
+        const form = document.getElementById('editProfileForm');
+        if (form) form.addEventListener('submit', handleEditProfile);
+        
+        fields.displayName.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !submitEditBtn.disabled) {
+                e.preventDefault();
+                handleEditProfile(e);
+            }
+        });
+        
+        window.openEditModal = openEditModal;
+    });
+</script>

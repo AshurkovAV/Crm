@@ -1,0 +1,380 @@
+﻿<!-- Модальное окно (единое для всех кнопок) -->
+<div id="inviteModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h3>Введите код приглашения</h3>
+        <input type="text" id="inviteCode" placeholder="Код приглашения (например, a1b2c3d4)" />
+        <div class="modal-buttons">
+            <button class="btn btn-primary" id="submitInviteBtn">Присоединиться</button>
+            <button class="btn btn-secondary" id="cancelModalBtn">Отмена</button>
+        </div>
+        <div id="inviteError" class="error-message" style="display: none;"></div>
+    </div>
+</div>
+
+<style>
+    /* Модальное окно */
+    .modal {
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-content {
+        background: white;
+        padding: 30px;
+        border-radius: 20px;
+        width: 450px;
+        max-width: 90%;
+        position: relative;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        animation: modalFadeIn 0.3s ease;
+    }
+
+    @@keyframes modalFadeIn {
+        from {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    .close {
+        position: absolute;
+        top: 15px;
+        right: 20px;
+        font-size: 28px;
+        cursor: pointer;
+        color: #aaa;
+        transition: color 0.2s;
+    }
+
+        .close:hover {
+            color: black;
+        }
+
+    .modal-content h3 {
+        margin-bottom: 20px;
+        color: #2c3e50;
+        font-size: 1.4rem;
+    }
+
+    .modal-content input {
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 20px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.2s;
+        box-sizing: border-box;
+    }
+
+        .modal-content input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .modal-content input.error {
+            border-color: #e53e3e;
+        }
+
+    .modal-buttons {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+    }
+
+    /* Стили для кнопок */
+    .btn {
+        padding: 10px 24px;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: background 0.2s;
+        font-weight: 500;
+    }
+
+    .btn-primary {
+        background: #667eea;
+        color: white;
+    }
+
+        .btn-primary:hover {
+            background: #5a67d8;
+        }
+
+        .btn-primary:disabled {
+            background: #a0aec0;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+    .btn-secondary {
+        background: #e2e8f0;
+        color: #2c3e50;
+    }
+
+        .btn-secondary:hover {
+            background: #cbd5e1;
+        }
+
+        .btn-secondary:disabled {
+            background: #e2e8f0;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+    /* Стили для сообщений */
+    .error-message {
+        margin-top: 15px;
+        font-size: 0.85rem;
+        text-align: center;
+        padding: 8px;
+        border-radius: 6px;
+    }
+
+        .error-message.error {
+            color: #e53e3e;
+            background-color: #fff5f5;
+            border: 1px solid #feb2b2;
+        }
+
+        .error-message.success {
+            color: #38a169;
+            background-color: #f0fff4;
+            border: 1px solid #9ae6b4;
+        }
+
+    /* Адаптив для модального окна */
+    @@media (max-width: 768px) {
+        .modal-content {
+            width: 90%;
+            padding: 20px;
+        }
+
+            .modal-content h3 {
+                font-size: 1.2rem;
+            }
+
+        .btn {
+            padding: 8px 16px;
+            font-size: 0.85rem;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .modal-buttons {
+            flex-direction: column;
+        }
+
+            .modal-buttons .btn {
+                width: 100%;
+            }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Получаем элементы
+        const modal = document.getElementById('inviteModal');
+        const inviteInput = document.getElementById('inviteCode');
+        const errorDiv = document.getElementById('inviteError');
+        const submitInvite = document.getElementById('submitInviteBtn');
+
+        // Проверяем существование обязательных элементов
+        if (!modal || !inviteInput || !errorDiv || !submitInvite) {
+            console.error('Один или несколько обязательных элементов не найдены');
+            return;
+        }
+
+        // Функции для работы с модальным окном
+        function openModal() {
+            modal.style.display = 'flex';
+            inviteInput.value = '';
+            clearMessage();
+            inviteInput.focus();
+        }
+
+        function closeModal() {
+            modal.style.display = 'none';
+            inviteInput.value = '';
+            clearMessage();
+        }
+
+        function showMessage(message, isError = true) {
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            errorDiv.className = 'error-message ' + (isError ? 'error' : 'success');
+        }
+
+        function clearMessage() {
+            errorDiv.style.display = 'none';
+            errorDiv.textContent = '';
+        }
+
+        // Обработчики для кнопок "Ввести код"
+        const joinBtns = ['joinCompanyBtn', 'joinCompanyBtnOnly', 'joinCompanyBtnOwn'];
+        joinBtns.forEach(btnId => {
+            const btn = document.getElementById(btnId);
+            if (btn) {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();  // ← Добавьте эту строку
+                    openModal();
+                });
+            }
+        });
+
+        // Закрытие модального окна
+        const closeModalBtn = modal.querySelector('.close');
+        const cancelBtn = document.getElementById('cancelModalBtn');
+
+        if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
+        if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+
+        window.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
+        // Отправка кода приглашения
+        async function handleSubmitInvite() {
+            const code = inviteInput.value.trim();
+
+            if (!code) {
+                showMessage('Введите код приглашения');
+                return;
+            }
+
+            // Блокируем кнопку
+            submitInvite.disabled = true;
+            const originalText = submitInvite.textContent;
+            submitInvite.textContent = 'Проверка...';
+            clearMessage();
+
+            try {
+                // Сначала проверяем код
+                const checkResponse = await fetch(`/invite/${code}/check`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + (localStorage.getItem('accessToken') || '')
+                    }
+                });
+
+                if (!checkResponse.ok) {
+                    let errorMessage = 'Неверный код приглашения';
+                    try {
+                        const error = await checkResponse.json();
+                        errorMessage = error.message || errorMessage;
+                    } catch (e) { }
+                    showMessage(errorMessage);
+                    return;
+                }
+
+                const checkData = await checkResponse.json();
+
+                // Формируем сообщение с информацией о приглашении
+                const confirmMessage = formatInvitationMessage(checkData);
+
+                if (!confirm(confirmMessage)) {
+                    return; // Пользователь отменил
+                }
+
+                // Принимаем приглашение
+                submitInvite.textContent = 'Присоединение...';
+
+                const acceptResponse = await fetch(`/invite/${code}/accept`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + (localStorage.getItem('accessToken') || ''),
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (acceptResponse.ok) {
+                    const acceptData = await acceptResponse.json();
+                    showMessage(acceptData.message || 'Вы успешно присоединились к компании!', false);
+
+                    // Закрываем модальное окно через 1 секунду
+                    setTimeout(() => {
+                        closeModal();
+                        setTimeout(() => {
+                            location.reload();
+                        }, 500);
+                    }, 1000);
+                } else {
+                    let errorMessage = 'Не удалось присоединиться к компании';
+                    try {
+                        const error = await acceptResponse.json();
+                        errorMessage = error.message || errorMessage;
+                    } catch (e) { }
+                    showMessage(errorMessage);
+                }
+            } catch (err) {
+                console.error('Error:', err);
+                showMessage('Ошибка сети. Проверьте подключение к интернету.');
+            } finally {
+                submitInvite.disabled = false;
+                submitInvite.textContent = originalText;
+            }
+        }
+
+        if (submitInvite) {
+            submitInvite.addEventListener('click', handleSubmitInvite);
+        }
+
+        // Разрешаем отправку по Enter
+        inviteInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !submitInvite.disabled) {
+                e.preventDefault();
+                handleSubmitInvite();
+            }
+        });
+
+        // Вспомогательные функции
+        function formatInvitationMessage(data) {
+            let message = 'Вы собираетесь присоединиться ';
+
+            if (data.companyName) {
+                message += `к компании "${data.companyName}"`;
+            } else {
+                message += 'к компании';
+            }
+
+            if (data.departmentName) {
+                message += ` в отдел "${data.departmentName}"`;
+            }
+
+            if (data.inviterName) {
+                message += `\n\nПригласил: ${data.inviterName}`;
+            }
+
+            if (data.daysLeft) {
+                message += `\n\nСрок действия приглашения: ${data.daysLeft} ${getDaysWord(data.daysLeft)}.`;
+            }
+
+            message += '\n\nПродолжить?';
+
+            return message;
+        }
+
+        function getDaysWord(days) {
+            if (typeof days !== 'number') return 'дней';
+            if (days % 10 === 1 && days % 100 !== 11) return 'день';
+            if (days % 10 >= 2 && days % 10 <= 4 && (days % 100 < 10 || days % 100 >= 20)) return 'дня';
+            return 'дней';
+        }
+    });
+</script>

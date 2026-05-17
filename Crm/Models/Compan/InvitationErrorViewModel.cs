@@ -1,4 +1,4 @@
-﻿namespace Crm.Models.Company
+﻿namespace Crm.Models.Compan
 {
     public class InvitationErrorViewModel
     {

@@ -21,7 +21,7 @@ public partial class Company
 
     public DateTime ModifiedDate { get; set; }
 
-    public bool IsActive { get; set; }
+    public bool? IsActive { get; set; }
 
     public virtual ICollection<CompanyUser> CompanyUsers { get; set; } = new List<CompanyUser>();
 

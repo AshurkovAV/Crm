@@ -1,0 +1,60 @@
+﻿@model Crm.Models.Compan.AcceptInvitationViewModel
+
+@{
+    ViewData["Title"] = "Конфликт аккаунтов";
+    Layout = "_Layout";
+}
+
+<div class="content-section">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg border-0 rounded-lg">
+                <div class="card-header bg-gradient-danger text-white py-4">
+                    <h3 class="mb-0 text-center">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Внимание
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-user-slash fa-3x text-danger mb-3"></i>
+                        <h4>Несоответствие email</h4>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <i class="fas fa-envelope me-2"></i>
+                        <strong>Приглашение отправлено на: @Model.Email</strong>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-user-circle me-2"></i>
+                        <strong>Вы авторизованы как: @User.Identity.Name</strong>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.Message))
+                    {
+                        <div class="alert alert-danger">
+                            @Model.Message
+                        </div>
+                    }
+
+                    <div class="d-grid gap-2">
+                        <a href="/account/logout?returnUrl=@Url.Action("Index", "Invite", new { code = Model.Code })"
+                           class="btn btn-warning">
+                            <i class="fas fa-sign-out-alt me-2"></i>Выйти и войти под другим аккаунтом
+                        </a>
+                        <a href="/" class="btn btn-secondary">
+                            <i class="fas fa-home me-2"></i>На главную
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-gradient-danger {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    }
+</style>

@@ -60,19 +60,8 @@
     }
 </div>
 
-<!-- Модальное окно для ввода кода (без изменений) -->
-<div id="inviteModal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <span class="close">&times;</span>
-        <h3>Введите код приглашения</h3>
-        <input type="text" id="inviteCode" placeholder="Код приглашения (например, a1b2c3d4)" />
-        <div class="modal-buttons">
-            <button class="btn-company btn-primary" id="submitInviteBtn">Присоединиться</button>
-            <button class="btn-company btn-secondary" id="cancelModalBtn">Отмена</button>
-        </div>
-        <div id="inviteError" class="error-message" style="display: none;"></div>
-    </div>
-</div>
+<!-- Подключаем общее модальное окно -->
+@await Html.PartialAsync("/Views/Shared/Company/_InviteModal.cshtml")
 
 <style>
     /* Общий блок страницы - в стиле patients-import-section */
@@ -252,85 +241,3 @@
     }
 </style>
 
-<script>
-    // Обработчики для кнопок "Ввести код"
-    const joinBtns = ['joinCompanyBtn', 'joinCompanyBtnOnly', 'joinCompanyBtnOwn'];
-    joinBtns.forEach(btnId => {
-        const btn = document.getElementById(btnId);
-        if (btn) {
-            btn.addEventListener('click', () => {
-                document.getElementById('inviteModal').style.display = 'flex';
-            });
-        }
-    });
-
-    // Закрытие модального окна
-    const modal = document.getElementById('inviteModal');
-    const closeModal = document.querySelector('.close');
-    const cancelBtn = document.getElementById('cancelModalBtn');
-    function closeModalFunc() {
-        modal.style.display = 'none';
-    }
-    if (closeModal) closeModal.addEventListener('click', closeModalFunc);
-    if (cancelBtn) cancelBtn.addEventListener('click', closeModalFunc);
-    window.addEventListener('click', (e) => {
-        if (e.target === modal) closeModalFunc();
-    });
-
-    // Отправка кода приглашения
-    const submitInvite = document.getElementById('submitInviteBtn');
-    if (submitInvite) {
-        submitInvite.addEventListener('click', async () => {
-            const code = document.getElementById('inviteCode').value.trim();
-            const errorDiv = document.getElementById('inviteError');
-            if (!code) {
-                errorDiv.textContent = 'Введите код приглашения';
-                errorDiv.style.display = 'block';
-                return;
-            }
-            try {
-                const response = await fetch(`/api/invitations/${code}/accept`, {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('accessToken') || '') }
-                });
-                if (response.ok) {
-                    location.reload();
-                } else {
-                    const error = await response.json();
-                    errorDiv.textContent = error.message || 'Неверный код или приглашение истекло';
-                    errorDiv.style.display = 'block';
-                }
-            } catch (err) {
-                errorDiv.textContent = 'Ошибка сети';
-                errorDiv.style.display = 'block';
-            }
-        });
-    }
-
-    // Создание компании
-    const createBtn = document.getElementById('createCompanyBtn');
-    if (createBtn) {
-        createBtn.addEventListener('click', async () => {
-            const companyName = prompt('Введите название компании:', 'Моя компания');
-            if (!companyName) return;
-            try {
-                const response = await fetch('/api/companies', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + (localStorage.getItem('accessToken') || '')
-                    },
-                    body: JSON.stringify({ name: companyName, description: '' })
-                });
-                if (response.ok) {
-                    location.reload();
-                } else {
-                    const error = await response.json();
-                    alert('Ошибка: ' + (error.message || 'Не удалось создать компанию'));
-                }
-            } catch (err) {
-                alert('Ошибка сети: ' + err.message);
-            }
-        });
-    }
-</script>
