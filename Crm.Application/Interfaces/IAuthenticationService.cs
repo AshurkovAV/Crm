@@ -5,7 +5,7 @@ namespace Crm.Application.Interfaces
 {
     public interface IAuthenticationService
     {
-        Task CreateRememberTokenAsync(string email);
+        Task CreateRememberTokenAsync(string email, int userid);
         Task ClearRememberTokenAsync(string email);
         Task AuthenticateWithCookiesAsync( User user);
         Task SignOutAsync();

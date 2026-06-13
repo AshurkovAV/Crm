@@ -2,11 +2,6 @@
 using Crm.Entity.ModelsCrm;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Crm.Entity.Infrastructure.Services
 {
@@ -20,7 +15,7 @@ namespace Crm.Entity.Infrastructure.Services
             _logger = logger;
         }
 
-        public async Task<bool> SaveRememberTokenAsync(string email, string rememberToken, string deviceId)
+        public async Task<bool> SaveRememberTokenAsync(string email, int userid, string rememberToken, string deviceId)
         {
             try
             {
@@ -41,6 +36,7 @@ namespace Crm.Entity.Infrastructure.Services
                         Email = email,
                         RememberToken = rememberToken,
                         DeviceId = deviceId,
+                        UserId = userid,
                         Expiration = DateTime.UtcNow.AddDays(30),
                         CreatedAt = DateTime.UtcNow
                     };

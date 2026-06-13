@@ -7,6 +7,7 @@ using Crm.Application.Features.Accounts.Commands.Login;
 using Microsoft.AspNetCore.Authorization;
 using Crm.Core.Features.Account.Interfaces;
 using Crm.Core.Features.Email.Interfaces;
+using System.Security.Claims;
 
 
 namespace Crm.Controllers
@@ -253,7 +254,7 @@ namespace Crm.Controllers
         public async Task<ActionResult<VerifyPasswordResponse>> VerifyPassword([FromBody] VerifyPasswordRequest request)
         {
             try
-            {  
+            {                
                 var command = new VerifyPasswordCommand
                 {
                     UserId = request.UserId,
@@ -269,7 +270,7 @@ namespace Crm.Controllers
                 }
                 if (request.RememberMe)
                 {
-                    await _authenticationService.CreateRememberTokenAsync(request.Email);
+                    await _authenticationService.CreateRememberTokenAsync(request.Email, result.User.Id);
                 }
 
                 await _authenticationService.AuthenticateWithCookiesAsync(result.User);

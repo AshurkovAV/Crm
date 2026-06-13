@@ -20,13 +20,14 @@ namespace Crm.Infrastructure.Services
             _httpContextAccessor = httpContextAccessor;
         }
 
-        public async Task CreateRememberTokenAsync(string email)
+        public async Task CreateRememberTokenAsync(string email, int userid)
         {
             if (string.IsNullOrEmpty(email))
                 return;
 
             var httpContext = _httpContextAccessor.HttpContext;
             if (httpContext == null) return;
+            
 
             // Удаляем старый токен (если есть)
             await ClearRememberTokenAsync(email);
@@ -36,7 +37,7 @@ namespace Crm.Infrastructure.Services
             var token = GenerateSecureToken();
 
             // Сохраняем в БД (хэшированный)
-            await _rememberDeviceService.SaveRememberTokenAsync(email, token, deviceId);
+            await _rememberDeviceService.SaveRememberTokenAsync(email, userid, token, deviceId);
 
             // Устанавливаем cookies
             var cookieOptions = new CookieOptions
