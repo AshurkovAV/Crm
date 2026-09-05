@@ -1185,10 +1185,14 @@
                     // Здесь можно добавить элементы подменю
                     // Например, для "Клиенты"
                     if (this.querySelector('span').textContent === 'Клиенты') {
-                        ['Контакты', 'Компании', 'Поставщики'].forEach(item => {
+                        [{ text: 'Контакты', url: '/Contacts' }, { text: 'Компании', url: '#' }, { text: 'Поставщики', url: '#' }].forEach(item => {
                             const submenuItem = document.createElement('div');
                             submenuItem.className = 'submenu-item';
-                            submenuItem.textContent = item;
+                            submenuItem.textContent = item.text;
+                            submenuItem.addEventListener('click', function (event) {
+                                event.stopPropagation();
+                                if (item.url !== '#') window.location.href = item.url;
+                            });
                             submenu.appendChild(submenuItem);
                         });
                     }

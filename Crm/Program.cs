@@ -30,6 +30,8 @@ builder.Services.AddSingleton<INsiRepository,            NsiRepository>();
 builder.Services.AddSingleton<IInvitationRepository,     InvitationRepository>();
 builder.Services.AddSingleton<ICompanyRepository,        CompanyRepository>();
 builder.Services.AddSingleton<IChatRepository,           ChatRepository>();
+builder.Services.AddSingleton<IDealRepository,            DealRepository>();
+builder.Services.AddSingleton<IClientRepository,          ClientRepository>();
 builder.Services.AddSingleton<ChatTypingStore>();
 builder.Services.AddScoped<IVerificationTokenRepository, VerificationTokenRepository>();
 builder.Services.AddScoped<IRememberDeviceService,       RememberDeviceService>();
@@ -136,6 +138,54 @@ END");
     catch (Exception exception)
     {
         app.Logger.LogWarning(exception, "Не удалось проверить таблицу внутренних сообщений");
+    }
+
+    try
+    {
+        await using var db = new CrmContext();
+        await db.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[Deal]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[Deal]
+    (
+        [Id] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_Deal] PRIMARY KEY,
+        [CompanyId] INT NOT NULL,
+        [OwnerId] INT NOT NULL,
+        [Title] NVARCHAR(255) NOT NULL,
+        [ClientName] NVARCHAR(255) NULL,
+        [Amount] DECIMAL(18, 2) NOT NULL CONSTRAINT [DF_Deal_Amount] DEFAULT (0),
+        [Status] NVARCHAR(50) NOT NULL CONSTRAINT [DF_Deal_Status] DEFAULT (N'Новая'),
+        [ExpectedCloseDate] DATETIME2 NULL,
+        [Description] NVARCHAR(2000) NULL,
+        [CreatedDate] DATETIME2 NOT NULL CONSTRAINT [DF_Deal_CreatedDate] DEFAULT (GETUTCDATE()),
+        [ModifiedDate] DATETIME2 NOT NULL CONSTRAINT [DF_Deal_ModifiedDate] DEFAULT (GETUTCDATE()),
+        CONSTRAINT [FK_Deal_Company] FOREIGN KEY ([CompanyId]) REFERENCES [dbo].[Company] ([Id]),
+        CONSTRAINT [FK_Deal_Owner] FOREIGN KEY ([OwnerId]) REFERENCES [dbo].[Users] ([Id])
+    );
+    CREATE INDEX [IX_Deal_Company_Status_Modified] ON [dbo].[Deal]
+        ([CompanyId], [Status], [ModifiedDate]);
+END");
+    }
+    catch (Exception exception)
+    {
+        app.Logger.LogWarning(exception, "Не удалось проверить таблицу сделок");
+    }
+
+    try
+    {
+        await using var db = new CrmContext();
+        await db.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[Deal]', N'U') IS NOT NULL
+AND COL_LENGTH(N'[dbo].[Deal]', N'ClientId') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[Deal] ADD [ClientId] INT NULL;
+    ALTER TABLE [dbo].[Deal] ADD CONSTRAINT [FK_Deal_Client]
+        FOREIGN KEY ([ClientId]) REFERENCES [dbo].[Clients] ([ClientID]) ON DELETE SET NULL;
+END");
+    }
+    catch (Exception exception)
+    {
+        app.Logger.LogWarning(exception, "Не удалось обновить связь сделок с контактами");
     }
 }
 

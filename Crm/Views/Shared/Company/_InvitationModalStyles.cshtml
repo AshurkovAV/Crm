@@ -148,4 +148,187 @@
         .send-invite-btn i {
             font-size: 16px;
         }
+
+    /* Compact layout for the employee invitation dialog. */
+    #invitationModal {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        overflow: hidden;
+        background: rgba(15, 31, 49, 0.58);
+        backdrop-filter: blur(4px);
+    }
+
+    #invitationModal .modal-dialog {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: min(640px, 100%);
+        max-width: 640px;
+        max-height: calc(100vh - 32px);
+        margin: 0;
+        transform: translate(-50%, -50%);
+    }
+
+    #invitationModal .modal-content {
+        width: 100%;
+        max-height: calc(100vh - 32px);
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.65);
+        border-radius: 18px;
+        background: #ffffff;
+        box-shadow: 0 24px 70px rgba(15, 31, 49, 0.28);
+    }
+
+    #invitationModal .modal-header {
+        min-height: 74px;
+        padding: 18px 24px;
+        background: linear-gradient(135deg, #eef6ff 0%, #f8fbff 100%);
+        border-bottom: 1px solid #e1eaf3;
+    }
+
+    #invitationModal .modal-title {
+        color: #20364d;
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: 0;
+    }
+
+    #invitationModal .close {
+        width: 36px;
+        height: 36px;
+        color: #6c8195;
+        font-size: 25px;
+        border-radius: 10px;
+    }
+
+    #invitationModal .close:hover {
+        color: #20364d;
+        background: #e2edf8;
+    }
+
+    #invitationModal .modal-body {
+        padding: 20px 24px 24px;
+        overflow: hidden;
+    }
+
+    #invitationModal .invitation-header {
+        margin-bottom: 16px;
+    }
+
+    #invitationModal .invitation-header h3 {
+        margin-bottom: 4px;
+        color: #29445c;
+        font-size: 16px;
+        font-weight: 700;
+    }
+
+    #invitationModal .description {
+        color: #718398;
+        font-size: 13px;
+    }
+
+    #invitationModal .email-form {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(150px, 0.55fr);
+        gap: 14px 16px;
+    }
+
+    #invitationModal .form-group {
+        min-width: 0;
+        margin: 0;
+    }
+
+    #invitationModal .form-group:first-child,
+    #invitationModal .form-group:nth-child(3),
+    #invitationModal .send-invite-btn {
+        grid-column: 1 / -1;
+    }
+
+    #invitationModal .form-group label {
+        margin-bottom: 6px;
+        color: #38536b;
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    #invitationModal .form-control {
+        min-height: 42px;
+        padding: 10px 12px;
+        border: 1px solid #d6e1eb;
+        border-radius: 10px;
+        background: #fbfdff;
+        color: #263e55;
+        font-size: 13px;
+    }
+
+    #invitationModal textarea.form-control {
+        min-height: 76px;
+        resize: none;
+    }
+
+    #invitationModal .form-group:nth-child(3) textarea.form-control {
+        min-height: 68px;
+    }
+
+    #invitationModal .form-control:focus {
+        border-color: #3390ec;
+        background: #ffffff;
+        box-shadow: 0 0 0 3px rgba(51, 144, 236, 0.12);
+    }
+
+    #invitationModal .hint {
+        margin-top: 4px;
+        color: #8798a8;
+        font-size: 11px;
+    }
+
+    #invitationModal .send-invite-btn {
+        min-height: 44px;
+        margin-top: 2px;
+        padding: 11px 18px;
+        border-radius: 10px;
+        background: #3390ec;
+        box-shadow: 0 7px 16px rgba(51, 144, 236, 0.2);
+        font-weight: 700;
+    }
+
+    #invitationModal .send-invite-btn:hover {
+        background: #247dcc;
+        box-shadow: 0 9px 20px rgba(51, 144, 236, 0.28);
+    }
+
+    @@media (max-width: 600px) {
+        #invitationModal {
+            padding: 10px;
+        }
+
+        #invitationModal .modal-dialog,
+        #invitationModal .modal-content {
+            max-height: calc(100vh - 20px);
+        }
+
+        #invitationModal .modal-dialog {
+            width: calc(100% - 20px);
+        }
+
+        #invitationModal .modal-body {
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        #invitationModal .email-form {
+            grid-template-columns: 1fr;
+        }
+
+        #invitationModal .form-group:first-child,
+        #invitationModal .form-group:nth-child(3),
+        #invitationModal .send-invite-btn {
+            grid-column: auto;
+        }
+    }
 </style>

@@ -1,4 +1,4 @@
-﻿@using Crm.Entity.DTO
+﻿@using Crm.Entity.ModelsCrm
 
 @{
     ViewData["Title"] = "Сделки";
@@ -7,252 +7,225 @@
 <div class="content-top-bar">
     <h1 class="content-title">Сделки</h1>
     <div class="content-actions">
-        <button class="content-btn" onclick="showCreateProjectModal()">
+        <button class="content-btn" type="button" onclick="addDeal()">
             <i class="fas fa-plus"></i>
             <span>Новая сделка</span>
         </button>
-        <button class="content-btn secondary">
+        <button class="content-btn secondary" type="button" onclick="toggleDealFilter()">
             <i class="fas fa-filter"></i>
             <span>Фильтр</span>
         </button>
     </div>
 </div>
-@* 
-<div class="content-section">
+
+
+
+<div class="content-section deals-section">
+    <div class="deals-toolbar">
+        <div>
+            <h2>Воронка продаж</h2>
+            <p>Управляйте сделками вашей компании в одном месте</p>
+        </div>
+        <div class="deals-summary" id="deals-summary">Загрузка сделок...</div>
+    </div>
+
     <div class="dx-grid-container">
-        @(Html.DevExtreme().DataGrid<ProjectDTO>()
-                        .ID("projectsGrid")
-                        .DataSource(ds => ds.Mvc()
-                                .Controller("ProjectData")
-                                .LoadAction("Get")
-                                .InsertAction("Post")
-                                .UpdateAction("Put")
-                                .DeleteAction("Delete")
-                                .Key("Id")
-                        )
-                .ShowBorders(true)
-                .ColumnAutoWidth(true)
-                .WordWrapEnabled(true)
-                .ShowColumnLines(true)
-                .ShowRowLines(true)
-                .RowAlternationEnabled(true)
-                .Grouping(g => g.AutoExpandAll(false))
-                .Pager(p => p
+        @(Html.DevExtreme().DataGrid<Deal>()
+            .ID("dealsGrid")
+            .DataSource(ds => ds.Mvc()
+                .Controller("DealData")
+                .LoadAction("Get")
+                .InsertAction("Post")
+                .UpdateAction("Put")
+                .DeleteAction("Delete")
+                .Key("Id"))
+            .ShowBorders(false)
+            .ColumnAutoWidth(true)
+            .WordWrapEnabled(true)
+            .RowAlternationEnabled(true)
+            .HoverStateEnabled(true)
+            .SearchPanel(s => s.Visible(true).Placeholder("Найти сделку..."))
+            .FilterRow(f => f.Visible(false))
+            .HeaderFilter(h => h.Visible(true))
+            .Paging(p => p.PageSize(10))
+            .Pager(p => p
                 .ShowPageSizeSelector(true)
                 .AllowedPageSizes(new[] { 10, 20, 50 })
-                .ShowInfo(true)
-                )
-                .Paging(p => p.PageSize(10))
-                .Editing(e => e
+                .ShowInfo(true))
+            .Editing(e => e
                 .Mode(GridEditMode.Popup)
-           
                 .AllowAdding(true)
                 .AllowUpdating(true)
                 .AllowDeleting(true)
                 .UseIcons(true)
                 .Popup(p => p
-                .Title("Редактирование проекта")
-                .ShowTitle(true)
-                .Width(860)
-                .Height(800)
-                .Position(pos => pos
-                .My(HorizontalAlignment.Center, VerticalAlignment.Center)
-                .At(HorizontalAlignment.Center, VerticalAlignment.Center)
-                .Of(new JS("window"))
-                )          
-                )
+                    .Title("Сделка")
+                    .ShowTitle(true)
+                    .Width(720)
+                    .Height(570)
+                    .DragEnabled(true)
+                    .ResizeEnabled(true)
+                    .Position(pos => pos
+                        .My(HorizontalAlignment.Center, VerticalAlignment.Center)
+                        .At(HorizontalAlignment.Center, VerticalAlignment.Center)
+                        .Of(new JS("window"))))
                 .Form(f => f
-                .ColCount(2)
-                .LabelLocation(FormLabelLocation.Top)
-                .Items(items =>
-                {                  
-                    // Первая колонка
-                    items.AddGroup()
+                    .ColCount(2)
+                    .LabelLocation(FormLabelLocation.Top)
+                    .Items(items =>
+                    {
+                        items.AddGroup()
                             .Caption("Основная информация")
-                            .ColSpan(1)
-                            .Items(groupItems =>
+                            .ColSpan(2)
+                            .ColCount(2)
+                            .Items(group =>
                             {
-                                groupItems.AddSimpleFor(m => m.Name)
-                                        .Label(l => l.Text("Название проекта*"))
-                                        .Editor(editor => editor
-                                        .TextBox()
-                                        .Placeholder("Введите название проекта")
-                            );
+                                group.AddSimpleFor(m => m.Title)
+                                    .ColSpan(2)
+                                    .Label(l => l.Text("Название сделки"))
+                                    .IsRequired(true)
+                                    .Editor(editor => editor.TextBox().Placeholder("Например, поставка оборудования"));
 
-                    groupItems.AddSimpleFor(m => m.Activity)
-                                            .Label(l => l.Text("Описание проекта"))
-                                            .Editor(editor => editor
-                                            .TextArea()
-                                            .Height(80)
-                                            .Placeholder("Опишите проект")
-                                            );
-                });
-
-                    // Вторая колонка
-                    items.AddGroup()
-                .Caption("Дополнительная информация")
-                .ColSpan(1)
-                .Items(groupItems =>
-                {
-                    groupItems.AddSimpleFor(m => m.Status)
-                    .Label(l => l.Text("Статус*"))
-                    .Editor(editor => editor
-                    .SelectBox()
-                    .DataSource(new[] {
-                                    "В работе",
-                                    "Завершен",
-                                    "На паузе",
-                                    "Планируется",
-                                    "Черновик",
-                                    "Отменен"
-                                        })
-                    .Placeholder("Выберите статус")
-                    );
-
-                    // Поле для выбора участников
-                    items.AddSimple()
-                            .DataField("Participants")  // Явно указываем DataField
-                            .Label(l => l.Text("Текущие участники"))
-                            .Editor(editor => editor
-                                        .TagBox()
+                                group.AddSimpleFor(m => m.ClientId)
+                                    .Label(l => l.Text("Клиент"))
+                                    .Editor(editor => editor.SelectBox()
                                         .DataSource(d => d.Mvc()
-                                                .Controller("ProjectUserData")
-                                                .LoadAction("GetParticipants")
-                                                .LoadMode(DataSourceLoadMode.Processed)
-                            )
-                                        .ValueExpr("Id")
-                                        .DisplayExpr("DisplayName")
-                                        .Placeholder("Выберите участников")
+                                            .Controller("Contacts")
+                                            .LoadAction("Lookup"))
+                                        .ValueExpr("ClientId")
+                                        .DisplayExpr("Name")
                                         .SearchEnabled(true)
-                                        .ShowSelectionControls(true)
                                         .ShowClearButton(true)
-                                        .Width("100%")
-                                        )
-                            .ColSpan(2);
-                });
-                })
-                )
-                )
-                .Columns(columns =>
-                {
-                    columns.Add().DataField("Name").Caption("Название проекта");
-                    columns.Add().DataField("Activity").Caption("Описание").Visible(true);
-                    columns.Add().DataField("ParticipantsDisplay").Caption("Участники").Visible(true);
-                    columns.Add()
-                    .DataField("Status")
-                    .Caption("Статус")
-                    .CellTemplate(@<text>
-                                    <span class="status-badge status-<%= getStatusClass(value) %>">
-                                        <%= value %>
-                                    </span>
-                                </text>);
-                    columns.Add().DataField("CreatedDate").Caption("Создан").DataType(GridColumnDataType.DateTime).Format("dd.MM.yyyy HH:mm").Width(120).AllowEditing(false);
-                    columns.Add().DataField("ModifiedDate").Caption("Изменен").DataType(GridColumnDataType.DateTime).Format("dd.MM.yyyy HH:mm").Width(120).Visible(false);
-                    columns.Add().DataField("Participants").Visible(false);
-                    columns.Add()
-            .Type(GridCommandColumnType.Buttons)
-            .Width(120)
-            .Buttons(b =>
+                                        .Placeholder("Выберите контакт"));
+
+                                group.AddSimpleFor(m => m.Amount)
+                                    .Label(l => l.Text("Сумма"))
+                                    .Editor(editor => editor.NumberBox().Min(0).Format("#,##0.00 ₽"));
+                            });
+
+                        items.AddGroup()
+                            .Caption("Этап и сроки")
+                            .ColSpan(2)
+                            .ColCount(2)
+                            .Items(group =>
+                            {
+                                group.AddSimpleFor(m => m.Status)
+                                    .Label(l => l.Text("Статус"))
+                                    .Editor(editor => editor.SelectBox()
+                                        .DataSource(new[] { "Новая", "В работе", "Переговоры", "Успешно", "Проиграна" })
+                                        .SearchEnabled(false));
+
+                                group.AddSimpleFor(m => m.ExpectedCloseDate)
+                                    .Label(l => l.Text("Плановая дата закрытия"))
+                                    .Editor(editor => editor.DateBox().Type(DateBoxType.Date).DisplayFormat("dd.MM.yyyy"));
+
+                                group.AddSimpleFor(m => m.Description)
+                                    .ColSpan(2)
+                                    .Label(l => l.Text("Описание"))
+                                    .Editor(editor => editor.TextArea().Height(90).Placeholder("Кратко опишите сделку"));
+                            });
+                    })))
+            .Columns(columns =>
             {
-                    b.Add().Name(GridColumnButtonName.Edit).Hint("Редактировать").Icon("edit");
-                    b.Add().Name(GridColumnButtonName.Delete).Hint("Удалить").Icon("trash").OnClick("deleteButtonClick");
-                });
-                })
-            .OnContentReady("function(e) { e.component.option('loadPanel.enabled', false); }")
+                columns.AddFor(m => m.Title).Caption("Сделка").MinWidth(220);
+                columns.AddFor(m => m.ClientName).Caption("Клиент").MinWidth(160);
+                columns.AddFor(m => m.Amount).Caption("Сумма").Format("#,##0.00 ₽").Width(140);
+                columns.AddFor(m => m.Status).Caption("Статус").Width(140)
+                    .CellTemplate(@<text>
+                        <span class="deal-status deal-status-<%= (value || '').toLowerCase().replaceAll(' ', '-') %>"><%= value %></span>
+                    </text>);
+                columns.AddFor(m => m.ExpectedCloseDate).Caption("Закрытие").DataType(GridColumnDataType.Date).Format("dd.MM.yyyy").Width(130);
+                columns.AddFor(m => m.ModifiedDate).Caption("Изменена").DataType(GridColumnDataType.DateTime).Format("dd.MM.yyyy HH:mm").Width(150);
+                columns.Add().Type(GridCommandColumnType.Buttons).Width(105);
+            })
+            .OnContentReady("updateDealsSummary")
+            .OnRowInserted("refreshDealsSummary")
+            .OnRowUpdated("refreshDealsSummary")
+            .OnRowRemoved("refreshDealsSummary")
             .AllowColumnReordering(true)
-            .AllowColumnResizing(true)
-            .Selection(s => s.Mode(SelectionMode.Single))
-            )
+            .AllowColumnResizing(true))
     </div>
 </div>
 
-<script>
-    function deleteButtonClick(e) {
-        const dataGrid = $("#projectsGrid").dxDataGrid("instance");
-        const selectedRowData = dataGrid.getSelectedRowsData();
-
-        if (selectedRowData.length > 0) {
-            DevExpress.ui.dialog.confirm("Вы уверены, что хотите удалить эту запись?", "Подтверждение удаления")
-                .done(function (dialogResult) {
-                    if (dialogResult) {
-                        const id = selectedRowData[0].Id; // Получаем ID выбранной строки
-
-                        // AJAX запрос на удаление
-                        $.ajax({
-                            url: '/ProjectData/' + id,
-                            type: 'DELETE',
-                            contentType: 'application/json',
-                            success: function () {
-                                dataGrid.refresh();
-                                DevExpress.ui.notify("Удаление выполнено успешно", "success", 2000);
-                            },
-                            error: function (error) {
-                                DevExpress.ui.notify("Ошибка при удалении: " + error.responseText, "error", 4000);
-                            }
-                        });
-
-
-                    }
-                });
-        } else {
-            DevExpress.ui.notify("Выберите строку для удаления", "warning", 2000);
-        }
+<style>
+    .deals-section {
+        padding: 0;
+        overflow: hidden;
     }
-</script>
 
-
-<script>
-    function editButtonClick(e) {
-        const dataGrid = $("#projectsGrid").dxDataGrid("instance");
-        const selectedRowData = dataGrid.getSelectedRowsData();
-
-        if (selectedRowData.length > 0) {
-            console.log(selectedRowData[0].Id);
-            // Получаем ключ выбранной строки
-            const rowKey = selectedRowData[0].Id;
-           
-            // Открываем редактирование в popup режиме
-            dataGrid.option('editing.mode', 'popup');
-            dataGrid.editRow(rowKey);
-
-        } else {
-            DevExpress.ui.notify("Выберите строку для редактирования", "warning", 2000);
-        }
+    .deals-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 22px 24px 18px;
+        border-bottom: 1px solid #e5edf4;
+        background: #ffffff;
     }
-</script>
+
+    .deals-toolbar h2 {
+        margin: 0 0 4px;
+        color: #20364d;
+        font-size: 18px;
+    }
+
+    .deals-toolbar p {
+        margin: 0;
+        color: #7b8da0;
+        font-size: 13px;
+    }
+
+    .deals-summary {
+        color: #6b8195;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+
+    .deals-section .dx-grid-container {
+        padding: 0 12px 12px;
+    }
+
+    .deal-status {
+        display: inline-flex;
+        align-items: center;
+        min-height: 26px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: #eef3f7;
+        color: #51677b;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .deal-status-новая { background: #eaf3ff; color: #2872bd; }
+    .deal-status-в-работе, .deal-status-переговоры { background: #fff5dc; color: #9a6a00; }
+    .deal-status-успешно { background: #e6f7ee; color: #218153; }
+    .deal-status-проиграна { background: #fdebed; color: #b14e5b; }
+
+    @@media (max-width: 700px) {
+        .deals-toolbar { align-items: flex-start; flex-direction: column; }
+        .deals-summary { white-space: normal; }
+    }
+</style>
 
 @section Scripts {
     <script>
-        function getStatusClass(status) {
-            const statusMap = {
-                'В работе': 'active',
-                'Завершен': 'completed',
-                'На паузе': 'paused',
-                'Планируется': 'planned',
-                'Черновик': 'draft',
-                'Отменен': 'cancelled'
-            };
-            return statusMap[status] || 'default';
+        function addDeal() {
+            $('#dealsGrid').dxDataGrid('instance').addRow();
         }
 
-        function showCreateProjectModal() {
-            const dataGrid = $('#projectsGrid').dxDataGrid('instance');
-            dataGrid.addRow();
-        }       
-
-        function refreshGrid() {
-            $('#projectsGrid').dxDataGrid('instance').refresh();
+        function toggleDealFilter() {
+            const grid = $('#dealsGrid').dxDataGrid('instance');
+            grid.option('filterRow.visible', !grid.option('filterRow.visible'));
         }
 
-        $(document).ready(function () {
-            setTimeout(function () {
-                const dataGrid = $('#projectsGrid').dxDataGrid('instance');
-                if (dataGrid) {
-                    console.log('DataGrid initialized successfully');
-                }
-            }, 1000);
-        });
+        function updateDealsSummary(e) {
+            const count = e.component.totalCount();
+            document.getElementById('deals-summary').textContent = `${count} сделок`;
+        }
+
+        function refreshDealsSummary(e) {
+            e.component.refresh();
+        }
     </script>
 }
-
- *@

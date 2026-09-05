@@ -23,6 +23,8 @@ public partial class CrmContext : DbContext
 
     public virtual DbSet<CompanyUser> CompanyUsers { get; set; }
 
+    public virtual DbSet<Deal> Deals { get; set; }
+
     public virtual DbSet<ChatMessage> ChatMessages { get; set; }
 
     public virtual DbSet<CustomerOrder> CustomerOrders { get; set; }
@@ -158,6 +160,36 @@ public partial class CrmContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_CompanyUser_User");
+        });
+
+        modelBuilder.Entity<Deal>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.ToTable("Deal");
+            entity.Property(e => e.Title).HasMaxLength(255).IsRequired();
+            entity.Property(e => e.ClientName).HasMaxLength(255);
+            entity.Property(e => e.ClientId);
+            entity.Property(e => e.Amount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.Status).HasMaxLength(50).HasDefaultValue("Новая");
+            entity.Property(e => e.Description).HasMaxLength(2000);
+            entity.Property(e => e.CreatedDate).HasDefaultValueSql("(getutcdate())");
+            entity.Property(e => e.ModifiedDate).HasDefaultValueSql("(getutcdate())");
+            entity.HasIndex(e => new { e.CompanyId, e.Status, e.ModifiedDate });
+
+            entity.HasOne(e => e.Company)
+                .WithMany()
+                .HasForeignKey(e => e.CompanyId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+
+            entity.HasOne(e => e.Client)
+                .WithMany()
+                .HasForeignKey(e => e.ClientId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.Owner)
+                .WithMany()
+                .HasForeignKey(e => e.OwnerId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
         });
 
         modelBuilder.Entity<ChatMessage>(entity =>
