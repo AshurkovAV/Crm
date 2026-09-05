@@ -1099,8 +1099,7 @@
         </div>
 
         <!-- Основное содержимое -->
-        <div class="main-content">
-            <!-- Содержимое (будет меняться) -->
+        <div class="main-content">            
             <div id="contentArea">
                 @RenderBody()
             </div>
@@ -1182,8 +1181,7 @@
                     const submenu = document.createElement('div');
                     submenu.className = 'submenu';
 
-                    // Здесь можно добавить элементы подменю
-                    // Например, для "Клиенты"
+                    // Здесь можно добавить элементы подменю                   
                     if (this.querySelector('span').textContent === 'Клиенты') {
                         ['Контакты', 'Компании', 'Поставщики'].forEach(item => {
                             const submenuItem = document.createElement('div');

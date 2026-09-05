@@ -1,0 +1,138 @@
+﻿@using Crm.Entity.DTO
+
+@{
+    ViewData["Title"] = "Сотрудники";
+}
+
+<!-- Подключаем стили -->
+@await Html.PartialAsync("Company/_InvitationModalStyles")
+
+<div class="content-top-bar">
+    <h1 class="content-title">Сотрудники</h1>
+    <div class="content-actions">
+        <button class="content-btn" onclick="showInvitationModal()">
+            <i class="fas fa-plus"></i>
+            <span>Пригласить сотрудника</span>
+        </button>
+        <button class="content-btn secondary">
+            <i class="fas fa-filter"></i>
+            <span>Фильтр</span>
+        </button>
+    </div>
+</div>
+
+<!-- Подключаем модальное окно -->
+@await Html.PartialAsync("Company/_InvitationModal")
+
+<div class="content-section">
+    <div class="dx-grid-container">
+        @(Html.DevExtreme().DataGrid<CompanyUserDto>()
+            .ID("projectsGrid")
+            .DataSource(ds => ds.Mvc()
+            .Controller("Company")
+            .LoadAction("GetUsers")
+            .InsertAction("Post")
+            .UpdateAction("Put")
+            .DeleteAction("Delete")
+            .Key("UserId")
+            )
+            .ShowBorders(true)
+            .ColumnAutoWidth(true)
+            .WordWrapEnabled(true)
+            .ShowColumnLines(true)
+            .ShowRowLines(true)
+            .RowAlternationEnabled(true)
+            .Grouping(g => g.AutoExpandAll(false))
+            .Pager(p => p
+            .ShowPageSizeSelector(true)
+            .AllowedPageSizes(new[] { 10, 20, 50 })
+            .ShowInfo(true)
+            )
+            .Paging(p => p.PageSize(10))
+            .Editing(e => e
+            .Mode(GridEditMode.Popup)
+            .AllowAdding(false)
+            .AllowUpdating(true)
+            .AllowDeleting(true)
+            .UseIcons(true)
+            .Popup(p => p
+            .Title("Редактирование сотрудника")
+            .ShowTitle(true)
+            .Width(600)
+            .Height(650)
+            .Position(pos => pos
+            .My(HorizontalAlignment.Center, VerticalAlignment.Center)
+            .At(HorizontalAlignment.Center, VerticalAlignment.Center)
+            .Of(new JS("window"))
+            )
+            )
+            .Form(f => f
+            .ColCount(1)
+            .LabelLocation(FormLabelLocation.Top)
+            .Items(items =>
+            {
+                items.AddSimple()
+                .Template(new JS("avatarUploaderTemplate"))
+                .Label(l => l.Text("Аватар").Visible(false))
+                .ColSpan(1);
+
+                items.AddGroup()
+                .Caption("Основная информация")
+                .Items(groupItems =>
+                {
+                    groupItems.AddSimpleFor(m => m.DisplayName)
+                .Label(l => l.Text("Имя пользователя*"))
+                .Editor(editor => editor
+                .TextBox()
+                .Placeholder("Введите имя")
+                );
+
+                    groupItems.AddSimpleFor(m => m.Email)
+                .Label(l => l.Text("Email"))
+                .Editor(editor => editor
+                .TextBox()
+                .Placeholder("Email пользователя")
+                .ReadOnly(true)
+                .Disabled(true)
+                );
+                });
+
+                items.AddSimpleFor(m => m.AvatarUrl)
+                .Label(l => l.Visible(false))
+                .Editor(e => e.TextBox().Visible(false));
+            })
+            )
+            )
+            .Columns(columns =>
+            {
+                columns.Add()
+                .DataField("AvatarUrl")
+                .Caption("Аватар")
+                .Width(80)
+                .CellTemplate(new JS("avatarCellTemplate"))
+                .AllowEditing(false);
+
+                columns.Add().DataField("UserId").Caption("ID").Visible(false);
+                columns.Add().DataField("DisplayName").Caption("Имя пользователя");
+                columns.Add().DataField("Email").Caption("Email").Visible(true);
+
+                columns.Add()
+                .Type(GridCommandColumnType.Buttons)
+                .Width(120)
+                .Buttons(b =>
+                {                   
+                    b.Add().Name(GridColumnButtonName.Delete).Hint("Исключить из компании").Icon("trash");
+                });
+            })
+            .OnContentReady("function(e) { e.component.option('loadPanel.enabled', false); }")
+            .AllowColumnReordering(true)
+            .AllowColumnResizing(true)
+            .Selection(s => s.Mode(SelectionMode.Single))
+            )
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Подключаем скрипты модального окна -->
+    @await Html.PartialAsync("Company/_InvitationModalScripts")
+}

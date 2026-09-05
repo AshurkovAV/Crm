@@ -27,7 +27,7 @@ namespace Crm.Controllers
             IMediator                                           mediator,
             IUserRepository                                     userRepository,
             Application.Interfaces.IAuthenticationService       authenticationService)
-        {
+        { 
             _mediator = mediator;
             _crmRepository = crmRepository;             
             _rememberDeviceService = rememberDeviceServicev;
