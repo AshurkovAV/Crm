@@ -1,10 +1,18 @@
 ﻿document.addEventListener('DOMContentLoaded', function () {
+    if (window.location.pathname.toLowerCase() === '/online') {
+        return;
+    }
+
     // Добавляем в существующий скрипт
     const chatToggle = document.getElementById('chatToggle');
     const chatContainer = document.getElementById('chatContainer');
     let isChatView = false;
 
-    chatToggle.addEventListener('click', function () {
+    chatToggle.addEventListener('click', function (event) {
+        if (event.target.closest('a')) {
+            return;
+        }
+
         if (isChatView) {
             // Возвращаемся к предыдущему виду
             changeView(currentView);

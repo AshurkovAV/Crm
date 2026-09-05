@@ -6,11 +6,13 @@ using Crm.Core.Implementations;
 using Crm.Core.Interfaces;
 using Crm.Core.Services;
 using Crm.Entity.Infrastructure.Services;
+using Crm.Entity.ModelsCrm;
 using Crm.Entity.Services;
 using Crm.Infrastructure.Services;
 using Crm.Services.Email;
 using Crm.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,6 +29,8 @@ builder.Services.AddSingleton<IUserRepository,           UserRepository>();
 builder.Services.AddSingleton<INsiRepository,            NsiRepository>();
 builder.Services.AddSingleton<IInvitationRepository,     InvitationRepository>();
 builder.Services.AddSingleton<ICompanyRepository,        CompanyRepository>();
+builder.Services.AddSingleton<IChatRepository,           ChatRepository>();
+builder.Services.AddSingleton<ChatTypingStore>();
 builder.Services.AddScoped<IVerificationTokenRepository, VerificationTokenRepository>();
 builder.Services.AddScoped<IRememberDeviceService,       RememberDeviceService>();
 builder.Services.AddScoped<IProfileService,              ProfileService>();
@@ -103,6 +107,37 @@ builder.Services.AddAuthorization(options =>
 });
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    try
+    {
+        await using var db = new CrmContext();
+        await db.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[ChatMessage]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[ChatMessage]
+    (
+        [Id] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_ChatMessage] PRIMARY KEY,
+        [CompanyId] INT NOT NULL,
+        [SenderUserId] INT NOT NULL,
+        [RecipientUserId] INT NOT NULL,
+        [Text] NVARCHAR(4000) NOT NULL,
+        [SentAt] DATETIME2 NOT NULL CONSTRAINT [DF_ChatMessage_SentAt] DEFAULT (GETUTCDATE()),
+        [IsRead] BIT NOT NULL CONSTRAINT [DF_ChatMessage_IsRead] DEFAULT (0),
+        CONSTRAINT [FK_ChatMessage_Company] FOREIGN KEY ([CompanyId]) REFERENCES [dbo].[Company] ([Id]),
+        CONSTRAINT [FK_ChatMessage_Sender] FOREIGN KEY ([SenderUserId]) REFERENCES [dbo].[Users] ([Id]),
+        CONSTRAINT [FK_ChatMessage_Recipient] FOREIGN KEY ([RecipientUserId]) REFERENCES [dbo].[Users] ([Id])
+    );
+    CREATE INDEX [IX_ChatMessage_Conversation] ON [dbo].[ChatMessage]
+        ([CompanyId], [SenderUserId], [RecipientUserId], [SentAt]);
+END");
+    }
+    catch (Exception exception)
+    {
+        app.Logger.LogWarning(exception, "Не удалось проверить таблицу внутренних сообщений");
+    }
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

@@ -4,7 +4,7 @@
 }
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/chat.css" />
+    <link rel="stylesheet" href="~/css/chat.css?v=5" />
 }
 
 <div class="content-section">
@@ -16,14 +16,14 @@
         <!-- Боковая панель с контактами -->
         <div class="chat-sidebar">
             <div class="sidebar-header">
-                <h2>Чаты</h2>
+                <h2>Сотрудники</h2>
             </div>
 
             <div class="search-container">
-                <input type="text" class="search-input" placeholder="Поиск">
+                <input type="search" class="search-input" id="contact-search" placeholder="Найти сотрудника" autocomplete="off">
             </div>
 
-            <div class="chat-list">
+            <div class="chat-list" id="online-chat-list">
                 <!-- Элементы чатов будут добавлены через JavaScript -->
             </div>
         </div>
@@ -55,110 +55,109 @@
 
 @section Scripts {
     <script>
-        // Данные чатов
-        const chats = [
-            { id: 1, name: "Архив", preview: "Строитель: ХОЗЯИН, Владельц...", time: "9 мин", avatar: "А" },
-            { id: 2, name: "Большая планерка КГБ6", preview: "Владимир Игоревич: Уважаемые коллеги...", time: "16:20", avatar: "Б" },
-            { id: 3, name: "Задачи", preview: "Выс. 1343", time: "15:55", avatar: "З" },
-            { id: 4, name: "Sanatorium Chat", preview: "SanatoriumChat Создание расписания...", time: "15:44", avatar: "S" },
-            { id: 5, name: "ЕМИСЗ КО", preview: "Дмитрий Александрович: Там все рабом...", time: "15:30", avatar: "Е" },
-            { id: 6, name: "Чат пользователей developers...", preview: "Лишь где вакансии для котиков?", time: "14:22", avatar: "Ч" },
-            { id: 7, name: "Оскар Хартман", preview: "Да называется Витя Стартапов Горько Сел...", time: "13:45", avatar: "О" },
-            { id: 8, name: "Александр Химигейн", preview: "Свой юбилей Всероссийский конкурс...", time: "12:30", avatar: "А" },
-            { id: 9, name: "И. Ф. Гистология", preview: "Вадим: Найдем выход...", time: "11:15", avatar: "И" },
-            { id: 10, name: "Натащенка", preview: "Натащенка Ирина Николаевна госуслуг", time: "10:05", avatar: "Н" },
-            { id: 11, name: "Петрикова Игорь Николаевич", preview: "У нас будет вам главного Мазепияна Ирина...", time: "09:40", avatar: "П" },
-            { id: 12, name: "Хвойная Россия Chat", preview: "Светлана: Если у вас его «много» и вы на юге...", time: "вчера", avatar: "Х" },
-            { id: 13, name: "Инна Анатольевна Димакова", preview: "спасибо", time: "вчера", avatar: "И" },
-            { id: 14, name: "«Свой Гектар»", preview: "Как выбрать участок, чтобы начать...", time: "вчера", avatar: "С" },
-            { id: 15, name: "Светлана Дмитриевна Бабичева", preview: "15:44", time: "пн", avatar: "С" }
-        ];
-
-        // Сообщения для каждого чата
-        const messages = {
-            1: [
-                { text: "Строитель: ХОЗЯИН, Владельц...", time: "16:20", incoming: true }
-            ],
-            2: [
-                { text: "Владимир Игоревич: Уважаемые коллеги...", time: "16:20", incoming: true }
-            ],
-            10: [
-                { text: "обучения", time: "16:20", incoming: true },
-                { text: "Предлагаю обучить заместителей главного врача, курирующих ИТ-специалистов.", time: "16:21", incoming: true },
-                { text: "Порядок регистрации тот же.", time: "16:21", incoming: true },
-                { text: "Фамилия замов, кто будет регистрироваться присылайте мне в личном сообщении.", time: "16:21", incoming: true },
-                { text: "добрый день", time: "16:22", incoming: false },
-                { text: "надо подать заявку на обучение", time: "16:22", incoming: false },
-                { text: "Конечно", time: "16:22", incoming: true },
-                { text: "Я правильно понимаю, что тогда в службу занятости не нужно?", time: "16:23", incoming: false },
-                { text: "поже нужно будет", time: "16:23", incoming: true },
-                { text: "список им нужен чтобы контролировать", time: "16:23", incoming: true },
-                { text: "я так понял 9 изменило", time: "16:23", incoming: true },
-                { text: "Подайте меня, пожалуйста", time: "16:24", incoming: false },
-                { text: "я не смогу там нужно под вашей учеткой", time: "16:24", incoming: false },
-                { text: "госуслуг", time: "16:24", incoming: false }
-            ]
-        };
-
+        let contacts = [];
         let currentChatId = null;
+        let currentChatRole = '';
+        let typingTimer = null;
 
-        // Функция для отрисовки списка чатов
+        function getInitials(name) {
+            return name.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]).join('').toUpperCase();
+        }
+
         function renderChatList() {
-            const chatList = document.querySelector('.chat-list');
+            const chatList = document.getElementById('online-chat-list');
+            const searchTerm = document.getElementById('contact-search').value.trim().toLocaleLowerCase();
+            const visibleContacts = contacts.filter(contact =>
+                !searchTerm || `${contact.name} ${contact.role}`.toLocaleLowerCase().includes(searchTerm));
+
             chatList.innerHTML = '';
 
-            chats.forEach(chat => {
+            if (contacts.length === 0) {
+                chatList.innerHTML = '<div class="chat-empty">В вашей компании пока нет других сотрудников</div>';
+                return;
+            }
+
+            if (visibleContacts.length === 0) {
+                chatList.innerHTML = '<div class="chat-empty">Сотрудник не найден</div>';
+                return;
+            }
+
+            visibleContacts.forEach(chat => {
                 const chatItem = document.createElement('div');
                 chatItem.className = 'chat-item';
                 chatItem.dataset.id = chat.id;
 
                 chatItem.innerHTML = `
-                            <div class="chat-avatar">${chat.avatar}</div>
+                            <div class="chat-avatar">${getInitials(chat.name)}</div>
                             <div class="chat-info">
-                                <div class="chat-name">${chat.name}</div>
-                                <div class="chat-preview">${chat.preview}</div>
+                                <div class="chat-name"></div>
+                                <div class="chat-preview">${chat.role}</div>
                             </div>
-                            <div class="chat-time">${chat.time}</div>
+                            <div class="chat-time"></div>
                         `;
 
+                chatItem.querySelector('.chat-name').textContent = chat.name;
                 chatItem.addEventListener('click', () => selectChat(chat.id));
                 chatList.appendChild(chatItem);
             });
         }
 
-        // Функция выбора чата
         function selectChat(chatId) {
+            stopTyping();
             currentChatId = chatId;
 
-            // Обновляем активный элемент в списке чатов
-            document.querySelectorAll('.chat-item').forEach(item => {
+            document.querySelectorAll('#online-chat-list .chat-item').forEach(item => {
                 item.classList.remove('active');
                 if (parseInt(item.dataset.id) === chatId) {
                     item.classList.add('active');
                 }
             });
 
-            // Обновляем заголовок чата
-            const chat = chats.find(c => c.id === chatId);
+            const chat = contacts.find(c => c.id === chatId);
             document.getElementById('current-chat-name').textContent = chat.name;
-            document.getElementById('current-chat-avatar').textContent = chat.avatar;
+            document.getElementById('current-chat-avatar').textContent = getInitials(chat.name);
+            currentChatRole = chat.role;
+            setChatStatus(currentChatRole);
 
-            // Загружаем сообщения для выбранного чата
-            renderMessages(chatId);
+            loadMessages(chatId);
         }
 
-        // Функция для отрисовки сообщений
-        function renderMessages(chatId) {
+        function resetChatWindow() {
+            currentChatId = null;
+            currentChatRole = '';
+            stopTyping();
+            document.getElementById('current-chat-name').textContent = 'Выберите сотрудника';
+            document.getElementById('current-chat-avatar').textContent = '...';
+            document.getElementById('current-chat-status').textContent = 'Внутренняя переписка';
+            document.getElementById('messages-container').innerHTML = `
+                <div class="message message-incoming">
+                    <div>Выберите сотрудника слева, чтобы начать переписку</div>
+                </div>`;
+        }
+
+        async function loadContacts() {
+            const response = await fetch('/Online/Contacts');
+            if (!response.ok) throw new Error('Не удалось загрузить сотрудников');
+            contacts = (await response.json()).filter(contact => !contact.isCurrentUser);
+            renderChatList();
+            resetChatWindow();
+        }
+
+        async function loadMessages(chatId) {
+            const response = await fetch(`/Online/Messages?userId=${encodeURIComponent(chatId)}`);
+            if (!response.ok) throw new Error('Не удалось загрузить сообщения');
+            if (currentChatId !== chatId) return;
+            renderMessages(await response.json());
+        }
+
+        function renderMessages(chatMessages) {
             const messagesContainer = document.getElementById('messages-container');
             messagesContainer.innerHTML = '';
-
-            const chatMessages = messages[chatId] || [];
 
             if (chatMessages.length === 0) {
                 messagesContainer.innerHTML = `
                             <div class="message message-incoming">
-                                <div>Нет сообщений</div>
-                                <div class="message-time">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                                <div>Начните переписку</div>
                             </div>
                         `;
                 return;
@@ -169,68 +168,78 @@
                 messageElement.className = `message ${msg.incoming ? 'message-incoming' : 'message-outgoing'}`;
 
                 messageElement.innerHTML = `
-                            <div>${msg.text}</div>
-                            <div class="message-time">${msg.time}</div>
+                            <div class="message-text"></div>
+                            <div class="message-time">${new Date(msg.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                         `;
 
+                messageElement.querySelector('.message-text').textContent = msg.text;
                 messagesContainer.appendChild(messageElement);
             });
 
-            // Прокручиваем вниз к последнему сообщению
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
 
-        // Функция для отправки сообщения
-        function sendMessage() {
+        async function sendMessage() {
             if (!currentChatId) {
-                alert('Сначала выберите чат!');
                 return;
             }
 
             const input = document.getElementById('message-input');
             const text = input.value.trim();
-
             if (text === '') return;
+            if (!text) return;
 
-            // Добавляем новое сообщение
-            if (!messages[currentChatId]) {
-                messages[currentChatId] = [];
-            }
+            stopTyping();
 
-            const now = new Date();
-            const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-            messages[currentChatId].push({
-                text: text,
-                time: time,
-                incoming: false
+            const response = await fetch('/Online/Send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ recipientUserId: currentChatId, text })
             });
 
-            // Очищаем поле ввода
+            if (!response.ok) {
+                const error = await response.json().catch(() => null);
+                alert(error?.message || 'Не удалось отправить сообщение');
+                return;
+            }
+
             input.value = '';
-
-            // Обновляем отображение сообщений
-            renderMessages(currentChatId);
-
-            // Имитируем ответ через некоторое время
-            setTimeout(() => {
-                messages[currentChatId].push({
-                    text: 'Сообщение получено',
-                    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                    incoming: true
-                });
-                renderMessages(currentChatId);
-            }, 1000);
+            input.style.height = 'auto';
+            await loadMessages(currentChatId);
         }
 
-        // Инициализация при загрузке страницы
-        document.addEventListener('DOMContentLoaded', () => {
-            renderChatList();
+        function setChatStatus(status) {
+            document.getElementById('current-chat-status').textContent = status;
+        }
 
-            // Обработчик кнопки отправки
+        async function updateTypingState(isTyping) {
+            if (!currentChatId) return;
+
+            await fetch('/Online/Typing', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ recipientUserId: currentChatId, isTyping })
+            }).catch(() => {});
+        }
+
+        function stopTyping() {
+            window.clearTimeout(typingTimer);
+            updateTypingState(false);
+        }
+
+        async function refreshTypingStatus() {
+            if (!currentChatId) return;
+
+            const response = await fetch(`/Online/TypingStatus?userId=${encodeURIComponent(currentChatId)}`);
+            if (!response.ok || !currentChatId) return;
+
+            const result = await response.json();
+            setChatStatus(result.isTyping ? 'печатает...' : currentChatRole);
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('send-button').addEventListener('click', sendMessage);
-
-            // Обработчик нажатия Enter в поле ввода
+            document.getElementById('contact-search').addEventListener('input', renderChatList);
             document.getElementById('message-input').addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
@@ -238,17 +247,34 @@
                 }
             });
 
-            // Автоматическое изменение высоты textarea
             const messageInput = document.getElementById('message-input');
             messageInput.addEventListener('input', function () {
                 this.style.height = 'auto';
                 this.style.height = (this.scrollHeight) + 'px';
+
+                if (!currentChatId || !this.value.trim()) {
+                    stopTyping();
+                    return;
+                }
+
+                updateTypingState(true);
+                window.clearTimeout(typingTimer);
+                typingTimer = window.setTimeout(stopTyping, 1500);
             });
 
-            // Автоматически выбираем первый чат
-            if (chats.length > 0) {
-                selectChat(chats[0].id);
+            try {
+                await loadContacts();
+            } catch (error) {
+                document.getElementById('online-chat-list').innerHTML = '<div class="chat-empty">Не удалось загрузить сотрудников</div>';
             }
+
+            window.setInterval(() => {
+                if (currentChatId) loadMessages(currentChatId).catch(() => {});
+            }, 5000);
+
+            window.setInterval(() => {
+                refreshTypingStatus().catch(() => {});
+            }, 1000);
         });
     </script>
 }

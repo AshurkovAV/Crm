@@ -23,6 +23,8 @@ public partial class CrmContext : DbContext
 
     public virtual DbSet<CompanyUser> CompanyUsers { get; set; }
 
+    public virtual DbSet<ChatMessage> ChatMessages { get; set; }
+
     public virtual DbSet<CustomerOrder> CustomerOrders { get; set; }
 
     public virtual DbSet<Employee> Employees { get; set; }
@@ -156,6 +158,38 @@ public partial class CrmContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_CompanyUser_User");
+        });
+
+        modelBuilder.Entity<ChatMessage>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.ToTable("ChatMessage");
+
+            entity.Property(e => e.Text)
+                .HasMaxLength(4000)
+                .IsRequired();
+            entity.Property(e => e.SentAt)
+                .HasDefaultValueSql("(getutcdate())");
+            entity.Property(e => e.IsRead)
+                .HasDefaultValue(false);
+
+            entity.HasIndex(e => new { e.CompanyId, e.SenderUserId, e.RecipientUserId, e.SentAt });
+
+            entity.HasOne(e => e.Company)
+                .WithMany()
+                .HasForeignKey(e => e.CompanyId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+
+            entity.HasOne(e => e.SenderUser)
+                .WithMany()
+                .HasForeignKey(e => e.SenderUserId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+
+            entity.HasOne(e => e.RecipientUser)
+                .WithMany()
+                .HasForeignKey(e => e.RecipientUserId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
         });
 
         modelBuilder.Entity<CustomerOrder>(entity =>
