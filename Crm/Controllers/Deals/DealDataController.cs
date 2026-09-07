@@ -35,60 +35,127 @@ public class DealDataController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> Post([FromForm] DealValues form)
+public async Task<IActionResult> Post([FromForm] DealValues form)
+{
+    var userId = GetUserId();
+    if (!userId.HasValue)
+        return Unauthorized();
+
+    var companyId = await GetCurrentCompanyIdAsync(userId.Value);
+    if (!companyId.HasValue)
+        return BadRequest(new { message = "Сначала выберите текущую компанию." });
+
+    var deal = new Deal
     {
-        var userId = GetUserId();
-        if (!userId.HasValue)
-            return Unauthorized();
+        CompanyId = companyId.Value,
+        OwnerId = userId.Value,
+        Title = "Новая сделка",
+        Status = "Новая",
+        CreatedDate = DateTime.UtcNow,
+        ModifiedDate = DateTime.UtcNow
+    };
 
-        var companyId = await GetCurrentCompanyIdAsync(userId.Value);
-        if (!companyId.HasValue)
-            return BadRequest(new { message = "Сначала выберите текущую компанию." });
+    await ApplyValuesAsync(deal, form.values);
+    ApplyClientIdFromForm(deal, Request.Form);
+    deal.Id = 0;
+    deal.CompanyId = companyId.Value;
+    deal.OwnerId = userId.Value;
+    deal.CreatedDate = DateTime.UtcNow;
+    deal.ModifiedDate = DateTime.UtcNow;
+    deal.Title = string.IsNullOrWhiteSpace(deal.Title) ? "Новая сделка" : deal.Title.Trim();
+    deal.Status = string.IsNullOrWhiteSpace(deal.Status) ? "Новая" : deal.Status;
 
-        var deal = new Deal
+    await ApplyClientNameAsync(deal);
+    await _dealRepository.AddAsync(deal);
+
+    return StatusCode(StatusCodes.Status201Created);
+}
+
+[HttpPut]
+public async Task<IActionResult> Put(int key, [FromForm] DealValues form)
+{
+    var userId = GetUserId();
+    if (!userId.HasValue)
+        return Unauthorized();
+
+    var deal = await _dealRepository.GetAsync(key, userId.Value);
+    if (deal == null)
+        return NotFound();
+
+    await ApplyValuesAsync(deal, form.values);
+    ApplyClientIdFromForm(deal, Request.Form);
+    deal.Id = key;
+    deal.ModifiedDate = DateTime.UtcNow;
+    deal.Title = string.IsNullOrWhiteSpace(deal.Title) ? "Новая сделка" : deal.Title.Trim();
+
+    await ApplyClientNameAsync(deal);
+    return await _dealRepository.UpdateAsync(deal, userId.Value)
+        ? Ok()
+        : NotFound();
+}
+
+private async Task ApplyValuesAsync(Deal deal, string? rawValues)
+{
+    if (string.IsNullOrWhiteSpace(rawValues))
+        return;
+
+    JsonConvert.PopulateObject(rawValues, deal);
+
+    var payload = JsonConvert.DeserializeObject<Dictionary<string, object?>>(rawValues);
+    if (payload == null || payload.Count == 0)
+        return;
+
+    foreach (var key in new[] { "ClientId", "clientId", "ClientID" })
+    {
+        if (!payload.TryGetValue(key, out var clientIdValue))
+            continue;
+
+        if (clientIdValue is null or "")
         {
-            CompanyId = companyId.Value,
-            OwnerId = userId.Value,
-            Title = "Новая сделка",
-            Status = "Новая",
-            CreatedDate = DateTime.UtcNow,
-            ModifiedDate = DateTime.UtcNow
-        };
+            deal.ClientId = null;
+            return;
+        }
 
-        JsonConvert.PopulateObject(form.values ?? "{}", deal);
-        deal.Id = 0;
-        deal.CompanyId = companyId.Value;
-        deal.OwnerId = userId.Value;
-        deal.CreatedDate = DateTime.UtcNow;
-        deal.ModifiedDate = DateTime.UtcNow;
-        deal.Title = string.IsNullOrWhiteSpace(deal.Title) ? "Новая сделка" : deal.Title.Trim();
-        deal.Status = string.IsNullOrWhiteSpace(deal.Status) ? "Новая" : deal.Status;
-        await ApplyClientNameAsync(deal);
+        if (clientIdValue is string s && int.TryParse(s, out var parsed))
+        {
+            deal.ClientId = parsed > 0 ? parsed : null;
+            return;
+        }
 
-        await _dealRepository.AddAsync(deal);
-        return StatusCode(StatusCodes.Status201Created);
+        if (clientIdValue is int i)
+        {
+            deal.ClientId = i > 0 ? i : null;
+            return;
+        }
+
+        if (clientIdValue is long l)
+        {
+            deal.ClientId = l > 0 ? (int)l : null;
+            return;
+        }
     }
+}
 
-    [HttpPut]
-    public async Task<IActionResult> Put(int key, [FromForm] DealValues form)
+    private static void ApplyClientIdFromForm(Deal deal, IFormCollection form)
     {
-        var userId = GetUserId();
-        if (!userId.HasValue)
-            return Unauthorized();
+        foreach (var key in new[] { "ClientId", "clientId", "ClientID" })
+        {
+            if (!form.TryGetValue(key, out var values) || values.Count == 0)
+                continue;
 
-        var deal = await _dealRepository.GetAsync(key, userId.Value);
-        if (deal == null)
-            return NotFound();
+            var rawValue = values[0];
+            if (string.IsNullOrWhiteSpace(rawValue) || rawValue == "null")
+            {
+                deal.ClientId = null;
+                return;
+            }
 
-        JsonConvert.PopulateObject(form.values ?? "{}", deal);
-        deal.Id = key;
-        deal.ModifiedDate = DateTime.UtcNow;
-        deal.Title = string.IsNullOrWhiteSpace(deal.Title) ? "Новая сделка" : deal.Title.Trim();
-        await ApplyClientNameAsync(deal);
-
-        return await _dealRepository.UpdateAsync(deal, userId.Value)
-            ? Ok()
-            : NotFound();
+            if (int.TryParse(rawValue, out var parsed))
+            {
+                deal.ClientId = parsed > 0 ? parsed : null;
+                return;
+            }
+        }
     }
 
     [HttpDelete("{id:int}")]
