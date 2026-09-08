@@ -216,6 +216,9 @@ namespace Crm.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
+            var userId = GetUserId();
+            if (!userId.HasValue)
+                return Unauthorized();
             try
             {
                 var itemsToDelete = _crmRepository.DeleteProject(id);
@@ -227,7 +230,11 @@ namespace Crm.Controllers
                 return BadRequest(ex.Message);
             }
         }
-
+        private int? GetUserId()
+        {
+            var value = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return int.TryParse(value, out var userId) ? userId : null;
+        }
 
         private void SyncProjectParticipants(int projectId, List<int> selectedUserIds)
         {

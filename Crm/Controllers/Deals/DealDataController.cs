@@ -1,5 +1,6 @@
 using Crm.Entity.ModelsCrm;
 using Crm.Entity.Services;
+using Crm.Models.Deals;
 using DevExtreme.AspNet.Data;
 using DevExtreme.AspNet.Mvc;
 using Microsoft.AspNetCore.Authorization;
@@ -35,106 +36,109 @@ public class DealDataController : Controller
     }
 
     [HttpPost]
-public async Task<IActionResult> Post([FromForm] DealValues form)
-{
-    var userId = GetUserId();
-    if (!userId.HasValue)
-        return Unauthorized();
-
-    var companyId = await GetCurrentCompanyIdAsync(userId.Value);
-    if (!companyId.HasValue)
-        return BadRequest(new { message = "Сначала выберите текущую компанию." });
-
-    var deal = new Deal
+    public async Task<IActionResult> Post([FromForm] DealValues form)
     {
-        CompanyId = companyId.Value,
-        OwnerId = userId.Value,
-        Title = "Новая сделка",
-        Status = "Новая",
-        CreatedDate = DateTime.UtcNow,
-        ModifiedDate = DateTime.UtcNow
-    };
+        var userId = GetUserId();
+        if (!userId.HasValue)
+            return Unauthorized();
 
-    await ApplyValuesAsync(deal, form.values);
-    ApplyClientIdFromForm(deal, Request.Form);
-    deal.Id = 0;
-    deal.CompanyId = companyId.Value;
-    deal.OwnerId = userId.Value;
-    deal.CreatedDate = DateTime.UtcNow;
-    deal.ModifiedDate = DateTime.UtcNow;
-    deal.Title = string.IsNullOrWhiteSpace(deal.Title) ? "Новая сделка" : deal.Title.Trim();
-    deal.Status = string.IsNullOrWhiteSpace(deal.Status) ? "Новая" : deal.Status;
+        var companyId = await GetCurrentCompanyIdAsync(userId.Value);
+        if (!companyId.HasValue)
+            return BadRequest(new { message = "Сначала выберите текущую компанию." });
 
-    await ApplyClientNameAsync(deal);
-    await _dealRepository.AddAsync(deal);
+        var deal = new Deal
+        {
+            CompanyId = companyId.Value,
+            OwnerId = userId.Value,
+            Title = "Новая сделка",
+            Status = "Новая",
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow
+        };
 
-    return StatusCode(StatusCodes.Status201Created);
-}
+        await ApplyValuesAsync(deal, form.values);
+        ApplyClientIdFromForm(deal, Request.Form);
+        deal.Id = 0;
+        deal.CompanyId = companyId.Value;
+        deal.OwnerId = userId.Value;
+        deal.CreatedDate = DateTime.UtcNow;
+        deal.ModifiedDate = DateTime.UtcNow;
+        deal.Title = string.IsNullOrWhiteSpace(deal.Title) ? "Новая сделка" : deal.Title.Trim();
+        deal.Status = string.IsNullOrWhiteSpace(deal.Status) ? "Новая" : deal.Status;
 
-[HttpPut]
-public async Task<IActionResult> Put(int key, [FromForm] DealValues form)
-{
-    var userId = GetUserId();
-    if (!userId.HasValue)
-        return Unauthorized();
+        await ApplyClientNameAsync(deal);
+        await _dealRepository.AddAsync(deal);
 
-    var deal = await _dealRepository.GetAsync(key, userId.Value);
-    if (deal == null)
-        return NotFound();
+        return StatusCode(StatusCodes.Status201Created);
+    }
 
-    await ApplyValuesAsync(deal, form.values);
-    ApplyClientIdFromForm(deal, Request.Form);
-    deal.Id = key;
-    deal.ModifiedDate = DateTime.UtcNow;
-    deal.Title = string.IsNullOrWhiteSpace(deal.Title) ? "Новая сделка" : deal.Title.Trim();
-
-    await ApplyClientNameAsync(deal);
-    return await _dealRepository.UpdateAsync(deal, userId.Value)
-        ? Ok()
-        : NotFound();
-}
-
-private async Task ApplyValuesAsync(Deal deal, string? rawValues)
-{
-    if (string.IsNullOrWhiteSpace(rawValues))
-        return;
-
-    JsonConvert.PopulateObject(rawValues, deal);
-
-    var payload = JsonConvert.DeserializeObject<Dictionary<string, object?>>(rawValues);
-    if (payload == null || payload.Count == 0)
-        return;
-
-    foreach (var key in new[] { "ClientId", "clientId", "ClientID" })
+    [HttpPut]
+    public async Task<IActionResult> Put([FromForm] DealValues form)
     {
-        if (!payload.TryGetValue(key, out var clientIdValue))
-            continue;
+        if (!int.TryParse(form.key, out var key))
+            return BadRequest(new { message = "Неверный формат ID." });
 
-        if (clientIdValue is null or "")
-        {
-            deal.ClientId = null;
-            return;
-        }
+        var userId = GetUserId();
+        if (!userId.HasValue)
+            return Unauthorized();
 
-        if (clientIdValue is string s && int.TryParse(s, out var parsed))
-        {
-            deal.ClientId = parsed > 0 ? parsed : null;
-            return;
-        }
+        var deal = await _dealRepository.GetAsync(key, userId.Value);
+        if (deal == null)
+            return NotFound();
 
-        if (clientIdValue is int i)
-        {
-            deal.ClientId = i > 0 ? i : null;
-            return;
-        }
+        await ApplyValuesAsync(deal, form.values);
+        ApplyClientIdFromForm(deal, Request.Form);
+        deal.Id = key;
+        deal.ModifiedDate = DateTime.UtcNow;
+        deal.Title = string.IsNullOrWhiteSpace(deal.Title) ? "Новая сделка" : deal.Title.Trim();
 
-        if (clientIdValue is long l)
-        {
-            deal.ClientId = l > 0 ? (int)l : null;
+        await ApplyClientNameAsync(deal);
+        return await _dealRepository.UpdateAsync(deal, userId.Value)
+            ? Ok()
+            : NotFound();
+    }
+
+    private async Task ApplyValuesAsync(Deal deal, string? rawValues)
+    {
+        if (string.IsNullOrWhiteSpace(rawValues))
             return;
+
+        JsonConvert.PopulateObject(rawValues, deal);
+
+        var payload = JsonConvert.DeserializeObject<Dictionary<string, object?>>(rawValues);
+        if (payload == null || payload.Count == 0)
+            return;
+
+        foreach (var key in new[] { "ClientId", "clientId", "ClientID" })
+        {
+            if (!payload.TryGetValue(key, out var clientIdValue))
+                continue;
+
+            if (clientIdValue is null or "")
+            {
+                deal.ClientId = null;
+                return;
+            }
+
+            if (clientIdValue is string s && int.TryParse(s, out var parsed))
+            {
+                deal.ClientId = parsed > 0 ? parsed : null;
+                return;
+            }
+
+            if (clientIdValue is int i)
+            {
+                deal.ClientId = i > 0 ? i : null;
+                return;
+            }
+
+            if (clientIdValue is long l)
+            {
+                deal.ClientId = l > 0 ? (int)l : null;
+                return;
+            }
         }
     }
-}
 
     private static void ApplyClientIdFromForm(Deal deal, IFormCollection form)
     {
@@ -158,17 +162,21 @@ private async Task ApplyValuesAsync(Deal deal, string? rawValues)
         }
     }
 
-    [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id)
+    [HttpDelete]
+    public async Task<IActionResult> Delete([FromForm] DeleteRequest request)
     {
         var userId = GetUserId();
         if (!userId.HasValue)
             return Unauthorized();
 
-        return await _dealRepository.DeleteAsync(id, userId.Value)
+        if (!request.key.HasValue)
+            return BadRequest(new { message = "ID сделки не указан." });
+
+        return await _dealRepository.DeleteAsync(request.key.Value, userId.Value)
             ? Ok()
             : NotFound();
     }
+
 
     private int? GetUserId()
     {
@@ -211,24 +219,5 @@ private async Task ApplyValuesAsync(Deal deal, string? rawValues)
             deal.ClientName = null;
         }
     }
-
-    public sealed class DealValues
-    {
-        public string? key { get; set; }
-        public string? values { get; set; }
-    }
-
-    public sealed class DealRow
-    {
-        public int Id { get; set; }
-        public string Title { get; set; } = null!;
-        public int? ClientId { get; set; }
-        public string? ClientName { get; set; }
-        public decimal Amount { get; set; }
-        public string Status { get; set; } = null!;
-        public DateTime? ExpectedCloseDate { get; set; }
-        public string? Description { get; set; }
-        public DateTime CreatedDate { get; set; }
-        public DateTime ModifiedDate { get; set; }
-    }
+   
 }

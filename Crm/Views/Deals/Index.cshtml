@@ -18,8 +18,6 @@
     </div>
 </div>
 
-
-
 <div class="content-section deals-section">
     <div class="deals-toolbar">
         <div>
@@ -31,121 +29,129 @@
 
     <div class="dx-grid-container">
         @(Html.DevExtreme().DataGrid<Deal>()
-            .ID("dealsGrid")
-            .DataSource(ds => ds.Mvc()
+                .ID("dealsGrid")
+                .DataSource(ds => ds.Mvc()
                 .Controller("DealData")
                 .LoadAction("Get")
                 .InsertAction("Post")
                 .UpdateAction("Put")
                 .DeleteAction("Delete")
                 .Key("Id"))
-            .ShowBorders(false)
-            .ColumnAutoWidth(true)
-            .WordWrapEnabled(true)
-            .RowAlternationEnabled(true)
-            .HoverStateEnabled(true)
-            .SearchPanel(s => s.Visible(true).Placeholder("Найти сделку..."))
-            .FilterRow(f => f.Visible(false))
-            .HeaderFilter(h => h.Visible(true))
-            .Paging(p => p.PageSize(10))
-            .Pager(p => p
+                .ShowBorders(false)
+                .ColumnAutoWidth(true)
+                .WordWrapEnabled(true)
+                .RowAlternationEnabled(true)
+                .HoverStateEnabled(true)
+                .SearchPanel(s => s.Visible(true).Placeholder("Найти сделку..."))
+                .FilterRow(f => f.Visible(false))
+                .HeaderFilter(h => h.Visible(true))
+                .Paging(p => p.PageSize(10))
+                .Pager(p => p
                 .ShowPageSizeSelector(true)
                 .AllowedPageSizes(new[] { 10, 20, 50 })
                 .ShowInfo(true))
-            .Editing(e => e
+                .Editing(e => e
                 .Mode(GridEditMode.Popup)
                 .AllowAdding(true)
                 .AllowUpdating(true)
                 .AllowDeleting(true)
                 .UseIcons(true)
+                .RefreshMode(GridEditRefreshMode.Reshape)
                 .Popup(p => p
-                    .Title("Сделка")
-                    .ShowTitle(true)
-                    .Width(720)
-                    .Height(570)
-                    .DragEnabled(true)
-                    .ResizeEnabled(true)
-                    .Position(pos => pos
-                        .My(HorizontalAlignment.Center, VerticalAlignment.Center)
-                        .At(HorizontalAlignment.Center, VerticalAlignment.Center)
-                        .Of(new JS("window"))))
+                .Title("Сделка")
+                .ShowTitle(true)
+                .Width(720)
+                .Height(570)
+                .DragEnabled(true)
+                .ResizeEnabled(true)
+                .Position(pos => pos
+                .My(HorizontalAlignment.Center, VerticalAlignment.Center)
+                .At(HorizontalAlignment.Center, VerticalAlignment.Center)
+                .Of(new JS("window"))))
                 .Form(f => f
-                    .ColCount(2)
-                    .LabelLocation(FormLabelLocation.Top)
-                    .Items(items =>
-                    {
-                        items.AddGroup()
-                            .Caption("Основная информация")
-                            .ColSpan(2)
-                            .ColCount(2)
-                            .Items(group =>
-                            {
-                                group.AddSimpleFor(m => m.Title)
-                                    .ColSpan(2)
-                                    .Label(l => l.Text("Название сделки"))
-                                    .IsRequired(true)
-                                    .Editor(editor => editor.TextBox().Placeholder("Например, поставка оборудования"));
+                .ColCount(2)
+                .LabelLocation(FormLabelLocation.Top)
+                .OnContentReady("formContentReady")  // <-- ДОБАВЛЯЕМ
+                .Items(items =>
+                {
+                    items.AddGroup()
+                .Caption("Основная информация")
+                .ColSpan(2)
+                .ColCount(2)
+                .Items(group =>
+                {
+                    group.AddSimpleFor(m => m.Title)
+                .ColSpan(2)
+                .Label(l => l.Text("Название сделки"))
+                .IsRequired(true)
+                .Editor(editor => editor.TextBox().Placeholder("Например, поставка оборудования"));
 
-                                group.AddSimpleFor(m => m.ClientId)
-                                    .Label(l => l.Text("Клиент"))
-                                    .Editor(editor => editor
-                                        .SelectBox()
-                                        .DataSource(d => d.Mvc()
-                                            .Controller("Contacts")
-                                            .LoadAction("Lookup")
-                                            .Key("ClientId")
-                                            )
-                                        .ValueExpr("ClientId")
-                                        .DisplayExpr("Name")
-                                        .SearchEnabled(true)
-                                        .ShowClearButton(true)
-                                        .Placeholder("Выберите контакт"));
+                    group.AddSimpleFor(m => m.ClientId)
+                .Label(l => l.Text("Клиент"))
+                .Editor(editor => editor
+                .SelectBox()
+                .DataSource(d => d.Mvc()
+                .Controller("Contacts")
+                .LoadAction("Lookup")
+                .Key("ClientId")
+                )
+                .ValueExpr("ClientId")
+                .DisplayExpr("Name")
+                .SearchEnabled(true)
+                .ShowClearButton(true)
+                .Placeholder("Выберите контакт")
+                )
+                .Name("ClientIdEditor");  // <-- ДОБАВЛЯЕМ ИМЯ
 
-                                group.AddSimpleFor(m => m.Amount)
-                                    .Label(l => l.Text("Сумма"))
-                                    .Editor(editor => editor.NumberBox().Min(0).Format("#,##0.00 ₽"));
-                            });
+                    group.AddSimpleFor(m => m.Amount)
+                .Label(l => l.Text("Сумма"))
+                .Editor(editor => editor.NumberBox().Min(0).Format("#,##0.00 ₽"));
+                });
 
-                        items.AddGroup()
-                            .Caption("Этап и сроки")
-                            .ColSpan(2)
-                            .ColCount(2)
-                            .Items(group =>
-                            {
-                                group.AddSimpleFor(m => m.Status)
-                                    .Label(l => l.Text("Статус"))
-                                    .Editor(editor => editor.SelectBox()
-                                        .DataSource(new[] { "Новая", "В работе", "Переговоры", "Успешно", "Проиграна" })
-                                        .SearchEnabled(false));
+                    items.AddGroup()
+                .Caption("Этап и сроки")
+                .ColSpan(2)
+                .ColCount(2)
+                .Items(group =>
+                {
+                    group.AddSimpleFor(m => m.Status)
+                .Label(l => l.Text("Статус"))
+                .Editor(editor => editor.SelectBox()
+                .DataSource(new[] { "Новая", "В работе", "Переговоры", "Успешно", "Проиграна" })
+                .SearchEnabled(false));
 
-                                group.AddSimpleFor(m => m.ExpectedCloseDate)
-                                    .Label(l => l.Text("Плановая дата закрытия"))
-                                    .Editor(editor => editor.DateBox().Type(DateBoxType.Date).DisplayFormat("dd.MM.yyyy"));
+                    group.AddSimpleFor(m => m.ExpectedCloseDate)
+                .Label(l => l.Text("Плановая дата закрытия"))
+                .Editor(editor => editor.DateBox().Type(DateBoxType.Date).DisplayFormat("dd.MM.yyyy"));
 
-                                group.AddSimpleFor(m => m.Description)
-                                    .ColSpan(2)
-                                    .Label(l => l.Text("Описание"))
-                                    .Editor(editor => editor.TextArea().Height(90).Placeholder("Кратко опишите сделку"));
-                            });
-                    })))
-            .Columns(columns =>
-            {
-                columns.AddFor(m => m.Title).Caption("Сделка").MinWidth(220);
-                columns.AddFor(m => m.ClientName).Caption("Клиент").MinWidth(160);
-                columns.AddFor(m => m.Amount).Caption("Сумма").Format("#,##0.00 ₽").Width(140);
-                columns.AddFor(m => m.Status).Caption("Статус").Width(140)
-                    .CellTemplate(@<text>
-                        <span class="deal-status deal-status-<%= (value || '').toLowerCase().replaceAll(' ', '-') %>"><%= value %></span>
-                    </text>);
-                columns.AddFor(m => m.ExpectedCloseDate).Caption("Закрытие").DataType(GridColumnDataType.Date).Format("dd.MM.yyyy").Width(130);
-                columns.AddFor(m => m.ModifiedDate).Caption("Изменена").DataType(GridColumnDataType.DateTime).Format("dd.MM.yyyy HH:mm").Width(150);
-                columns.Add().Type(GridCommandColumnType.Buttons).Width(105);
-            })
+                    group.AddSimpleFor(m => m.Description)
+                .ColSpan(2)
+                .Label(l => l.Text("Описание"))
+                .Editor(editor => editor.TextArea().Height(90).Placeholder("Кратко опишите сделку"));
+                });
+                }))
+                )
+                .Columns(columns =>
+                {
+                    columns.AddFor(m => m.Title).Caption("Сделка").MinWidth(220);
+                    columns.AddFor(m => m.ClientName).Caption("Клиент").MinWidth(160);
+                    columns.AddFor(m => m.Amount).Caption("Сумма").Format("#,##0.00 ₽").Width(140);
+                    columns.AddFor(m => m.Status).Caption("Статус").Width(140)
+                .CellTemplate(@<text>
+            <span class="deal-status deal-status-<%= (value || '').toLowerCase().replaceAll(' ', '-') %>"><%= value %></span>
+        </text>);
+                    columns.AddFor(m => m.ExpectedCloseDate).Caption("Закрытие").DataType(GridColumnDataType.Date).Format("dd.MM.yyyy").Width(130);
+                    columns.AddFor(m => m.ModifiedDate).Caption("Изменена").DataType(GridColumnDataType.DateTime).Format("dd.MM.yyyy HH:mm").Width(150);
+                    columns.Add().Type(GridCommandColumnType.Buttons).Width(105);
+                })
             .OnContentReady("updateDealsSummary")
-            .OnSaving("saveDealWithClientId")
+            .OnInitNewRow("handleInitNewRow")
+            .OnRowUpdating("handleRowUpdating")
+            .OnSaving("handleSaving")
             .OnRowInserted("refreshDealsSummary")
             .OnRowUpdated("refreshDealsSummary")
             .OnRowRemoved("refreshDealsSummary")
+            .OnEditorPreparing("handleEditorPreparing")
             .AllowColumnReordering(true)
             .AllowColumnResizing(true))
     </div>
@@ -167,17 +173,17 @@
         background: #ffffff;
     }
 
-    .deals-toolbar h2 {
-        margin: 0 0 4px;
-        color: #20364d;
-        font-size: 18px;
-    }
+        .deals-toolbar h2 {
+            margin: 0 0 4px;
+            color: #20364d;
+            font-size: 18px;
+        }
 
-    .deals-toolbar p {
-        margin: 0;
-        color: #7b8da0;
-        font-size: 13px;
-    }
+        .deals-toolbar p {
+            margin: 0;
+            color: #7b8da0;
+            font-size: 13px;
+        }
 
     .deals-summary {
         color: #6b8195;
@@ -201,14 +207,35 @@
         font-weight: 600;
     }
 
-    .deal-status-новая { background: #eaf3ff; color: #2872bd; }
-    .deal-status-в-работе, .deal-status-переговоры { background: #fff5dc; color: #9a6a00; }
-    .deal-status-успешно { background: #e6f7ee; color: #218153; }
-    .deal-status-проиграна { background: #fdebed; color: #b14e5b; }
+    .deal-status-новая {
+        background: #eaf3ff;
+        color: #2872bd;
+    }
+
+    .deal-status-в-работе, .deal-status-переговоры {
+        background: #fff5dc;
+        color: #9a6a00;
+    }
+
+    .deal-status-успешно {
+        background: #e6f7ee;
+        color: #218153;
+    }
+
+    .deal-status-проиграна {
+        background: #fdebed;
+        color: #b14e5b;
+    }
 
     @@media (max-width: 700px) {
-        .deals-toolbar { align-items: flex-start; flex-direction: column; }
-        .deals-summary { white-space: normal; }
+        .deals-toolbar {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .deals-summary {
+            white-space: normal;
+        }
     }
 </style>
 
@@ -232,18 +259,124 @@
             e.component.refresh();
         }
 
-        function saveDealWithClientId(e) {
+        function handleInitNewRow(e) {
+            e.data.ClientId = null;
+        }
+
+        // <-- ГЛАВНОЕ РЕШЕНИЕ: устанавливаем значение после загрузки формы
+        function formContentReady(e) {
+            setTimeout(function () {
+                const grid = $('#dealsGrid').dxDataGrid('instance');
+                const editRowKey = grid.option('editing.editRowKey');
+
+                if (editRowKey !== undefined) {
+                    // Получаем данные строки
+                    grid.byKey(editRowKey).done(function (data) {
+                        if (data && data.ClientId !== undefined && data.ClientId !== null) {
+                            const form = e.component;
+                            const editor = form.getEditor('ClientId');
+                            if (editor) {
+                                editor.option('value', data.ClientId);
+                                console.log('formContentReady: ClientId set to', data.ClientId);
+                            }
+                        }
+                    }).fail(function () {
+                        // Если byKey не работает, ищем в кэше
+                        try {
+                            const dataSource = grid.getDataSource();
+                            const items = dataSource.items();
+                            const foundItem = items.find(item => (item.Id || item.id) === editRowKey);
+                            if (foundItem && foundItem.ClientId !== undefined && foundItem.ClientId !== null) {
+                                const form = e.component;
+                                const editor = form.getEditor('ClientId');
+                                if (editor) {
+                                    editor.option('value', foundItem.ClientId);
+                                    console.log('formContentReady (cache): ClientId set to', foundItem.ClientId);
+                                }
+                            }
+                        } catch (err) {
+                            console.warn('Could not set ClientId in form', err);
+                        }
+                    });
+                }
+            }, 300);
+        }
+
+        function handleEditorPreparing(e) {
+            if (e.parentType === 'dataRow' && e.dataField === 'ClientId') {
+                if (e.row && e.row.data) {
+                    // Проверяем, что значение не null и не undefined
+                    if (e.row.data.ClientId !== undefined && e.row.data.ClientId !== null) {
+                        e.value = e.row.data.ClientId;
+                        console.log('EditorPreparing: ClientId set to', e.value);
+                    }
+                }
+            }
+        }
+
+        function handleSaving(e) {
+            console.log('handleSaving called', e);
+
             if (!e.changes || e.changes.length === 0) {
+                const grid = $('#dealsGrid').dxDataGrid('instance');
+                const editRowKey = grid.option('editing.editRowKey');
+                if (editRowKey !== undefined) {
+                    const form = $('.dx-popup-content .dx-form').dxForm('instance');
+                    const clientIdEditor = form && form.getEditor('ClientId');
+                    if (clientIdEditor) {
+                        const clientId = clientIdEditor.option('value');
+                        if (clientId !== undefined && clientId !== null) {
+                            e.changes = [{
+                                type: 'update',
+                                key: editRowKey,
+                                data: {
+                                    ClientId: clientId,
+                                    _forceUpdate: new Date().getTime()
+                                }
+                            }];
+                            console.log('Forced changes with ClientId:', clientId);
+                        }
+                    }
+                }
                 return;
             }
 
             const change = e.changes[0];
             const form = $('.dx-popup-content .dx-form').dxForm('instance');
-            const editor = form && form.getEditor('ClientId');
+            const clientIdEditor = form && form.getEditor('ClientId');
 
-            if (editor) {
-                change.data = change.data || {};
-                change.data.ClientId = editor.option('value') || null;
+            if (change.type === 'update' || change.type === 'insert') {
+                if (!change.data) {
+                    change.data = {};
+                }
+                if (clientIdEditor) {
+                    const clientId = clientIdEditor.option('value');
+                    if (clientId !== undefined && clientId !== null) {
+                        change.data.ClientId = clientId;
+                        console.log('handleSaving: ClientId set to', change.data.ClientId);
+                    }
+                }
+            }
+        }
+
+        function handleRowUpdating(e) {
+            console.log('handleRowUpdating called', e);
+
+            const form = $('.dx-popup-content .dx-form').dxForm('instance');
+            const clientIdEditor = form && form.getEditor('ClientId');
+
+            if (clientIdEditor) {
+                const value = clientIdEditor.option('value');
+                if (value !== undefined && value !== null) {
+                    e.newData.ClientId = value;
+                    console.log('RowUpdating: ClientId =', e.newData.ClientId);
+                }
+            } else if (e.oldData && e.oldData.ClientId !== undefined && e.oldData.ClientId !== null) {
+                e.newData.ClientId = e.oldData.ClientId;
+            }
+
+            if (e.newData && Object.keys(e.newData).length === 0) {
+                e.newData._forceUpdate = new Date().getTime();
             }
         }
     </script>
