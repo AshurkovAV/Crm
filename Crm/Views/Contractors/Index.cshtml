@@ -1,0 +1,154 @@
+@using Crm.Entity.ModelsCrm
+
+@{
+    ViewData["Title"] = "Подрядчики";
+}
+
+<div class="content-top-bar">
+    <h1 class="content-title">Подрядчики</h1>
+    <div class="content-actions">
+        <button class="content-btn" type="button" onclick="addContractor()">
+            <i class="fas fa-plus"></i>
+            <span>Новый подрядчик</span>
+        </button>
+        <a class="content-btn secondary" href="/Contractors/Assign">
+            <i class="fas fa-link"></i>
+            <span>Назначить этап</span>
+        </a>
+    </div>
+</div>
+
+<div class="content-section contractors-section">
+    <div class="contractors-toolbar">
+        <div>
+            <h2>Внешняя кооперация</h2>
+            <p>Подрядчики, которым можно передать этап производства (лазерная гравировка, гибка металла и т.п.)</p>
+        </div>
+        <div class="contractors-summary" id="contractors-summary">Загрузка подрядчиков...</div>
+    </div>
+
+    <div class="dx-grid-container">
+        @(Html.DevExtreme().DataGrid<Contractor>()
+            .ID("contractorsGrid")
+            .DataSource(ds => ds.Mvc()
+                .Controller("ContractorData")
+                .LoadAction("Get")
+                .InsertAction("Post")
+                .UpdateAction("Put")
+                .DeleteAction("Delete")
+                .Key("ContractorId"))
+            .ShowBorders(false)
+            .ColumnAutoWidth(true)
+            .WordWrapEnabled(true)
+            .RowAlternationEnabled(true)
+            .HoverStateEnabled(true)
+            .SearchPanel(s => s.Visible(true).Placeholder("Найти подрядчика..."))
+            .FilterRow(f => f.Visible(false))
+            .HeaderFilter(h => h.Visible(true))
+            .Paging(p => p.PageSize(10))
+            .Pager(p => p.ShowPageSizeSelector(true).AllowedPageSizes(new[] { 10, 20, 50 }).ShowInfo(true))
+            .Editing(e => e
+                .Mode(GridEditMode.Popup)
+                .AllowAdding(true)
+                .AllowUpdating(true)
+                .AllowDeleting(true)
+                .UseIcons(true)
+                .Popup(p => p
+                    .Title("Подрядчик")
+                    .ShowTitle(true)
+                    .Width(600)
+                    .Height(480)
+                    .DragEnabled(true)
+                    .ResizeEnabled(true)
+                    .Position(pos => pos
+                        .My(HorizontalAlignment.Center, VerticalAlignment.Center)
+                        .At(HorizontalAlignment.Center, VerticalAlignment.Center)
+                        .Of(new JS("window"))))
+                .Form(f => f
+                    .ColCount(2)
+                    .LabelLocation(FormLabelLocation.Top)
+                    .Items(items =>
+                    {
+                        items.AddGroup()
+                            .Caption("Данные подрядчика")
+                            .ColSpan(2)
+                            .ColCount(2)
+                            .Items(group =>
+                            {
+                                group.AddSimpleFor(m => m.Name)
+                                    .ColSpan(2)
+                                    .Label(l => l.Text("Название / ФИО"))
+                                    .IsRequired(true)
+                                    .Editor(editor => editor.TextBox().Placeholder("Например, ООО «Лазер-Про»"));
+
+                                group.AddSimpleFor(m => m.Phone)
+                                    .Label(l => l.Text("Телефон"))
+                                    .Editor(editor => editor.TextBox().Mode(TextBoxMode.Tel));
+
+                                group.AddSimpleFor(m => m.Email)
+                                    .Label(l => l.Text("Email"))
+                                    .Editor(editor => editor.TextBox().Mode(TextBoxMode.Email));
+
+                                group.AddSimpleFor(m => m.Notes)
+                                    .ColSpan(2)
+                                    .Label(l => l.Text("Заметки"))
+                                    .Editor(editor => editor.TextArea().Height(90));
+
+                                group.AddSimpleFor(m => m.IsActive)
+                                    .Label(l => l.Text("Активен"));
+                            });
+                    })))
+            .Columns(columns =>
+            {
+                columns.AddFor(m => m.Name).Caption("Подрядчик").MinWidth(220);
+                columns.AddFor(m => m.Phone).Caption("Телефон").Width(150);
+                columns.AddFor(m => m.Email).Caption("Email").MinWidth(190);
+                columns.AddFor(m => m.Notes).Caption("Заметки").MinWidth(200);
+                columns.AddFor(m => m.IsActive).Caption("Активен").Width(100);
+                columns.Add().Type(GridCommandColumnType.Buttons).Width(105);
+            })
+            .OnContentReady("updateContractorsSummary")
+            .OnRowInserted("refreshContractorsSummary")
+            .OnRowUpdated("refreshContractorsSummary")
+            .OnRowRemoved("refreshContractorsSummary")
+            .AllowColumnReordering(true)
+            .AllowColumnResizing(true))
+    </div>
+</div>
+
+<style>
+    .contractors-section { padding: 0; overflow: hidden; }
+    .contractors-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 22px 24px 18px;
+        border-bottom: 1px solid #e5edf4;
+        background: #fff;
+    }
+    .contractors-toolbar h2 { margin: 0 0 4px; color: #20364d; font-size: 18px; }
+    .contractors-toolbar p { margin: 0; color: #7b8da0; font-size: 13px; max-width: 520px; }
+    .contractors-summary { color: #6b8195; font-size: 13px; white-space: nowrap; }
+    .contractors-section .dx-grid-container { padding: 0 12px 12px; }
+    @@media (max-width: 700px) {
+        .contractors-toolbar { align-items: flex-start; flex-direction: column; }
+        .contractors-summary { white-space: normal; }
+    }
+</style>
+
+@section Scripts {
+    <script>
+        function addContractor() {
+            $('#contractorsGrid').dxDataGrid('instance').addRow();
+        }
+
+        function updateContractorsSummary(e) {
+            document.getElementById('contractors-summary').textContent = `${e.component.totalCount()} подрядчиков`;
+        }
+
+        function refreshContractorsSummary(e) {
+            e.component.refresh();
+        }
+    </script>
+}
