@@ -1,4 +1,5 @@
-﻿@using Crm.Entity.DTO
+@using Crm.Models.Calculator
+@using Crm.Entity.ModelsCrm
 
 @{
     ViewData["Title"] = "Товары и склады";
@@ -7,252 +8,246 @@
 <div class="content-top-bar">
     <h1 class="content-title">Товары и склады</h1>
     <div class="content-actions">
-        <button class="content-btn" onclick="showCreateProjectModal()">
+        <button class="content-btn" type="button" onclick="addComponent()">
             <i class="fas fa-plus"></i>
-            <span>Добавить товар</span>
+            <span>Добавить материал</span>
         </button>
-        <button class="content-btn secondary">
+        <button class="content-btn secondary" type="button" onclick="toggleWarehouseFilter()">
             <i class="fas fa-filter"></i>
             <span>Фильтр</span>
         </button>
     </div>
 </div>
-@* 
-<div class="content-section">
+
+<div class="content-section warehouse-section">
+    <div class="warehouse-toolbar">
+        <div>
+            <h2>Склад материалов (ТМЦ)</h2>
+            <p>Остатки, себестоимость и поставщики компонентов для калькулятора изделий</p>
+        </div>
+        <div class="warehouse-summary" id="components-summary">Загрузка...</div>
+    </div>
+
     <div class="dx-grid-container">
-        @(Html.DevExtreme().DataGrid<ProjectDTO>()
-                        .ID("projectsGrid")
-                        .DataSource(ds => ds.Mvc()
-                                .Controller("ProjectData")
-                                .LoadAction("Get")
-                                .InsertAction("Post")
-                                .UpdateAction("Put")
-                                .DeleteAction("Delete")
-                                .Key("Id")
-                        )
-                .ShowBorders(true)
-                .ColumnAutoWidth(true)
-                .WordWrapEnabled(true)
-                .ShowColumnLines(true)
-                .ShowRowLines(true)
-                .RowAlternationEnabled(true)
-                .Grouping(g => g.AutoExpandAll(false))
-                .Pager(p => p
-                .ShowPageSizeSelector(true)
-                .AllowedPageSizes(new[] { 10, 20, 50 })
-                .ShowInfo(true)
-                )
-                .Paging(p => p.PageSize(10))
-                .Editing(e => e
+        @(Html.DevExtreme().DataGrid<ComponentRow>()
+            .ID("componentsGrid")
+            .DataSource(ds => ds.Mvc()
+                .Controller("ComponentData")
+                .LoadAction("Get")
+                .InsertAction("Post")
+                .UpdateAction("Put")
+                .DeleteAction("Delete")
+                .Key("ComponentId"))
+            .ShowBorders(false)
+            .ColumnAutoWidth(true)
+            .WordWrapEnabled(true)
+            .RowAlternationEnabled(true)
+            .HoverStateEnabled(true)
+            .SearchPanel(s => s.Visible(true).Placeholder("Найти материал..."))
+            .FilterRow(f => f.Visible(false))
+            .HeaderFilter(h => h.Visible(true))
+            .Paging(p => p.PageSize(10))
+            .Pager(p => p.ShowPageSizeSelector(true).AllowedPageSizes(new[] { 10, 20, 50 }).ShowInfo(true))
+            .Editing(e => e
                 .Mode(GridEditMode.Popup)
-           
                 .AllowAdding(true)
                 .AllowUpdating(true)
                 .AllowDeleting(true)
                 .UseIcons(true)
                 .Popup(p => p
-                .Title("Редактирование проекта")
-                .ShowTitle(true)
-                .Width(860)
-                .Height(800)
-                .Position(pos => pos
-                .My(HorizontalAlignment.Center, VerticalAlignment.Center)
-                .At(HorizontalAlignment.Center, VerticalAlignment.Center)
-                .Of(new JS("window"))
-                )          
-                )
+                    .Title("Материал (ТМЦ)")
+                    .ShowTitle(true)
+                    .Width(620)
+                    .Height(520)
+                    .DragEnabled(true)
+                    .ResizeEnabled(true)
+                    .Position(pos => pos
+                        .My(HorizontalAlignment.Center, VerticalAlignment.Center)
+                        .At(HorizontalAlignment.Center, VerticalAlignment.Center)
+                        .Of(new JS("window"))))
                 .Form(f => f
-                .ColCount(2)
-                .LabelLocation(FormLabelLocation.Top)
-                .Items(items =>
-                {                  
-                    // Первая колонка
-                    items.AddGroup()
-                            .Caption("Основная информация")
-                            .ColSpan(1)
-                            .Items(groupItems =>
+                    .ColCount(2)
+                    .LabelLocation(FormLabelLocation.Top)
+                    .Items(items =>
+                    {
+                        items.AddGroup()
+                            .Caption("Основное")
+                            .ColSpan(2)
+                            .ColCount(2)
+                            .Items(group =>
                             {
-                                groupItems.AddSimpleFor(m => m.Name)
-                                        .Label(l => l.Text("Название проекта*"))
-                                        .Editor(editor => editor
-                                        .TextBox()
-                                        .Placeholder("Введите название проекта")
-                            );
+                                group.AddSimpleFor(m => m.Name)
+                                    .ColSpan(2)
+                                    .Label(l => l.Text("Название материала"))
+                                    .IsRequired(true)
+                                    .Editor(editor => editor.TextBox().Placeholder("Например, Стеклопакет 24мм"));
 
-                    groupItems.AddSimpleFor(m => m.Activity)
-                                            .Label(l => l.Text("Описание проекта"))
-                                            .Editor(editor => editor
-                                            .TextArea()
-                                            .Height(80)
-                                            .Placeholder("Опишите проект")
-                                            );
-                });
+                                group.AddSimpleFor(m => m.Unit)
+                                    .Label(l => l.Text("Ед. изм."))
+                                    .IsRequired(true)
+                                    .Editor(editor => editor.TextBox().Placeholder("м2, шт, пог.м..."));
 
-                    // Вторая колонка
-                    items.AddGroup()
-                .Caption("Дополнительная информация")
-                .ColSpan(1)
-                .Items(groupItems =>
-                {
-                    groupItems.AddSimpleFor(m => m.Status)
-                    .Label(l => l.Text("Статус*"))
-                    .Editor(editor => editor
-                    .SelectBox()
-                    .DataSource(new[] {
-                                    "В работе",
-                                    "Завершен",
-                                    "На паузе",
-                                    "Планируется",
-                                    "Черновик",
-                                    "Отменен"
-                                        })
-                    .Placeholder("Выберите статус")
-                    );
-
-                    // Поле для выбора участников
-                    items.AddSimple()
-                            .DataField("Participants")  // Явно указываем DataField
-                            .Label(l => l.Text("Текущие участники"))
-                            .Editor(editor => editor
-                                        .TagBox()
-                                        .DataSource(d => d.Mvc()
-                                                .Controller("ProjectUserData")
-                                                .LoadAction("GetParticipants")
-                                                .LoadMode(DataSourceLoadMode.Processed)
-                            )
-                                        .ValueExpr("Id")
-                                        .DisplayExpr("DisplayName")
-                                        .Placeholder("Выберите участников")
+                                group.AddSimpleFor(m => m.SupplierId)
+                                    .Label(l => l.Text("Поставщик"))
+                                    .Editor(editor => editor
+                                        .SelectBox()
+                                        .DataSource(d => d.Mvc().Controller("SupplierData").LoadAction("Lookup").Key("SupplierId"))
+                                        .ValueExpr("SupplierId")
+                                        .DisplayExpr("Name")
                                         .SearchEnabled(true)
-                                        .ShowSelectionControls(true)
                                         .ShowClearButton(true)
-                                        .Width("100%")
-                                        )
-                            .ColSpan(2);
-                });
-                })
-                )
-                )
-                .Columns(columns =>
-                {
-                    columns.Add().DataField("Name").Caption("Название проекта");
-                    columns.Add().DataField("Activity").Caption("Описание").Visible(true);
-                    columns.Add().DataField("ParticipantsDisplay").Caption("Участники").Visible(true);
-                    columns.Add()
-                    .DataField("Status")
-                    .Caption("Статус")
-                    .CellTemplate(@<text>
-                                    <span class="status-badge status-<%= getStatusClass(value) %>">
-                                        <%= value %>
-                                    </span>
-                                </text>);
-                    columns.Add().DataField("CreatedDate").Caption("Создан").DataType(GridColumnDataType.DateTime).Format("dd.MM.yyyy HH:mm").Width(120).AllowEditing(false);
-                    columns.Add().DataField("ModifiedDate").Caption("Изменен").DataType(GridColumnDataType.DateTime).Format("dd.MM.yyyy HH:mm").Width(120).Visible(false);
-                    columns.Add().DataField("Participants").Visible(false);
-                    columns.Add()
-            .Type(GridCommandColumnType.Buttons)
-            .Width(120)
-            .Buttons(b =>
+                                        .Placeholder("Не указан"));
+                            });
+
+                        items.AddGroup()
+                            .Caption("Себестоимость и остатки")
+                            .ColSpan(2)
+                            .ColCount(2)
+                            .Items(group =>
+                            {
+                                group.AddSimpleFor(m => m.CostPrice)
+                                    .Label(l => l.Text("Себестоимость за единицу"))
+                                    .Editor(editor => editor.NumberBox().Min(0).Format("#,##0.00 ₽"));
+
+                                group.AddSimpleFor(m => m.StockQuantity)
+                                    .Label(l => l.Text("Остаток на складе"))
+                                    .Editor(editor => editor.NumberBox().Min(0));
+
+                                group.AddSimpleFor(m => m.ReorderLevel)
+                                    .Label(l => l.Text("Точка перезаказа"))
+                                    .Editor(editor => editor.NumberBox().Min(0));
+
+                                group.AddSimpleFor(m => m.IsActive)
+                                    .Label(l => l.Text("Активен"))
+                                    .Editor(editor => editor.CheckBox());
+                            });
+                    })))
+            .Columns(columns =>
             {
-                    b.Add().Name(GridColumnButtonName.Edit).Hint("Редактировать").Icon("edit");
-                    b.Add().Name(GridColumnButtonName.Delete).Hint("Удалить").Icon("trash").OnClick("deleteButtonClick");
-                });
-                })
-            .OnContentReady("function(e) { e.component.option('loadPanel.enabled', false); }")
+                columns.AddFor(m => m.Name).Caption("Материал").MinWidth(200);
+                columns.AddFor(m => m.Unit).Caption("Ед. изм.").Width(90);
+                columns.AddFor(m => m.CostPrice).Caption("Себестоимость").Format("#,##0.00 ₽").Width(140);
+                columns.AddFor(m => m.StockQuantity).Caption("Остаток").Width(110)
+                    .CellTemplate(@<text>
+                        <span class="stock-badge <%= (data.ReorderLevel != null && value <= data.ReorderLevel) ? 'stock-low' : 'stock-ok' %>"><%= value %></span>
+                    </text>);
+                columns.AddFor(m => m.ReorderLevel).Caption("Точка перезаказа").Width(130);
+                columns.AddFor(m => m.SupplierName).Caption("Поставщик").MinWidth(160);
+                columns.AddFor(m => m.IsActive).Caption("Активен").Width(90);
+                columns.Add().Type(GridCommandColumnType.Buttons).Width(105);
+            })
+            .OnContentReady("updateComponentsSummary")
+            .OnRowInserted("refreshComponentsSummary")
+            .OnRowUpdated("refreshComponentsSummary")
+            .OnRowRemoved("refreshComponentsSummary")
             .AllowColumnReordering(true)
-            .AllowColumnResizing(true)
-            .Selection(s => s.Mode(SelectionMode.Single))
-            )
+            .AllowColumnResizing(true))
     </div>
 </div>
 
-<script>
-    function deleteButtonClick(e) {
-        const dataGrid = $("#projectsGrid").dxDataGrid("instance");
-        const selectedRowData = dataGrid.getSelectedRowsData();
+<div class="content-section warehouse-section" style="margin-top: 20px;">
+    <div class="warehouse-toolbar">
+        <div>
+            <h2>Поставщики</h2>
+            <p>Справочник поставщиков материалов</p>
+        </div>
+        <div class="warehouse-summary" id="suppliers-summary">Загрузка...</div>
+    </div>
 
-        if (selectedRowData.length > 0) {
-            DevExpress.ui.dialog.confirm("Вы уверены, что хотите удалить эту запись?", "Подтверждение удаления")
-                .done(function (dialogResult) {
-                    if (dialogResult) {
-                        const id = selectedRowData[0].Id; // Получаем ID выбранной строки
+    <div class="dx-grid-container">
+        @(Html.DevExtreme().DataGrid<Supplier>()
+            .ID("suppliersGrid")
+            .DataSource(ds => ds.Mvc()
+                .Controller("SupplierData")
+                .LoadAction("Get")
+                .InsertAction("Post")
+                .UpdateAction("Put")
+                .DeleteAction("Delete")
+                .Key("SupplierId"))
+            .ShowBorders(false)
+            .ColumnAutoWidth(true)
+            .WordWrapEnabled(true)
+            .RowAlternationEnabled(true)
+            .HoverStateEnabled(true)
+            .SearchPanel(s => s.Visible(true).Placeholder("Найти поставщика..."))
+            .Paging(p => p.PageSize(10))
+            .Pager(p => p.ShowPageSizeSelector(true).AllowedPageSizes(new[] { 10, 20, 50 }).ShowInfo(true))
+            .Editing(e => e
+                .Mode(GridEditMode.Popup)
+                .AllowAdding(true)
+                .AllowUpdating(true)
+                .AllowDeleting(true)
+                .UseIcons(true)
+                .Popup(p => p
+                    .Title("Поставщик")
+                    .ShowTitle(true)
+                    .Width(560)
+                    .Height(460)
+                    .Position(pos => pos
+                        .My(HorizontalAlignment.Center, VerticalAlignment.Center)
+                        .At(HorizontalAlignment.Center, VerticalAlignment.Center)
+                        .Of(new JS("window")))))
+            .Columns(columns =>
+            {
+                columns.AddFor(m => m.Name).Caption("Поставщик").MinWidth(200);
+                columns.AddFor(m => m.ContactPerson).Caption("Контактное лицо").MinWidth(160);
+                columns.AddFor(m => m.Phone).Caption("Телефон").Width(150);
+                columns.AddFor(m => m.Email).Caption("Email").MinWidth(180);
+                columns.AddFor(m => m.IsActive).Caption("Активен").Width(90);
+                columns.Add().Type(GridCommandColumnType.Buttons).Width(105);
+            })
+            .OnContentReady("updateSuppliersSummary")
+            .OnRowInserted("refreshSuppliersSummary")
+            .OnRowUpdated("refreshSuppliersSummary")
+            .OnRowRemoved("refreshSuppliersSummary")
+            .AllowColumnReordering(true)
+            .AllowColumnResizing(true))
+    </div>
+</div>
 
-                        // AJAX запрос на удаление
-                        $.ajax({
-                            url: '/ProjectData/' + id,
-                            type: 'DELETE',
-                            contentType: 'application/json',
-                            success: function () {
-                                dataGrid.refresh();
-                                DevExpress.ui.notify("Удаление выполнено успешно", "success", 2000);
-                            },
-                            error: function (error) {
-                                DevExpress.ui.notify("Ошибка при удалении: " + error.responseText, "error", 4000);
-                            }
-                        });
-
-
-                    }
-                });
-        } else {
-            DevExpress.ui.notify("Выберите строку для удаления", "warning", 2000);
-        }
+<style>
+    .warehouse-section { padding: 0; overflow: hidden; }
+    .warehouse-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 22px 24px 18px;
+        border-bottom: 1px solid #e5edf4;
+        background: #fff;
     }
-</script>
-
-
-<script>
-    function editButtonClick(e) {
-        const dataGrid = $("#projectsGrid").dxDataGrid("instance");
-        const selectedRowData = dataGrid.getSelectedRowsData();
-
-        if (selectedRowData.length > 0) {
-            console.log(selectedRowData[0].Id);
-            // Получаем ключ выбранной строки
-            const rowKey = selectedRowData[0].Id;
-           
-            // Открываем редактирование в popup режиме
-            dataGrid.option('editing.mode', 'popup');
-            dataGrid.editRow(rowKey);
-
-        } else {
-            DevExpress.ui.notify("Выберите строку для редактирования", "warning", 2000);
-        }
+    .warehouse-toolbar h2 { margin: 0 0 4px; color: #20364d; font-size: 18px; }
+    .warehouse-toolbar p { margin: 0; color: #7b8da0; font-size: 13px; }
+    .warehouse-summary { color: #6b8195; font-size: 13px; white-space: nowrap; }
+    .warehouse-section .dx-grid-container { padding: 0 12px 12px; }
+    .stock-badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px; font-weight: 600; }
+    .stock-ok { background: #e6f7ee; color: #218153; }
+    .stock-low { background: #fdebed; color: #b14e5b; }
+    @@media (max-width: 700px) {
+        .warehouse-toolbar { align-items: flex-start; flex-direction: column; }
+        .warehouse-summary { white-space: normal; }
     }
-</script>
+</style>
 
 @section Scripts {
     <script>
-        function getStatusClass(status) {
-            const statusMap = {
-                'В работе': 'active',
-                'Завершен': 'completed',
-                'На паузе': 'paused',
-                'Планируется': 'planned',
-                'Черновик': 'draft',
-                'Отменен': 'cancelled'
-            };
-            return statusMap[status] || 'default';
+        function addComponent() {
+            $('#componentsGrid').dxDataGrid('instance').addRow();
         }
 
-        function showCreateProjectModal() {
-            const dataGrid = $('#projectsGrid').dxDataGrid('instance');
-            dataGrid.addRow();
-        }       
-
-        function refreshGrid() {
-            $('#projectsGrid').dxDataGrid('instance').refresh();
+        function toggleWarehouseFilter() {
+            const grid = $('#componentsGrid').dxDataGrid('instance');
+            grid.option('filterRow.visible', !grid.option('filterRow.visible'));
         }
 
-        $(document).ready(function () {
-            setTimeout(function () {
-                const dataGrid = $('#projectsGrid').dxDataGrid('instance');
-                if (dataGrid) {
-                    console.log('DataGrid initialized successfully');
-                }
-            }, 1000);
-        });
+        function updateComponentsSummary(e) {
+            document.getElementById('components-summary').textContent = `${e.component.totalCount()} материалов`;
+        }
+        function refreshComponentsSummary(e) { e.component.refresh(); }
+
+        function updateSuppliersSummary(e) {
+            document.getElementById('suppliers-summary').textContent = `${e.component.totalCount()} поставщиков`;
+        }
+        function refreshSuppliersSummary(e) { e.component.refresh(); }
     </script>
 }
-
- *@
