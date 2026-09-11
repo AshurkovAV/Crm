@@ -32,6 +32,7 @@ builder.Services.AddSingleton<ICompanyRepository,        CompanyRepository>();
 builder.Services.AddSingleton<IChatRepository,           ChatRepository>();
 builder.Services.AddSingleton<IDealRepository,            DealRepository>();
 builder.Services.AddSingleton<IClientRepository,          ClientRepository>();
+builder.Services.AddSingleton<IProductionTaskRepository,  ProductionTaskRepository>();
 builder.Services.AddSingleton<ChatTypingStore>();
 builder.Services.AddScoped<IVerificationTokenRepository, VerificationTokenRepository>();
 builder.Services.AddScoped<IRememberDeviceService,       RememberDeviceService>();
