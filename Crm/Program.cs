@@ -37,6 +37,12 @@ builder.Services.AddSingleton<IProductionTaskRepository,  ProductionTaskReposito
 builder.Services.AddSingleton<IContractorRepository,           ContractorRepository>();
 builder.Services.AddSingleton<IContractorAssignmentRepository, ContractorAssignmentRepository>();
 builder.Services.AddSingleton<IContractorPortalRepository,     ContractorPortalRepository>();
+builder.Services.AddSingleton<ISupplierRepository,        SupplierRepository>();
+builder.Services.AddSingleton<IComponentRepository,       ComponentRepository>();
+builder.Services.AddSingleton<IProductTemplateRepository, ProductTemplateRepository>();
+builder.Services.AddSingleton<IProductTemplateComponentRepository, ProductTemplateComponentRepository>();
+builder.Services.AddSingleton<IOrderItemRepository,       OrderItemRepository>();
+builder.Services.AddSingleton<ICalculationService,        CalculationService>();
 builder.Services.AddSingleton<ChatTypingStore>();
 builder.Services.AddScoped<IVerificationTokenRepository, VerificationTokenRepository>();
 builder.Services.AddScoped<IRememberDeviceService,       RememberDeviceService>();

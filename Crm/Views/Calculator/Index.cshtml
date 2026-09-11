@@ -1,0 +1,511 @@
+@using Crm.Entity.ModelsCrm
+
+@{
+    ViewData["Title"] = "Умный калькулятор";
+}
+
+<div class="content-top-bar">
+    <h1 class="content-title">Умный калькулятор</h1>
+    <div class="content-actions">
+        <button class="content-btn" type="button" onclick="addTemplate()">
+            <i class="fas fa-plus"></i>
+            <span>Новый шаблон</span>
+        </button>
+    </div>
+</div>
+
+<div class="content-section calc-section">
+    <div class="calc-toolbar">
+        <div>
+            <h2>Шаблоны изделий</h2>
+            <p>Формула себестоимости (NCalc) и наценка по умолчанию для каждого шаблона</p>
+        </div>
+        <div class="calc-summary" id="templates-summary">Загрузка...</div>
+    </div>
+
+    <div class="dx-grid-container">
+        @(Html.DevExtreme().DataGrid<ProductTemplate>()
+            .ID("templatesGrid")
+            .DataSource(ds => ds.Mvc()
+                .Controller("ProductTemplateData")
+                .LoadAction("Get")
+                .InsertAction("Post")
+                .UpdateAction("Put")
+                .DeleteAction("Delete")
+                .Key("ProductTemplateId"))
+            .ShowBorders(false)
+            .ColumnAutoWidth(true)
+            .WordWrapEnabled(true)
+            .RowAlternationEnabled(true)
+            .HoverStateEnabled(true)
+            .SearchPanel(s => s.Visible(true).Placeholder("Найти шаблон..."))
+            .Paging(p => p.PageSize(10))
+            .Pager(p => p.ShowPageSizeSelector(true).AllowedPageSizes(new[] { 10, 20, 50 }).ShowInfo(true))
+            .Selection(s => s.Mode(SelectionMode.Single))
+            .Editing(e => e
+                .Mode(GridEditMode.Popup)
+                .AllowAdding(true)
+                .AllowUpdating(true)
+                .AllowDeleting(true)
+                .UseIcons(true)
+                .Popup(p => p
+                    .Title("Шаблон изделия")
+                    .ShowTitle(true)
+                    .Width(700)
+                    .Height(560)
+                    .DragEnabled(true)
+                    .ResizeEnabled(true)
+                    .Position(pos => pos
+                        .My(HorizontalAlignment.Center, VerticalAlignment.Center)
+                        .At(HorizontalAlignment.Center, VerticalAlignment.Center)
+                        .Of(new JS("window"))))
+                .Form(f => f
+                    .ColCount(2)
+                    .LabelLocation(FormLabelLocation.Top)
+                    .Items(items =>
+                    {
+                        items.AddGroup().Caption("Основное").ColSpan(2).ColCount(2).Items(group =>
+                        {
+                            group.AddSimpleFor(m => m.Name).ColSpan(2).Label(l => l.Text("Название шаблона")).IsRequired(true)
+                                .Editor(editor => editor.TextBox().Placeholder("Например, Пластиковое окно"));
+                            group.AddSimpleFor(m => m.Category).Label(l => l.Text("Категория"))
+                                .Editor(editor => editor.TextBox().Placeholder("Окна, Зеркала, МАФ..."));
+                            group.AddSimpleFor(m => m.Unit).Label(l => l.Text("Ед. изм.")).IsRequired(true)
+                                .Editor(editor => editor.TextBox().Placeholder("шт"));
+                        });
+                        items.AddGroup().Caption("Смета").ColSpan(2).ColCount(2).Items(group =>
+                        {
+                            group.AddSimpleFor(m => m.FormulaExpression).ColSpan(2)
+                                .Label(l => l.Text("Формула себестоимости (NCalc)"))
+                                .IsRequired(true)
+                                .Editor(editor => editor.TextArea().Height(70)
+                                    .Placeholder("(Width * Height * PriceGlass) + ((Width + Height) * 2 * PriceFrame), или используйте MaterialsCost"));
+                            group.AddSimpleFor(m => m.DefaultMarginPercent).Label(l => l.Text("Наценка по умолчанию, %"))
+                                .Editor(editor => editor.NumberBox().Min(0).Format("#0.##"));
+                            group.AddSimpleFor(m => m.IsActive).Label(l => l.Text("Активен"))
+                                .Editor(editor => editor.CheckBox());
+                        });
+                    })))
+            .Columns(columns =>
+            {
+                columns.AddFor(m => m.Name).Caption("Шаблон").MinWidth(180);
+                columns.AddFor(m => m.Category).Caption("Категория").Width(140);
+                columns.AddFor(m => m.Unit).Caption("Ед. изм.").Width(90);
+                columns.AddFor(m => m.FormulaExpression).Caption("Формула себестоимости").MinWidth(260);
+                columns.AddFor(m => m.DefaultMarginPercent).Caption("Наценка, %").Width(110);
+                columns.AddFor(m => m.IsActive).Caption("Активен").Width(90);
+                columns.Add().Type(GridCommandColumnType.Buttons).Width(105);
+            })
+            .OnContentReady("updateTemplatesSummary")
+            .OnRowInserted("refreshTemplatesSummary")
+            .OnRowUpdated("onTemplatesGridChanged")
+            .OnRowRemoved("onTemplatesGridChanged")
+            .OnSelectionChanged("onTemplateSelectionChanged")
+            .AllowColumnReordering(true)
+            .AllowColumnResizing(true))
+    </div>
+</div>
+
+<div class="content-section calc-section" style="margin-top:20px;">
+    <div class="calc-toolbar">
+        <div>
+            <h2>Состав шаблона (BOM)</h2>
+            <p id="bom-hint">Выберите шаблон изделия выше, чтобы отредактировать список расходуемых материалов</p>
+        </div>
+    </div>
+    <div class="dx-grid-container">
+        <div id="bomGrid"></div>
+    </div>
+</div>
+
+<div class="content-section calc-section" style="margin-top:20px;">
+    <div class="calc-toolbar">
+        <div>
+            <h2>Расчёт сметы</h2>
+            <p>Введите параметры изделия и нажмите «Рассчитать»</p>
+        </div>
+    </div>
+    <div class="calc-form">
+        <div class="calc-form-row">
+            <div class="calc-field">
+                <label>Шаблон изделия</label>
+                <div id="calcTemplateSelect"></div>
+            </div>
+            <div class="calc-field">
+                <label>Ширина, м</label>
+                <div id="calcWidth"></div>
+            </div>
+            <div class="calc-field">
+                <label>Высота, м</label>
+                <div id="calcHeight"></div>
+            </div>
+            <div class="calc-field">
+                <label>Глубина, м</label>
+                <div id="calcDepth"></div>
+            </div>
+            <div class="calc-field">
+                <label>Количество</label>
+                <div id="calcQuantity"></div>
+            </div>
+            <div class="calc-field calc-field-btn">
+                <button class="content-btn" type="button" onclick="computeEstimate()"><i class="fas fa-calculator"></i><span>Рассчитать</span></button>
+            </div>
+        </div>
+    </div>
+
+    <div id="calcResult" class="calc-result" hidden>
+        <div class="calc-result-summary">
+            <div class="calc-kpi">
+                <span class="calc-kpi-label">Себестоимость</span>
+                <span class="calc-kpi-value" id="calcCostPrice">-</span>
+            </div>
+            <div class="calc-kpi">
+                <span class="calc-kpi-label">Материалы</span>
+                <span class="calc-kpi-value" id="calcMaterialsCost">-</span>
+            </div>
+            <div class="calc-kpi">
+                <span class="calc-kpi-label">Наценка</span>
+                <span class="calc-kpi-value" id="calcMargin">-</span>
+            </div>
+            <div class="calc-kpi calc-kpi-accent">
+                <span class="calc-kpi-label">Итоговая цена</span>
+                <span class="calc-kpi-value" id="calcPrice">-</span>
+            </div>
+        </div>
+
+        <div id="calcWarnings" class="calc-warnings" hidden></div>
+
+        <table class="calc-materials-table">
+            <thead>
+                <tr>
+                    <th>Материал</th>
+                    <th>Требуется</th>
+                    <th>Остаток</th>
+                    <th>Цена за ед.</th>
+                    <th>Стоимость</th>
+                </tr>
+            </thead>
+            <tbody id="calcMaterialsBody"></tbody>
+        </table>
+
+        <div class="calc-order-row">
+            <div class="calc-field">
+                <label>ID сделки, чтобы сохранить изделие в неё (необязательно)</label>
+                <div id="calcDealId"></div>
+            </div>
+            <div class="calc-field calc-field-btn">
+                <button class="content-btn secondary" type="button" onclick="saveOrderItem()"><i class="fas fa-save"></i><span>Сохранить изделие в сделку</span></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .calc-section { padding: 0; overflow: hidden; }
+    .calc-toolbar {
+        display: flex; align-items: center; justify-content: space-between; gap: 16px;
+        padding: 22px 24px 18px; border-bottom: 1px solid #e5edf4; background: #fff;
+    }
+    .calc-toolbar h2 { margin: 0 0 4px; color: #20364d; font-size: 18px; }
+    .calc-toolbar p { margin: 0; color: #7b8da0; font-size: 13px; }
+    .calc-summary { color: #6b8195; font-size: 13px; white-space: nowrap; }
+    .calc-section .dx-grid-container { padding: 0 12px 12px; }
+
+    .calc-form { padding: 18px 24px; }
+    .calc-form-row { display: flex; flex-wrap: wrap; gap: 16px; align-items: end; }
+    .calc-field { display: flex; flex-direction: column; gap: 6px; min-width: 160px; }
+    .calc-field label { font-size: 12px; color: #6b8195; }
+    .calc-field-btn { justify-content: end; }
+
+    .calc-result { padding: 0 24px 24px; }
+    .calc-result-summary { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 16px; }
+    .calc-kpi {
+        flex: 1; min-width: 160px; background: #f4f8fb; border-radius: 10px; padding: 14px 16px;
+        display: flex; flex-direction: column; gap: 4px;
+    }
+    .calc-kpi-accent { background: #eaf3ff; }
+    .calc-kpi-label { font-size: 12px; color: #6b8195; }
+    .calc-kpi-value { font-size: 20px; font-weight: 700; color: #20364d; }
+
+    .calc-warnings { margin-bottom: 16px; }
+    .calc-warning-item {
+        background: #fdebed; color: #b14e5b; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; font-size: 13px;
+    }
+
+    .calc-materials-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .calc-materials-table th, .calc-materials-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #e5edf4; }
+    .calc-materials-table th { color: #6b8195; font-weight: 600; }
+    .calc-materials-table tr.row-shortage td { color: #b14e5b; font-weight: 600; }
+
+    .calc-order-row { display: flex; gap: 16px; align-items: end; margin-top: 8px; }
+
+    @@media (max-width: 700px) {
+        .calc-toolbar { align-items: flex-start; flex-direction: column; }
+        .calc-summary { white-space: normal; }
+    }
+</style>
+
+@section Scripts {
+    <script>
+        let selectedTemplateId = null;
+        let bomGridInstance = null;
+        let lastCalculation = null;
+        let calcTemplateSelectInstance = null;
+        let calcWidthInstance = null;
+        let calcHeightInstance = null;
+        let calcDepthInstance = null;
+        let calcQuantityInstance = null;
+        let calcDealIdInstance = null;
+
+        function updateTemplatesSummary(e) {
+            document.getElementById('templates-summary').textContent = `${e.component.totalCount()} шаблонов`;
+        }
+        function refreshTemplatesSummary(e) { e.component.refresh(); }
+        function onTemplatesGridChanged(e) {
+            e.component.refresh();
+            refreshLookups();
+        }
+
+        function onTemplateSelectionChanged(e) {
+            const rows = e.selectedRowsData;
+            selectedTemplateId = rows && rows.length > 0 ? rows[0].ProductTemplateId : null;
+            document.getElementById('bom-hint').textContent = selectedTemplateId
+                ? `Шаблон: ${rows[0].Name} (ID ${selectedTemplateId})`
+                : 'Выберите шаблон изделия выше, чтобы отредактировать список расходуемых материалов';
+            if (bomGridInstance) {
+                bomGridInstance.option('dataSource', createBomStore());
+            }
+        }
+
+        function createBomStore() {
+            return new DevExpress.data.CustomStore({
+                key: 'Id',
+                load: function () {
+                    if (!selectedTemplateId) return $.Deferred().resolve([]).promise();
+                    return $.ajax({
+                        url: '/ProductTemplateComponentData/Get',
+                        method: 'GET',
+                        data: { productTemplateId: selectedTemplateId }
+                    }).then(function (result) {
+                        return result.data || result;
+                    });
+                },
+                insert: function (values) {
+                    if (!selectedTemplateId) return $.Deferred().reject('Сначала выберите шаблон изделия').promise();
+                    values.ProductTemplateId = selectedTemplateId;
+                    return $.ajax({
+                        url: '/ProductTemplateComponentData/Post',
+                        method: 'POST',
+                        data: { values: JSON.stringify(values) }
+                    });
+                },
+                update: function (key, values) {
+                    return $.ajax({
+                        url: '/ProductTemplateComponentData/Put',
+                        method: 'PUT',
+                        data: { key: key, values: JSON.stringify(values) }
+                    });
+                },
+                remove: function (key) {
+                    return $.ajax({
+                        url: '/ProductTemplateComponentData/' + key,
+                        method: 'DELETE'
+                    });
+                }
+            });
+        }
+
+        $(function () {
+            bomGridInstance = $('#bomGrid').dxDataGrid({
+                dataSource: createBomStore(),
+                showBorders: false,
+                columnAutoWidth: true,
+                rowAlternationEnabled: true,
+                noDataText: 'Сначала выберите шаблон изделия в таблице выше',
+                editing: {
+                    mode: 'popup',
+                    allowAdding: true,
+                    allowUpdating: true,
+                    allowDeleting: true,
+                    useIcons: true,
+                    popup: { title: 'Строка состава', showTitle: true, width: 520, height: 380 },
+                    form: {
+                        colCount: 1,
+                        items: [
+                            {
+                                dataField: 'ComponentId',
+                                label: { text: 'Материал' },
+                                isRequired: true,
+                                editorType: 'dxSelectBox',
+                                editorOptions: {
+                                    dataSource: { store: new DevExpress.data.CustomStore({
+                                        key: 'ComponentId',
+                                        load: function () {
+                                            return $.ajax({ url: '/ComponentData/Lookup', method: 'GET' }).then(r => r.data || r);
+                                        }
+                                    }) },
+                                    valueExpr: 'ComponentId',
+                                    displayExpr: 'Name',
+                                    searchEnabled: true
+                                }
+                            },
+                            {
+                                dataField: 'QuantityFormula',
+                                label: { text: 'Формула расхода (NCalc)' },
+                                isRequired: true,
+                                editorType: 'dxTextArea',
+                                editorOptions: { height: 70, placeholder: 'Например, Width * Height * Quantity' }
+                            },
+                            { dataField: 'Notes', label: { text: 'Заметка' }, editorType: 'dxTextBox' }
+                        ]
+                    }
+                },
+                columns: [
+                    { dataField: 'ComponentName', caption: 'Материал', minWidth: 160 },
+                    { dataField: 'ComponentUnit', caption: 'Ед. изм.', width: 90 },
+                    { dataField: 'QuantityFormula', caption: 'Формула расхода', minWidth: 220 },
+                    { dataField: 'Notes', caption: 'Заметка', minWidth: 140 },
+                    { type: 'buttons', width: 100 }
+                ],
+                onRowInserted: refreshLookups,
+                onRowUpdated: refreshLookups,
+                onRowRemoved: refreshLookups
+            }).dxDataGrid('instance');
+
+            calcTemplateSelectInstance = $('#calcTemplateSelect').dxSelectBox({
+                dataSource: { store: new DevExpress.data.CustomStore({
+                    key: 'ProductTemplateId',
+                    load: function () {
+                        return $.ajax({ url: '/ProductTemplateData/Lookup', method: 'GET' }).then(r => r.data || r);
+                    }
+                }) },
+                valueExpr: 'ProductTemplateId',
+                displayExpr: 'Name',
+                searchEnabled: true,
+                placeholder: 'Выберите шаблон',
+                onValueChanged: function (e) {
+                    const item = calcTemplateSelectInstance.option('selectedItem');
+                    if (item && item.DefaultMarginPercent != null) {
+                        // ничего, наценка подставляется сервером в ответе расчёта
+                    }
+                }
+            }).dxSelectBox('instance');
+
+            calcWidthInstance = $('#calcWidth').dxNumberBox({ value: 1, min: 0, format: '#0.###' }).dxNumberBox('instance');
+            calcHeightInstance = $('#calcHeight').dxNumberBox({ value: 1, min: 0, format: '#0.###' }).dxNumberBox('instance');
+            calcDepthInstance = $('#calcDepth').dxNumberBox({ value: null, min: 0, format: '#0.###', placeholder: 'необязательно' }).dxNumberBox('instance');
+            calcQuantityInstance = $('#calcQuantity').dxNumberBox({ value: 1, min: 0.001, format: '#0.###' }).dxNumberBox('instance');
+            calcDealIdInstance = $('#calcDealId').dxNumberBox({ value: null, min: 1, placeholder: 'ID сделки' }).dxNumberBox('instance');
+        });
+
+        function refreshLookups() {
+            if (bomGridInstance) bomGridInstance.getDataSource().reload();
+        }
+
+        function addTemplate() {
+            $('#templatesGrid').dxDataGrid('instance').addRow();
+        }
+
+        function formatMoney(value) {
+            return (value == null ? 0 : value).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₽';
+        }
+
+        function computeEstimate() {
+            const templateId = calcTemplateSelectInstance.option('value');
+            if (!templateId) {
+                DevExpress.ui.notify('Выберите шаблон изделия', 'warning', 2500);
+                return;
+            }
+
+            const payload = {
+                ProductTemplateId: templateId,
+                Width: calcWidthInstance.option('value') || 0,
+                Height: calcHeightInstance.option('value') || 0,
+                Depth: calcDepthInstance.option('value'),
+                Quantity: calcQuantityInstance.option('value') || 1
+            };
+
+            $.ajax({
+                url: '/api/v1/calculations/compute',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(payload)
+            }).done(function (result) {
+                lastCalculation = result;
+                renderCalcResult(result);
+            }).fail(function (xhr) {
+                let message = 'Не удалось выполнить расчёт';
+                try { message = JSON.parse(xhr.responseText).message || message; } catch (e) { }
+                DevExpress.ui.notify(message, 'error', 4000);
+            });
+        }
+
+        function renderCalcResult(result) {
+            document.getElementById('calcResult').hidden = false;
+            document.getElementById('calcCostPrice').textContent = formatMoney(result.CostPrice);
+            document.getElementById('calcMaterialsCost').textContent = formatMoney(result.MaterialsCost);
+            document.getElementById('calcMargin').textContent = (result.SuggestedMarginPercent || 0) + ' %';
+            document.getElementById('calcPrice').textContent = formatMoney(result.SuggestedPrice);
+
+            const warningsEl = document.getElementById('calcWarnings');
+            warningsEl.innerHTML = '';
+            if (result.Warnings && result.Warnings.length > 0) {
+                warningsEl.hidden = false;
+                result.Warnings.forEach(w => {
+                    const div = document.createElement('div');
+                    div.className = 'calc-warning-item';
+                    div.textContent = w;
+                    warningsEl.appendChild(div);
+                });
+            } else {
+                warningsEl.hidden = true;
+            }
+
+            const body = document.getElementById('calcMaterialsBody');
+            body.innerHTML = '';
+            (result.Materials || []).forEach(m => {
+                const tr = document.createElement('tr');
+                if (m.IsShortage) tr.className = 'row-shortage';
+                tr.innerHTML = `<td>${m.Name}</td><td>${m.RequiredQuantity} ${m.Unit}</td><td>${m.StockQuantity} ${m.Unit}</td><td>${formatMoney(m.UnitCostPrice)}</td><td>${formatMoney(m.TotalCost)}</td>`;
+                body.appendChild(tr);
+            });
+        }
+
+        function saveOrderItem() {
+            if (!lastCalculation) {
+                DevExpress.ui.notify('Сначала выполните расчёт', 'warning', 2500);
+                return;
+            }
+            const dealId = calcDealIdInstance.option('value');
+            if (!dealId) {
+                DevExpress.ui.notify('Укажите ID сделки', 'warning', 2500);
+                return;
+            }
+
+            const values = {
+                DealId: dealId,
+                ProductTemplateId: lastCalculation.ProductTemplateId,
+                Name: lastCalculation.ProductTemplateName,
+                Quantity: lastCalculation.Quantity,
+                Width: lastCalculation.Width,
+                Height: lastCalculation.Height,
+                Depth: lastCalculation.Depth,
+                CostPrice: lastCalculation.CostPrice,
+                MarginPercent: lastCalculation.SuggestedMarginPercent,
+                Price: lastCalculation.SuggestedPrice
+            };
+
+            $.ajax({
+                url: '/OrderItemData/Post',
+                method: 'POST',
+                data: { values: JSON.stringify(values) }
+            }).done(function () {
+                DevExpress.ui.notify('Изделие сохранено в сделку', 'success', 2500);
+            }).fail(function (xhr) {
+                let message = 'Не удалось сохранить изделие';
+                try { message = JSON.parse(xhr.responseText).message || message; } catch (e) { }
+                DevExpress.ui.notify(message, 'error', 4000);
+            });
+        }
+    </script>
+}

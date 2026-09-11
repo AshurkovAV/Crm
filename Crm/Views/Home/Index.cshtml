@@ -30,8 +30,55 @@
     }
     else if (hasAnyCompany && !hasOwnCompany)
     {
-        <h2>Последние активности</h2>
-        <p>Здесь будут ваши задачи и события.</p>
+        <div class="main-panel">
+            <div class="panel-header">
+                <div>
+                    <p class="eyebrow">Главная</p>
+                    <h2>Последние новости</h2>
+                </div>
+                <span class="panel-badge">Сегодня</span>
+            </div>
+
+            <p class="panel-subtitle">Следите за обновлениями, задачами и событиями вашей компании.</p>
+
+            <div class="news-list">
+                <article class="news-item">
+                    <div class="news-dot"></div>
+                    <div class="news-content">
+                        <div class="news-meta">
+                            <span class="news-date">Сегодня</span>
+                            <span class="news-tag">Сделки</span>
+                        </div>
+                        <h3>Обновлены статусы по текущим сделкам</h3>
+                        <p>Проверьте карточки сделок и завершите согласование с клиентами.</p>
+                    </div>
+                </article>
+
+                <article class="news-item">
+                    <div class="news-dot"></div>
+                    <div class="news-content">
+                        <div class="news-meta">
+                            <span class="news-date">Вчера</span>
+                            <span class="news-tag">Команда</span>
+                        </div>
+                        <h3>Добавлены новые контакты и поставщики</h3>
+                        <p>Обновлён справочник позволяет быстрее находить клиентов и партнёров.</p>
+                    </div>
+                </article>
+
+                <article class="news-item">
+                    <div class="news-dot"></div>
+                    <div class="news-content">
+                        <div class="news-meta">
+                            <span class="news-date">На этой неделе</span>
+                            <span class="news-tag">Проекты</span>
+                        </div>
+                        <h3>Следующий дедлайн по проектам уже назначен</h3>
+                        <p>Проверьте актуальные задачи и распределите загрузку команды.</p>
+                    </div>
+                </article>
+            </div>
+        </div>
 
         <div class="company-actions" style="margin-top: 30px;">
             <div class="action-card" id="joinCompanyCardOnly">
@@ -44,8 +91,55 @@
     }
     else if (hasOwnCompany)
     {
-        <h2>Последние активности</h2>
-        <p>Здесь будут ваши задачи и события.</p>
+        <div class="main-panel">
+            <div class="panel-header">
+                <div>
+                    <p class="eyebrow">Главная</p>
+                    <h2>Последние новости</h2>
+                </div>
+                <span class="panel-badge">Сегодня</span>
+            </div>
+
+            <p class="panel-subtitle">Здесь собраны ключевые обновления, задачи и важные события компании.</p>
+
+            <div class="news-list">
+                <article class="news-item">
+                    <div class="news-dot"></div>
+                    <div class="news-content">
+                        <div class="news-meta">
+                            <span class="news-date">Сегодня</span>
+                            <span class="news-tag">Задачи</span>
+                        </div>
+                        <h3>Скоро будет обновление по текущим задачам</h3>
+                        <p>Проверьте остаток задач и отметьте приоритетные пункты для команды.</p>
+                    </div>
+                </article>
+
+                <article class="news-item">
+                    <div class="news-dot"></div>
+                    <div class="news-content">
+                        <div class="news-meta">
+                            <span class="news-date">Вчера</span>
+                            <span class="news-tag">Сотрудники</span>
+                        </div>
+                        <h3>Приглашения сотрудникам готовы к отправке</h3>
+                        <p>Добавьте новых участников и настройте доступы для совместной работы.</p>
+                    </div>
+                </article>
+
+                <article class="news-item">
+                    <div class="news-dot"></div>
+                    <div class="news-content">
+                        <div class="news-meta">
+                            <span class="news-date">На этой неделе</span>
+                            <span class="news-tag">Контакты</span>
+                        </div>
+                        <h3>Справочник клиентов и поставщиков обновлён</h3>
+                        <p>Теперь все важные записи доступны в одном месте для быстрого поиска.</p>
+                    </div>
+                </article>
+            </div>
+        </div>
 
         <div class="company-actions" style="margin-top: 30px;">
             <div class="action-card" id="joinCompanyCardOwn">
@@ -65,9 +159,134 @@
 <style>
     /* Общие стили */
     .content-section {
-        padding: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 28px 24px 40px;
         width: 100%;
         box-sizing: border-box;
+    }
+
+    .main-panel {
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        border: 1px solid #e2e8f0;
+        border-radius: 20px;
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+        padding: 28px;
+        margin-bottom: 28px;
+    }
+
+    .panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 8px;
+    }
+
+    .eyebrow {
+        margin: 0;
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #64748b;
+    }
+
+    .panel-header h2 {
+        margin: 6px 0 0;
+        font-size: clamp(1.8rem, 2vw, 2.4rem);
+        line-height: 1.15;
+        color: #0f172a;
+    }
+
+    .panel-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: #eef2ff;
+        color: #4f46e5;
+        font-size: 0.8rem;
+        font-weight: 700;
+    }
+
+    .panel-subtitle {
+        margin: 0 0 24px;
+        color: #475569;
+        font-size: 1rem;
+        line-height: 1.5;
+    }
+
+    .news-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 18px;
+    }
+
+    .news-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 18px;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+    }
+
+    .news-dot {
+        width: 11px;
+        height: 11px;
+        margin-top: 10px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #4f46e5, #7c3aed);
+        box-shadow: 0 0 0 6px rgba(79, 70, 229, 0.12);
+        flex-shrink: 0;
+    }
+
+    .news-content {
+        flex: 1;
+    }
+
+    .news-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 8px;
+        flex-wrap: wrap;
+    }
+
+    .news-date {
+        font-size: 0.76rem;
+        font-weight: 600;
+        color: #64748b;
+    }
+
+    .news-tag {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: #f1f5f9;
+        color: #334155;
+        font-size: 0.7rem;
+        font-weight: 700;
+    }
+
+    .news-item h3 {
+        margin: 0 0 8px;
+        color: #0f172a;
+        font-size: 1.05rem;
+        line-height: 1.35;
+    }
+
+    .news-item p {
+        margin: 0;
+        color: #475569;
+        line-height: 1.5;
+        font-size: 0.92rem;
     }
 
     .welcome-message {
@@ -88,13 +307,11 @@
 
     /* Горизонтальные плашки с прокруткой */
     .company-actions {
-        display: flex !important;
-        flex-direction: row !important;
-        flex-wrap: nowrap !important;
-        gap: 30px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 24px;
         justify-content: center;
         margin: 30px 0;
-        overflow-x: auto;
         padding-bottom: 15px;
         -webkit-overflow-scrolling: touch;
     }
@@ -102,14 +319,13 @@
     .action-card {
         background: white;
         border-radius: 16px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
         padding: 30px 25px;
-        width: 320px;
-        min-width: 280px;
+        width: 100%;
+        min-width: 0;
         text-align: center;
         transition: transform 0.2s, box-shadow 0.2s;
         cursor: pointer;
-        flex-shrink: 0;
         border: 1px solid #e2e8f0;
     }
 
@@ -272,14 +488,26 @@
 
     /* Адаптив */
     @@media (max-width: 768px) {
+        .content-section {
+            padding-left: 18px;
+            padding-right: 18px;
+        }
+
+        .main-panel {
+            padding: 20px;
+        }
+
+        .panel-header {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
         .company-actions {
             justify-content: flex-start;
             gap: 20px;
         }
 
         .action-card {
-            width: 280px;
-            min-width: 260px;
             padding: 20px 15px;
         }
 
