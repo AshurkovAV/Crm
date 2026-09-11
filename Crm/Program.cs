@@ -192,6 +192,263 @@ END");
     {
         app.Logger.LogWarning(exception, "Не удалось обновить связь сделок с контактами");
     }
+
+    // ====== Производственный модуль (ТЗ "BigLV: Прозрачный завод") ======
+    // Только аддитивные, идемпотентные изменения (CREATE IF NOT EXISTS / ADD COLUMN IF NOT EXISTS).
+    // Удаление старой демо-схемы склада делается вручную: Crm.Entity/Migrations/0001_production_schema.sql
+
+    try
+    {
+        await using var db = new CrmContext();
+        await db.Database.ExecuteSqlRawAsync(@"
+IF COL_LENGTH(N'[dbo].[Clients]', N'CompanyId') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[Clients] ADD [CompanyId] INT NULL;
+    ALTER TABLE [dbo].[Clients] ADD CONSTRAINT [FK_Clients_Company]
+        FOREIGN KEY ([CompanyId]) REFERENCES [dbo].[Company] ([Id]);
+    CREATE INDEX [IX_Clients_CompanyId] ON [dbo].[Clients]([CompanyId]);
+END");
+    }
+    catch (Exception exception)
+    {
+        app.Logger.LogWarning(exception, "Не удалось добавить CompanyId в Clients");
+    }
+
+    try
+    {
+        await using var db = new CrmContext();
+        await db.Database.ExecuteSqlRawAsync(@"
+IF COL_LENGTH(N'[dbo].[Deal]', N'InstallationAddress') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[Deal] ADD [InstallationAddress] NVARCHAR(500) NULL;
+    ALTER TABLE [dbo].[Deal] ADD [PrepaymentAmount] DECIMAL(18, 2) NULL;
+    ALTER TABLE [dbo].[Deal] ADD [PublicToken] UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID();
+    CREATE UNIQUE INDEX [UQ_Deal_PublicToken] ON [dbo].[Deal]([PublicToken]);
+END");
+    }
+    catch (Exception exception)
+    {
+        app.Logger.LogWarning(exception, "Не удалось добавить поля адреса/предоплаты/публичного токена в Deal");
+    }
+
+    try
+    {
+        await using var db = new CrmContext();
+        await db.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[Supplier]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[Supplier]
+    (
+        [SupplierId]    INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_Supplier] PRIMARY KEY,
+        [CompanyId]     INT NOT NULL,
+        [Name]          NVARCHAR(100) NOT NULL,
+        [ContactPerson] NVARCHAR(100) NULL,
+        [Phone]         NVARCHAR(20) NULL,
+        [Email]         NVARCHAR(100) NULL,
+        [Notes]         NVARCHAR(500) NULL,
+        [IsActive]      BIT NOT NULL CONSTRAINT [DF_Supplier_IsActive] DEFAULT (1),
+        CONSTRAINT [FK_Supplier_Company] FOREIGN KEY ([CompanyId]) REFERENCES [dbo].[Company] ([Id])
+    );
+    CREATE INDEX [IX_Supplier_CompanyId] ON [dbo].[Supplier]([CompanyId]);
+END");
+    }
+    catch (Exception exception)
+    {
+        app.Logger.LogWarning(exception, "Не удалось создать таблицу Supplier");
+    }
+
+    try
+    {
+        await using var db = new CrmContext();
+        await db.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[Component]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[Component]
+    (
+        [ComponentId]   INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_Component] PRIMARY KEY,
+        [CompanyId]     INT NOT NULL,
+        [Name]          NVARCHAR(200) NOT NULL,
+        [Unit]          NVARCHAR(20) NOT NULL,
+        [CostPrice]     DECIMAL(18, 2) NOT NULL,
+        [StockQuantity] DECIMAL(18, 3) NOT NULL CONSTRAINT [DF_Component_StockQuantity] DEFAULT (0),
+        [ReorderLevel]  DECIMAL(18, 3) NULL,
+        [SupplierId]    INT NULL,
+        [IsActive]      BIT NOT NULL CONSTRAINT [DF_Component_IsActive] DEFAULT (1),
+        CONSTRAINT [FK_Component_Company] FOREIGN KEY ([CompanyId]) REFERENCES [dbo].[Company] ([Id]),
+        CONSTRAINT [FK_Component_Supplier] FOREIGN KEY ([SupplierId]) REFERENCES [dbo].[Supplier] ([SupplierId])
+    );
+    CREATE INDEX [IX_Component_CompanyId] ON [dbo].[Component]([CompanyId]);
+END");
+    }
+    catch (Exception exception)
+    {
+        app.Logger.LogWarning(exception, "Не удалось создать таблицу Component");
+    }
+
+    try
+    {
+        await using var db = new CrmContext();
+        await db.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[ProductTemplate]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[ProductTemplate]
+    (
+        [ProductTemplateId]    INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_ProductTemplate] PRIMARY KEY,
+        [CompanyId]            INT NOT NULL,
+        [Name]                 NVARCHAR(200) NOT NULL,
+        [Category]             NVARCHAR(100) NULL,
+        [Unit]                 NVARCHAR(20) NOT NULL,
+        [FormulaExpression]    NVARCHAR(2000) NOT NULL,
+        [DefaultMarginPercent] DECIMAL(5, 2) NULL,
+        [IsActive]             BIT NOT NULL CONSTRAINT [DF_ProductTemplate_IsActive] DEFAULT (1),
+        CONSTRAINT [FK_ProductTemplate_Company] FOREIGN KEY ([CompanyId]) REFERENCES [dbo].[Company] ([Id])
+    );
+    CREATE INDEX [IX_ProductTemplate_CompanyId] ON [dbo].[ProductTemplate]([CompanyId]);
+END");
+    }
+    catch (Exception exception)
+    {
+        app.Logger.LogWarning(exception, "Не удалось создать таблицу ProductTemplate");
+    }
+
+    try
+    {
+        await using var db = new CrmContext();
+        await db.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[ProductTemplateComponent]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[ProductTemplateComponent]
+    (
+        [Id]                INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_ProductTemplateComponent] PRIMARY KEY,
+        [ProductTemplateId] INT NOT NULL,
+        [ComponentId]       INT NOT NULL,
+        [QuantityFormula]   NVARCHAR(500) NOT NULL,
+        [Notes]             NVARCHAR(200) NULL,
+        CONSTRAINT [FK_PTC_ProductTemplate] FOREIGN KEY ([ProductTemplateId]) REFERENCES [dbo].[ProductTemplate] ([ProductTemplateId]) ON DELETE CASCADE,
+        CONSTRAINT [FK_PTC_Component] FOREIGN KEY ([ComponentId]) REFERENCES [dbo].[Component] ([ComponentId])
+    );
+    CREATE INDEX [IX_ProductTemplateComponent_ProductTemplateId] ON [dbo].[ProductTemplateComponent]([ProductTemplateId]);
+END");
+    }
+    catch (Exception exception)
+    {
+        app.Logger.LogWarning(exception, "Не удалось создать таблицу ProductTemplateComponent");
+    }
+
+    try
+    {
+        await using var db = new CrmContext();
+        await db.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[OrderItem]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[OrderItem]
+    (
+        [OrderItemId]       INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_OrderItem] PRIMARY KEY,
+        [DealId]            INT NOT NULL,
+        [ProductTemplateId] INT NULL,
+        [Name]              NVARCHAR(255) NOT NULL,
+        [Quantity]          DECIMAL(18, 3) NOT NULL CONSTRAINT [DF_OrderItem_Quantity] DEFAULT (1),
+        [Width]             DECIMAL(18, 3) NULL,
+        [Height]            DECIMAL(18, 3) NULL,
+        [Depth]             DECIMAL(18, 3) NULL,
+        [CostPrice]         DECIMAL(18, 2) NOT NULL CONSTRAINT [DF_OrderItem_CostPrice] DEFAULT (0),
+        [MarginPercent]     DECIMAL(5, 2) NULL,
+        [Price]             DECIMAL(18, 2) NOT NULL CONSTRAINT [DF_OrderItem_Price] DEFAULT (0),
+        [Status]            NVARCHAR(50) NOT NULL CONSTRAINT [DF_OrderItem_Status] DEFAULT (N'Новое'),
+        [CreatedDate]       DATETIME2 NOT NULL CONSTRAINT [DF_OrderItem_CreatedDate] DEFAULT (SYSUTCDATETIME()),
+        CONSTRAINT [FK_OrderItem_Deal] FOREIGN KEY ([DealId]) REFERENCES [dbo].[Deal] ([Id]) ON DELETE CASCADE,
+        CONSTRAINT [FK_OrderItem_ProductTemplate] FOREIGN KEY ([ProductTemplateId]) REFERENCES [dbo].[ProductTemplate] ([ProductTemplateId])
+    );
+    CREATE INDEX [IX_OrderItem_DealId] ON [dbo].[OrderItem]([DealId]);
+END");
+    }
+    catch (Exception exception)
+    {
+        app.Logger.LogWarning(exception, "Не удалось создать таблицу OrderItem");
+    }
+
+    try
+    {
+        await using var db = new CrmContext();
+        await db.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[Contractor]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[Contractor]
+    (
+        [ContractorId] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_Contractor] PRIMARY KEY,
+        [CompanyId]    INT NOT NULL,
+        [Name]         NVARCHAR(200) NOT NULL,
+        [Phone]        NVARCHAR(20) NULL,
+        [Email]        NVARCHAR(100) NULL,
+        [Notes]        NVARCHAR(500) NULL,
+        [IsActive]     BIT NOT NULL CONSTRAINT [DF_Contractor_IsActive] DEFAULT (1),
+        CONSTRAINT [FK_Contractor_Company] FOREIGN KEY ([CompanyId]) REFERENCES [dbo].[Company] ([Id])
+    );
+    CREATE INDEX [IX_Contractor_CompanyId] ON [dbo].[Contractor]([CompanyId]);
+END");
+    }
+    catch (Exception exception)
+    {
+        app.Logger.LogWarning(exception, "Не удалось создать таблицу Contractor");
+    }
+
+    try
+    {
+        await using var db = new CrmContext();
+        await db.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[ProductionTask]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[ProductionTask]
+    (
+        [ProductionTaskId] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_ProductionTask] PRIMARY KEY,
+        [OrderItemId]      INT NOT NULL,
+        [StageName]        NVARCHAR(100) NOT NULL,
+        [StageOrder]       INT NOT NULL CONSTRAINT [DF_ProductionTask_StageOrder] DEFAULT (0),
+        [ExecutorType]     NVARCHAR(20) NOT NULL CONSTRAINT [DF_ProductionTask_ExecutorType] DEFAULT (N'Internal'),
+        [AssignedUserId]   INT NULL,
+        [ContractorId]     INT NULL,
+        [Status]           NVARCHAR(20) NOT NULL CONSTRAINT [DF_ProductionTask_Status] DEFAULT (N'Pending'),
+        [StartedAt]        DATETIME2 NULL,
+        [CompletedAt]      DATETIME2 NULL,
+        [PhotoUrl]         NVARCHAR(500) NULL,
+        [Notes]            NVARCHAR(2000) NULL,
+        CONSTRAINT [FK_ProductionTask_OrderItem] FOREIGN KEY ([OrderItemId]) REFERENCES [dbo].[OrderItem] ([OrderItemId]) ON DELETE CASCADE,
+        CONSTRAINT [FK_ProductionTask_AssignedUser] FOREIGN KEY ([AssignedUserId]) REFERENCES [dbo].[Users] ([Id]),
+        CONSTRAINT [FK_ProductionTask_Contractor] FOREIGN KEY ([ContractorId]) REFERENCES [dbo].[Contractor] ([ContractorId])
+    );
+    CREATE INDEX [IX_ProductionTask_OrderItemId_StageOrder] ON [dbo].[ProductionTask]([OrderItemId], [StageOrder]);
+END");
+    }
+    catch (Exception exception)
+    {
+        app.Logger.LogWarning(exception, "Не удалось создать таблицу ProductionTask");
+    }
+
+    try
+    {
+        await using var db = new CrmContext();
+        await db.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[ContractorAccessToken]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[ContractorAccessToken]
+    (
+        [ContractorAccessTokenId] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_ContractorAccessToken] PRIMARY KEY,
+        [ContractorId]            INT NOT NULL,
+        [ProductionTaskId]        INT NOT NULL,
+        [Token]                   UNIQUEIDENTIFIER NOT NULL CONSTRAINT [DF_ContractorAccessToken_Token] DEFAULT (NEWID()),
+        [CreatedAt]               DATETIME2 NOT NULL CONSTRAINT [DF_ContractorAccessToken_CreatedAt] DEFAULT (SYSUTCDATETIME()),
+        [ExpiresAt]               DATETIME2 NULL,
+        [UsedAt]                  DATETIME2 NULL,
+        CONSTRAINT [FK_CAT_Contractor] FOREIGN KEY ([ContractorId]) REFERENCES [dbo].[Contractor] ([ContractorId]) ON DELETE CASCADE,
+        CONSTRAINT [FK_CAT_ProductionTask] FOREIGN KEY ([ProductionTaskId]) REFERENCES [dbo].[ProductionTask] ([ProductionTaskId])
+    );
+    CREATE UNIQUE INDEX [UQ_ContractorAccessToken_Token] ON [dbo].[ContractorAccessToken]([Token]);
+END");
+    }
+    catch (Exception exception)
+    {
+        app.Logger.LogWarning(exception, "Не удалось создать таблицу ContractorAccessToken");
+    }
 }
 
 // Configure the HTTP request pipeline.
