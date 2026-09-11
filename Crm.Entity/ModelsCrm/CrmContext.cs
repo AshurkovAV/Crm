@@ -153,7 +153,7 @@ public partial class CrmContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull);
 
             entity.HasOne(e => e.Client)
-                .WithMany()
+                .WithMany(c => c.Deals)
                 .HasForeignKey(e => e.ClientId)
                 .OnDelete(DeleteBehavior.SetNull);
 
