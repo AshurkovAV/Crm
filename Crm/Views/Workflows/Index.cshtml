@@ -1,258 +1,722 @@
-﻿@using Crm.Entity.DTO
-
 @{
-    ViewData["Title"] = "Потоки";
+    ViewData["Title"] = "Производство";
 }
 
 <div class="content-top-bar">
-    <h1 class="content-title">Потоки</h1>
+    <h1 class="content-title">Цех: производственный конвейер</h1>
     <div class="content-actions">
-        <button class="content-btn" onclick="showCreateProjectModal()">
+        <button class="content-btn" type="button" onclick="Prod.openStartModal()">
+            <i class="fas fa-play"></i>
+            <span>Начать производство</span>
+        </button>
+        <button class="content-btn secondary" type="button" onclick="Prod.openAddStageModal()">
             <i class="fas fa-plus"></i>
-            <span>Новый поток</span>
+            <span>Добавить этап</span>
         </button>
-        <button class="content-btn secondary">
-            <i class="fas fa-filter"></i>
-            <span>Фильтр</span>
+        <button class="content-btn secondary" type="button" onclick="Prod.reload()">
+            <i class="fas fa-rotate"></i>
+            <span>Обновить</span>
         </button>
     </div>
 </div>
-@* 
-<div class="content-section">
-    <div class="dx-grid-container">
-        @(Html.DevExtreme().DataGrid<ProjectDTO>()
-                        .ID("projectsGrid")
-                        .DataSource(ds => ds.Mvc()
-                                .Controller("ProjectData")
-                                .LoadAction("Get")
-                                .InsertAction("Post")
-                                .UpdateAction("Put")
-                                .DeleteAction("Delete")
-                                .Key("Id")
-                        )
-                .ShowBorders(true)
-                .ColumnAutoWidth(true)
-                .WordWrapEnabled(true)
-                .ShowColumnLines(true)
-                .ShowRowLines(true)
-                .RowAlternationEnabled(true)
-                .Grouping(g => g.AutoExpandAll(false))
-                .Pager(p => p
-                .ShowPageSizeSelector(true)
-                .AllowedPageSizes(new[] { 10, 20, 50 })
-                .ShowInfo(true)
-                )
-                .Paging(p => p.PageSize(10))
-                .Editing(e => e
-                .Mode(GridEditMode.Popup)
-           
-                .AllowAdding(true)
-                .AllowUpdating(true)
-                .AllowDeleting(true)
-                .UseIcons(true)
-                .Popup(p => p
-                .Title("Редактирование проекта")
-                .ShowTitle(true)
-                .Width(860)
-                .Height(800)
-                .Position(pos => pos
-                .My(HorizontalAlignment.Center, VerticalAlignment.Center)
-                .At(HorizontalAlignment.Center, VerticalAlignment.Center)
-                .Of(new JS("window"))
-                )          
-                )
-                .Form(f => f
-                .ColCount(2)
-                .LabelLocation(FormLabelLocation.Top)
-                .Items(items =>
-                {                  
-                    // Первая колонка
-                    items.AddGroup()
-                            .Caption("Основная информация")
-                            .ColSpan(1)
-                            .Items(groupItems =>
-                            {
-                                groupItems.AddSimpleFor(m => m.Name)
-                                        .Label(l => l.Text("Название проекта*"))
-                                        .Editor(editor => editor
-                                        .TextBox()
-                                        .Placeholder("Введите название проекта")
-                            );
 
-                    groupItems.AddSimpleFor(m => m.Activity)
-                                            .Label(l => l.Text("Описание проекта"))
-                                            .Editor(editor => editor
-                                            .TextArea()
-                                            .Height(80)
-                                            .Placeholder("Опишите проект")
-                                            );
-                });
+<div class="prod-wrap">
+    <div class="prod-filters">
+        <select id="prodStatusFilter" class="prod-select" onchange="Prod.reload()">
+            <option value="">Все статусы</option>
+            <option value="Pending">Ожидает</option>
+            <option value="InProgress">В работе</option>
+            <option value="Done">Готово</option>
+        </select>
+        <span class="prod-summary" id="prodSummary">Загрузка...</span>
+    </div>
 
-                    // Вторая колонка
-                    items.AddGroup()
-                .Caption("Дополнительная информация")
-                .ColSpan(1)
-                .Items(groupItems =>
-                {
-                    groupItems.AddSimpleFor(m => m.Status)
-                    .Label(l => l.Text("Статус*"))
-                    .Editor(editor => editor
-                    .SelectBox()
-                    .DataSource(new[] {
-                                    "В работе",
-                                    "Завершен",
-                                    "На паузе",
-                                    "Планируется",
-                                    "Черновик",
-                                    "Отменен"
-                                        })
-                    .Placeholder("Выберите статус")
-                    );
-
-                    // Поле для выбора участников
-                    items.AddSimple()
-                            .DataField("Participants")  // Явно указываем DataField
-                            .Label(l => l.Text("Текущие участники"))
-                            .Editor(editor => editor
-                                        .TagBox()
-                                        .DataSource(d => d.Mvc()
-                                                .Controller("ProjectUserData")
-                                                .LoadAction("GetParticipants")
-                                                .LoadMode(DataSourceLoadMode.Processed)
-                            )
-                                        .ValueExpr("Id")
-                                        .DisplayExpr("DisplayName")
-                                        .Placeholder("Выберите участников")
-                                        .SearchEnabled(true)
-                                        .ShowSelectionControls(true)
-                                        .ShowClearButton(true)
-                                        .Width("100%")
-                                        )
-                            .ColSpan(2);
-                });
-                })
-                )
-                )
-                .Columns(columns =>
-                {
-                    columns.Add().DataField("Name").Caption("Название проекта");
-                    columns.Add().DataField("Activity").Caption("Описание").Visible(true);
-                    columns.Add().DataField("ParticipantsDisplay").Caption("Участники").Visible(true);
-                    columns.Add()
-                    .DataField("Status")
-                    .Caption("Статус")
-                    .CellTemplate(@<text>
-                                    <span class="status-badge status-<%= getStatusClass(value) %>">
-                                        <%= value %>
-                                    </span>
-                                </text>);
-                    columns.Add().DataField("CreatedDate").Caption("Создан").DataType(GridColumnDataType.DateTime).Format("dd.MM.yyyy HH:mm").Width(120).AllowEditing(false);
-                    columns.Add().DataField("ModifiedDate").Caption("Изменен").DataType(GridColumnDataType.DateTime).Format("dd.MM.yyyy HH:mm").Width(120).Visible(false);
-                    columns.Add().DataField("Participants").Visible(false);
-                    columns.Add()
-            .Type(GridCommandColumnType.Buttons)
-            .Width(120)
-            .Buttons(b =>
-            {
-                    b.Add().Name(GridColumnButtonName.Edit).Hint("Редактировать").Icon("edit");
-                    b.Add().Name(GridColumnButtonName.Delete).Hint("Удалить").Icon("trash").OnClick("deleteButtonClick");
-                });
-                })
-            .OnContentReady("function(e) { e.component.option('loadPanel.enabled', false); }")
-            .AllowColumnReordering(true)
-            .AllowColumnResizing(true)
-            .Selection(s => s.Mode(SelectionMode.Single))
-            )
+    <div class="prod-board" id="prodBoard">
+        <div class="prod-empty" id="prodEmpty" hidden>
+            Пока нет ни одного производственного этапа. Нажмите «Начать производство», чтобы создать этапы для изделия.
+        </div>
     </div>
 </div>
 
-<script>
-    function deleteButtonClick(e) {
-        const dataGrid = $("#projectsGrid").dxDataGrid("instance");
-        const selectedRowData = dataGrid.getSelectedRowsData();
+<input type="file" id="prodPhotoInput" accept="image/*" capture="environment" style="display:none" />
 
-        if (selectedRowData.length > 0) {
-            DevExpress.ui.dialog.confirm("Вы уверены, что хотите удалить эту запись?", "Подтверждение удаления")
-                .done(function (dialogResult) {
-                    if (dialogResult) {
-                        const id = selectedRowData[0].Id; // Получаем ID выбранной строки
+<!-- Модалка: начать производство (генерация дефолтных этапов для изделия) -->
+<div class="prod-modal-overlay" id="prodStartModalOverlay" hidden>
+    <div class="prod-modal">
+        <h3>Начать производство</h3>
+        <p class="prod-modal-hint">Выберите изделие — для него будет создана цепочка этапов «Резка → Обработка → Сборка → ОТК» (если этапы ещё не создавались).</p>
+        <select id="prodStartOrderItemSelect" class="prod-select prod-select-wide"></select>
+        <div class="prod-modal-actions">
+            <button class="prod-btn prod-btn-secondary" type="button" onclick="Prod.closeStartModal()">Отмена</button>
+            <button class="prod-btn prod-btn-primary" type="button" onclick="Prod.confirmStart()">Создать этапы</button>
+        </div>
+    </div>
+</div>
 
-                        // AJAX запрос на удаление
-                        $.ajax({
-                            url: '/ProjectData/' + id,
-                            type: 'DELETE',
-                            contentType: 'application/json',
-                            success: function () {
-                                dataGrid.refresh();
-                                DevExpress.ui.notify("Удаление выполнено успешно", "success", 2000);
-                            },
-                            error: function (error) {
-                                DevExpress.ui.notify("Ошибка при удалении: " + error.responseText, "error", 4000);
-                            }
-                        });
+<!-- Модалка: добавить произвольный этап -->
+<div class="prod-modal-overlay" id="prodAddStageModalOverlay" hidden>
+    <div class="prod-modal">
+        <h3>Добавить этап вручную</h3>
+        <label class="prod-field-label">Изделие</label>
+        <select id="prodAddStageOrderItemSelect" class="prod-select prod-select-wide"></select>
+        <label class="prod-field-label">Название этапа</label>
+        <input type="text" id="prodAddStageName" class="prod-input" placeholder="Например, Упаковка" />
+        <label class="prod-field-label">Исполнитель</label>
+        <select id="prodAddStageExecutorType" class="prod-select prod-select-wide">
+            <option value="Internal">Внутренний сотрудник</option>
+            <option value="External">Подрядчик</option>
+        </select>
+        <div class="prod-modal-actions">
+            <button class="prod-btn prod-btn-secondary" type="button" onclick="Prod.closeAddStageModal()">Отмена</button>
+            <button class="prod-btn prod-btn-primary" type="button" onclick="Prod.confirmAddStage()">Добавить</button>
+        </div>
+    </div>
+</div>
 
+<!-- Просмотр фото ОТК -->
+<div class="prod-modal-overlay" id="prodPhotoViewOverlay" hidden onclick="Prod.closePhotoView(event)">
+    <img id="prodPhotoViewImg" class="prod-photo-view-img" src="" alt="Фото готового изделия" />
+</div>
 
-                    }
-                });
-        } else {
-            DevExpress.ui.notify("Выберите строку для удаления", "warning", 2000);
+<style>
+    .prod-wrap {
+        padding: 0 20px 24px;
+    }
+
+    .prod-filters {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 2px;
+    }
+
+    .prod-select {
+        border: 1px solid #d7e1ea;
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-size: 14px;
+        color: #20364d;
+        background: #fff;
+        min-height: 44px;
+    }
+
+    .prod-select-wide {
+        width: 100%;
+    }
+
+    .prod-summary {
+        color: #6b8195;
+        font-size: 13px;
+    }
+
+    .prod-board {
+        display: flex;
+        gap: 16px;
+        overflow-x: auto;
+        padding-bottom: 12px;
+        align-items: flex-start;
+    }
+
+    .prod-empty {
+        padding: 40px;
+        color: #7b8da0;
+        font-size: 15px;
+        text-align: center;
+        width: 100%;
+    }
+
+    .prod-column {
+        flex: 0 0 320px;
+        background: #f4f7fa;
+        border-radius: 14px;
+        padding: 12px;
+        min-height: 200px;
+    }
+
+    .prod-column-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 4px 6px 12px;
+    }
+
+        .prod-column-header h3 {
+            margin: 0;
+            font-size: 15px;
+            color: #20364d;
+        }
+
+    .prod-column-count {
+        background: #e4ecf3;
+        color: #4d6478;
+        border-radius: 999px;
+        min-width: 26px;
+        height: 26px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 700;
+        padding: 0 8px;
+    }
+
+    .prod-card {
+        background: #fff;
+        border-radius: 14px;
+        padding: 14px;
+        margin-bottom: 12px;
+        box-shadow: 0 1px 3px rgba(20, 40, 60, 0.08);
+        border: 1px solid #e5edf4;
+        position: relative;
+    }
+
+    .prod-card-remove {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: none;
+        background: #fdecec;
+        color: #c0454f;
+        font-size: 16px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .prod-card-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #1c2b3a;
+        margin: 0 30px 4px 0;
+    }
+
+    .prod-card-meta {
+        font-size: 13px;
+        color: #6b8195;
+        margin-bottom: 8px;
+        line-height: 1.4;
+    }
+
+    .prod-card-badges {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+    }
+
+    .prod-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .prod-badge-pending { background: #eef3f7; color: #51677b; }
+    .prod-badge-inprogress { background: #fff5dc; color: #9a6a00; }
+    .prod-badge-done { background: #e6f7ee; color: #218153; }
+    .prod-badge-final { background: #fde8ec; color: #b1274a; }
+    .prod-badge-executor { background: #eaf3ff; color: #2872bd; }
+
+    .prod-card-photo {
+        width: 100%;
+        max-height: 140px;
+        object-fit: cover;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        cursor: zoom-in;
+        display: block;
+    }
+
+    .prod-card-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .prod-btn-task {
+        flex: 1;
+        min-height: 54px;
+        border-radius: 12px;
+        border: none;
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+        color: #fff;
+        letter-spacing: 0.02em;
+        touch-action: manipulation;
+    }
+
+    .prod-btn-start {
+        background: #2872bd;
+    }
+
+        .prod-btn-start:active {
+            background: #1f5a99;
+        }
+
+    .prod-btn-finish {
+        background: #218153;
+    }
+
+        .prod-btn-finish:active {
+            background: #1a6942;
+        }
+
+    .prod-btn-task:disabled {
+        background: #c7d2db;
+        cursor: not-allowed;
+    }
+
+    .prod-card-done-note {
+        text-align: center;
+        color: #218153;
+        font-weight: 700;
+        font-size: 15px;
+        padding: 10px 0 2px;
+    }
+
+    .prod-card-error {
+        color: #b1274a;
+        font-size: 13px;
+        margin-top: 8px;
+    }
+
+    .prod-modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(20, 30, 45, 0.55);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+        padding: 16px;
+    }
+
+    .prod-modal {
+        background: #fff;
+        border-radius: 16px;
+        padding: 22px;
+        width: 100%;
+        max-width: 440px;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+        .prod-modal h3 {
+            margin: 0 0 8px;
+            color: #20364d;
+        }
+
+    .prod-modal-hint {
+        color: #6b8195;
+        font-size: 13px;
+        margin: 0 0 14px;
+    }
+
+    .prod-field-label {
+        display: block;
+        font-size: 13px;
+        color: #51677b;
+        margin: 10px 0 6px;
+    }
+
+    .prod-input {
+        width: 100%;
+        border: 1px solid #d7e1ea;
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-size: 14px;
+        min-height: 44px;
+        box-sizing: border-box;
+    }
+
+    .prod-modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .prod-btn {
+        min-height: 46px;
+        padding: 0 20px;
+        border-radius: 10px;
+        border: none;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .prod-btn-primary {
+        background: #2872bd;
+        color: #fff;
+    }
+
+    .prod-btn-secondary {
+        background: #eef3f7;
+        color: #51677b;
+    }
+
+    .prod-photo-view-img {
+        max-width: 92vw;
+        max-height: 92vh;
+        border-radius: 10px;
+    }
+
+    @@media (max-width: 700px) {
+        .prod-column {
+            flex: 0 0 86vw;
+        }
+
+        .prod-btn-task {
+            min-height: 62px;
+            font-size: 17px;
         }
     }
-</script>
-
-
-<script>
-    function editButtonClick(e) {
-        const dataGrid = $("#projectsGrid").dxDataGrid("instance");
-        const selectedRowData = dataGrid.getSelectedRowsData();
-
-        if (selectedRowData.length > 0) {
-            console.log(selectedRowData[0].Id);
-            // Получаем ключ выбранной строки
-            const rowKey = selectedRowData[0].Id;
-           
-            // Открываем редактирование в popup режиме
-            dataGrid.option('editing.mode', 'popup');
-            dataGrid.editRow(rowKey);
-
-        } else {
-            DevExpress.ui.notify("Выберите строку для редактирования", "warning", 2000);
-        }
-    }
-</script>
+</style>
 
 @section Scripts {
     <script>
-        function getStatusClass(status) {
-            const statusMap = {
-                'В работе': 'active',
-                'Завершен': 'completed',
-                'На паузе': 'paused',
-                'Планируется': 'planned',
-                'Черновик': 'draft',
-                'Отменен': 'cancelled'
-            };
-            return statusMap[status] || 'default';
-        }
+        (function () {
+            const API_BASE = '/api/v1/production';
+            const STAGE_ORDER_HINT = { 'Резка': 1, 'Обработка': 2, 'Сборка': 3, 'ОТК': 4 };
 
-        function showCreateProjectModal() {
-            const dataGrid = $('#projectsGrid').dxDataGrid('instance');
-            dataGrid.addRow();
-        }       
+            let tasksCache = [];
+            let orderItemsCache = [];
+            let pendingFinishTaskId = null;
 
-        function refreshGrid() {
-            $('#projectsGrid').dxDataGrid('instance').refresh();
-        }
+            function el(id) { return document.getElementById(id); }
 
-        $(document).ready(function () {
-            setTimeout(function () {
-                const dataGrid = $('#projectsGrid').dxDataGrid('instance');
-                if (dataGrid) {
-                    console.log('DataGrid initialized successfully');
+            async function api(url, options) {
+                const response = await fetch(url, Object.assign({
+                    headers: { 'Content-Type': 'application/json' }
+                }, options || {}));
+
+                if (!response.ok) {
+                    let message = 'Ошибка запроса (' + response.status + ').';
+                    try {
+                        const body = await response.json();
+                        if (body && body.message) message = body.message;
+                    } catch (e) { /* ignore */ }
+                    throw new Error(message);
                 }
-            }, 1000);
-        });
+
+                if (response.status === 204) return null;
+                const text = await response.text();
+                return text ? JSON.parse(text) : null;
+            }
+
+            function notify(message, isError) {
+                if (window.DevExpress && DevExpress.ui && DevExpress.ui.notify) {
+                    DevExpress.ui.notify(message, isError ? 'error' : 'success', isError ? 4000 : 2000);
+                } else if (isError) {
+                    alert(message);
+                }
+            }
+
+            function statusBadgeClass(status) {
+                if (status === 'InProgress') return 'prod-badge-inprogress';
+                if (status === 'Done') return 'prod-badge-done';
+                return 'prod-badge-pending';
+            }
+
+            function statusLabel(status) {
+                if (status === 'InProgress') return 'В работе';
+                if (status === 'Done') return 'Готово';
+                return 'Ожидает';
+            }
+
+            function escapeHtml(value) {
+                return (value == null ? '' : String(value))
+                    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            }
+
+            function renderCard(task) {
+                const badges = [
+                    '<span class="prod-badge ' + statusBadgeClass(task.Status) + '">' + statusLabel(task.Status) + '</span>'
+                ];
+                if (task.IsFinalStage) badges.push('<span class="prod-badge prod-badge-final">Требует фото (ОТК)</span>');
+                if (task.ExecutorType === 'External') {
+                    badges.push('<span class="prod-badge prod-badge-executor">Подрядчик' + (task.ContractorName ? ': ' + escapeHtml(task.ContractorName) : '') + '</span>');
+                } else if (task.AssignedUserName) {
+                    badges.push('<span class="prod-badge prod-badge-executor">' + escapeHtml(task.AssignedUserName) + '</span>');
+                }
+
+                let photoHtml = '';
+                if (task.PhotoUrl) {
+                    photoHtml = '<img class="prod-card-photo" src="' + escapeHtml(task.PhotoUrl) + '" onclick="Prod.viewPhoto(\'' + escapeHtml(task.PhotoUrl) + '\')" alt="Фото ОТК" />';
+                }
+
+                let actionsHtml;
+                if (task.Status === 'Pending') {
+                    actionsHtml = '<div class="prod-card-actions">' +
+                        '<button class="prod-btn-task prod-btn-start" onclick="Prod.startTask(' + task.ProductionTaskId + ')">НАЧАТЬ ЭТАП</button>' +
+                        '</div>';
+                } else if (task.Status === 'InProgress') {
+                    actionsHtml = '<div class="prod-card-actions">' +
+                        '<button class="prod-btn-task prod-btn-finish" onclick="Prod.finishTask(' + task.ProductionTaskId + ', ' + (task.IsFinalStage ? 'true' : 'false') + ')">ЗАВЕРШИТЬ</button>' +
+                        '</div>';
+                } else {
+                    actionsHtml = '<div class="prod-card-done-note"><i class="fas fa-check-circle"></i> Этап завершён' +
+                        (task.CompletedAt ? ' · ' + formatDateTime(task.CompletedAt) : '') + '</div>';
+                }
+
+                return '<div class="prod-card" data-task-id="' + task.ProductionTaskId + '">' +
+                    (task.Status !== 'Done'
+                        ? '<button class="prod-card-remove" title="Удалить этап" onclick="Prod.removeStage(' + task.ProductionTaskId + ')"><i class="fas fa-times"></i></button>'
+                        : '') +
+                    '<div class="prod-card-title">' + escapeHtml(task.OrderItemName) + '</div>' +
+                    '<div class="prod-card-meta">Сделка: ' + escapeHtml(task.DealTitle) +
+                        (task.ClientName ? ' · Клиент: ' + escapeHtml(task.ClientName) : '') + '</div>' +
+                    '<div class="prod-card-badges">' + badges.join('') + '</div>' +
+                    photoHtml +
+                    actionsHtml +
+                    '</div>';
+            }
+
+            function formatDateTime(value) {
+                try {
+                    const date = new Date(value);
+                    return date.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+                } catch (e) {
+                    return '';
+                }
+            }
+
+            function renderBoard() {
+                const board = el('prodBoard');
+                const empty = el('prodEmpty');
+
+                const groups = new Map();
+                tasksCache.forEach(function (task) {
+                    if (!groups.has(task.StageName)) groups.set(task.StageName, []);
+                    groups.get(task.StageName).push(task);
+                });
+
+                const stageNames = Array.from(groups.keys()).sort(function (a, b) {
+                    const orderA = groups.get(a)[0].StageOrder ?? STAGE_ORDER_HINT[a] ?? 99;
+                    const orderB = groups.get(b)[0].StageOrder ?? STAGE_ORDER_HINT[b] ?? 99;
+                    return orderA - orderB;
+                });
+
+                board.innerHTML = '';
+                if (stageNames.length === 0) {
+                    empty.hidden = false;
+                    board.appendChild(empty);
+                    el('prodSummary').textContent = 'Нет активных этапов';
+                    return;
+                }
+                empty.hidden = true;
+
+                stageNames.forEach(function (stageName) {
+                    const items = groups.get(stageName).slice().sort(function (a, b) {
+                        return (a.DealId - b.DealId) || (a.OrderItemId - b.OrderItemId);
+                    });
+                    const column = document.createElement('div');
+                    column.className = 'prod-column';
+                    column.innerHTML = '<div class="prod-column-header"><h3>' + escapeHtml(stageName) + '</h3>' +
+                        '<span class="prod-column-count">' + items.length + '</span></div>' +
+                        items.map(renderCard).join('');
+                    board.appendChild(column);
+                });
+
+                el('prodSummary').textContent = tasksCache.length + ' этапов на доске';
+            }
+
+            async function loadKanban() {
+                const status = el('prodStatusFilter').value;
+                const query = status ? ('?status=' + encodeURIComponent(status)) : '';
+                el('prodSummary').textContent = 'Загрузка...';
+                try {
+                    tasksCache = await api(API_BASE + '/tasks/kanban' + query);
+                    renderBoard();
+                } catch (e) {
+                    el('prodSummary').textContent = 'Ошибка загрузки доски';
+                    notify(e.message, true);
+                }
+            }
+
+            async function loadOrderItems() {
+                try {
+                    orderItemsCache = await api(API_BASE + '/order-items');
+                } catch (e) {
+                    orderItemsCache = [];
+                }
+            }
+
+            function fillOrderItemSelect(selectEl, onlyWithoutStages) {
+                const items = onlyWithoutStages ? orderItemsCache.filter(function (i) { return !i.HasStages; }) : orderItemsCache;
+                if (items.length === 0) {
+                    selectEl.innerHTML = '<option value="">Нет доступных изделий</option>';
+                    return;
+                }
+                selectEl.innerHTML = items.map(function (i) {
+                    const label = i.Name + ' — ' + i.DealTitle + (i.ClientName ? ' (' + i.ClientName + ')' : '') + (i.HasStages ? ' [этапы уже созданы]' : '');
+                    return '<option value="' + i.OrderItemId + '">' + escapeHtml(label) + '</option>';
+                }).join('');
+            }
+
+            const Prod = {
+                reload: function () {
+                    loadKanban();
+                },
+
+                startTask: async function (taskId) {
+                    try {
+                        await api(API_BASE + '/tasks/' + taskId + '/status', {
+                            method: 'PATCH',
+                            body: JSON.stringify({ Status: 'InProgress' })
+                        });
+                        notify('Этап начат');
+                        loadKanban();
+                    } catch (e) {
+                        notify(e.message, true);
+                    }
+                },
+
+                finishTask: function (taskId, isFinalStage) {
+                    if (isFinalStage) {
+                        pendingFinishTaskId = taskId;
+                        el('prodPhotoInput').value = '';
+                        el('prodPhotoInput').click();
+                        return;
+                    }
+                    Prod.completeTask(taskId, null);
+                },
+
+                completeTask: async function (taskId, photoUrl) {
+                    try {
+                        const body = { Status: 'Done' };
+                        if (photoUrl) body.PhotoUrl = photoUrl;
+                        await api(API_BASE + '/tasks/' + taskId + '/status', {
+                            method: 'PATCH',
+                            body: JSON.stringify(body)
+                        });
+                        notify('Этап завершён');
+                        loadKanban();
+                    } catch (e) {
+                        notify(e.message, true);
+                    }
+                },
+
+                removeStage: async function (taskId) {
+                    if (!confirm('Удалить этот этап?')) return;
+                    try {
+                        await api(API_BASE + '/tasks/' + taskId, { method: 'DELETE' });
+                        notify('Этап удалён');
+                        loadKanban();
+                    } catch (e) {
+                        notify(e.message, true);
+                    }
+                },
+
+                viewPhoto: function (url) {
+                    el('prodPhotoViewImg').src = url;
+                    el('prodPhotoViewOverlay').hidden = false;
+                },
+
+                closePhotoView: function (e) {
+                    if (e && e.target !== el('prodPhotoViewOverlay')) return;
+                    el('prodPhotoViewOverlay').hidden = true;
+                },
+
+                openStartModal: async function () {
+                    await loadOrderItems();
+                    fillOrderItemSelect(el('prodStartOrderItemSelect'), false);
+                    el('prodStartModalOverlay').hidden = false;
+                },
+
+                closeStartModal: function () {
+                    el('prodStartModalOverlay').hidden = true;
+                },
+
+                confirmStart: async function () {
+                    const orderItemId = parseInt(el('prodStartOrderItemSelect').value, 10);
+                    if (!orderItemId) { notify('Выберите изделие', true); return; }
+                    try {
+                        await api(API_BASE + '/tasks/generate-stages', {
+                            method: 'POST',
+                            body: JSON.stringify({ OrderItemId: orderItemId })
+                        });
+                        notify('Этапы производства созданы');
+                        Prod.closeStartModal();
+                        loadKanban();
+                    } catch (e) {
+                        notify(e.message, true);
+                    }
+                },
+
+                openAddStageModal: async function () {
+                    await loadOrderItems();
+                    fillOrderItemSelect(el('prodAddStageOrderItemSelect'), false);
+                    el('prodAddStageName').value = '';
+                    el('prodAddStageExecutorType').value = 'Internal';
+                    el('prodAddStageModalOverlay').hidden = false;
+                },
+
+                closeAddStageModal: function () {
+                    el('prodAddStageModalOverlay').hidden = true;
+                },
+
+                confirmAddStage: async function () {
+                    const orderItemId = parseInt(el('prodAddStageOrderItemSelect').value, 10);
+                    const stageName = el('prodAddStageName').value.trim();
+                    const executorType = el('prodAddStageExecutorType').value;
+                    if (!orderItemId || !stageName) { notify('Укажите изделие и название этапа', true); return; }
+                    try {
+                        await api(API_BASE + '/tasks/stages', {
+                            method: 'POST',
+                            body: JSON.stringify({ OrderItemId: orderItemId, StageName: stageName, ExecutorType: executorType })
+                        });
+                        notify('Этап добавлен');
+                        Prod.closeAddStageModal();
+                        loadKanban();
+                    } catch (e) {
+                        notify(e.message, true);
+                    }
+                }
+            };
+
+            window.Prod = Prod;
+
+            el('prodPhotoInput').addEventListener('change', async function () {
+                const file = this.files && this.files[0];
+                if (!file || !pendingFinishTaskId) return;
+                const taskId = pendingFinishTaskId;
+                pendingFinishTaskId = null;
+
+                const formData = new FormData();
+                formData.append('file', file);
+
+                try {
+                    notify('Загрузка фото...');
+                    const uploadResponse = await fetch(API_BASE + '/tasks/' + taskId + '/photo', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    if (!uploadResponse.ok) {
+                        const body = await uploadResponse.json().catch(function () { return null; });
+                        throw new Error((body && body.message) || 'Не удалось загрузить фото.');
+                    }
+                    const result = await uploadResponse.json();
+                    await Prod.completeTask(taskId, result.url);
+                } catch (e) {
+                    notify(e.message, true);
+                }
+            });
+
+            document.addEventListener('DOMContentLoaded', function () {
+                loadKanban();
+            });
+
+            if (document.readyState !== 'loading') {
+                loadKanban();
+            }
+        })();
     </script>
 }
-
- *@
