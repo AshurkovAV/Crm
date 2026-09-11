@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace Crm.Entity.ModelsCrm;
@@ -6,6 +6,8 @@ namespace Crm.Entity.ModelsCrm;
 public partial class Client
 {
     public int ClientId { get; set; }
+
+    public int CompanyId { get; set; }
 
     public string Name { get; set; } = null!;
 
@@ -25,7 +27,7 @@ public partial class Client
 
     public bool? IsActive { get; set; }
 
-    public virtual ICollection<ClientInteraction> ClientInteractions { get; set; } = new List<ClientInteraction>();
+    public virtual Company Company { get; set; } = null!;
 
-    public virtual ICollection<CustomerOrder> CustomerOrders { get; set; } = new List<CustomerOrder>();
+    public virtual ICollection<Deal> Deals { get; set; } = new List<Deal>();
 }

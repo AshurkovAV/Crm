@@ -66,7 +66,7 @@ public class DealDataController : Controller
         deal.Title = string.IsNullOrWhiteSpace(deal.Title) ? "Новая сделка" : deal.Title.Trim();
         deal.Status = string.IsNullOrWhiteSpace(deal.Status) ? "Новая" : deal.Status;
 
-        await ApplyClientNameAsync(deal);
+        await ApplyClientNameAsync(deal, userId.Value);
         await _dealRepository.AddAsync(deal);
 
         return StatusCode(StatusCodes.Status201Created);
@@ -92,7 +92,7 @@ public class DealDataController : Controller
         deal.ModifiedDate = DateTime.UtcNow;
         deal.Title = string.IsNullOrWhiteSpace(deal.Title) ? "Новая сделка" : deal.Title.Trim();
 
-        await ApplyClientNameAsync(deal);
+        await ApplyClientNameAsync(deal, userId.Value);
         return await _dealRepository.UpdateAsync(deal, userId.Value)
             ? Ok()
             : NotFound();
@@ -207,11 +207,11 @@ public class DealDataController : Controller
         ModifiedDate = deal.ModifiedDate
     };
 
-    private async Task ApplyClientNameAsync(Deal deal)
+    private async Task ApplyClientNameAsync(Deal deal, int userId)
     {
         if (deal.ClientId.HasValue)
         {
-            var client = await _clientRepository.GetAsync(deal.ClientId.Value);
+            var client = await _clientRepository.GetAsync(deal.ClientId.Value, userId);
             deal.ClientName = client?.Name;
         }
         else

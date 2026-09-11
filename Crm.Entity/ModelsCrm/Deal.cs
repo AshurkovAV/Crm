@@ -22,6 +22,12 @@ public partial class Deal
 
     public string? Description { get; set; }
 
+    public string? InstallationAddress { get; set; }
+
+    public decimal? PrepaymentAmount { get; set; }
+
+    public Guid PublicToken { get; set; } = Guid.NewGuid();
+
     public DateTime CreatedDate { get; set; }
 
     public DateTime ModifiedDate { get; set; }
@@ -31,4 +37,6 @@ public partial class Deal
     public virtual Client? Client { get; set; }
 
     public virtual User Owner { get; set; } = null!;
+
+    public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
 }

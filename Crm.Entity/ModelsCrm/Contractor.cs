@@ -3,15 +3,16 @@ using System.Collections.Generic;
 
 namespace Crm.Entity.ModelsCrm;
 
-public partial class Supplier
+/// <summary>
+/// Внешний подрядчик (смежник), Модуль В ТЗ. Не имеет логина — доступ по Magic Link.
+/// </summary>
+public partial class Contractor
 {
-    public int SupplierId { get; set; }
+    public int ContractorId { get; set; }
 
     public int CompanyId { get; set; }
 
     public string Name { get; set; } = null!;
-
-    public string? ContactPerson { get; set; }
 
     public string? Phone { get; set; }
 
@@ -23,5 +24,5 @@ public partial class Supplier
 
     public virtual Company Company { get; set; } = null!;
 
-    public virtual ICollection<Component> Components { get; set; } = new List<Component>();
+    public virtual ICollection<ProductionTask> ProductionTasks { get; set; } = new List<ProductionTask>();
 }
