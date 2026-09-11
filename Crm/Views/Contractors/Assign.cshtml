@@ -1,0 +1,184 @@
+@{
+    ViewData["Title"] = "Назначение подрядчику";
+}
+
+<div class="content-top-bar">
+    <h1 class="content-title">Назначение этапа подрядчику</h1>
+    <div class="content-actions">
+        <a class="content-btn secondary" href="/Contractors">
+            <i class="fas fa-arrow-left"></i>
+            <span>К списку подрядчиков</span>
+        </a>
+    </div>
+</div>
+
+<div class="content-section assign-section">
+    <p class="assign-hint">
+        Выберите незавершённый этап производства и подрядчика — система создаст уникальную
+        ссылку (Magic Link) без логина и пароля. Отправьте её подрядчику: он увидит задание,
+        дедлайн и две кнопки — «Принял в работу» и «Готово, отгружено».
+    </p>
+
+    <div class="assign-form">
+        <label for="stageSelect">Этап производства</label>
+        <select id="stageSelect" class="assign-select"></select>
+
+        <label for="contractorSelect">Подрядчик</label>
+        <select id="contractorSelect" class="assign-select"></select>
+
+        <label for="expiresInput">Ссылка активна, дней</label>
+        <input id="expiresInput" type="number" class="assign-select" value="30" min="1" max="365" />
+
+        <button id="generateBtn" class="content-btn" type="button" onclick="generateLink()">
+            <i class="fas fa-link"></i>
+            <span>Создать ссылку</span>
+        </button>
+    </div>
+
+    <div id="resultBox" class="assign-result" style="display:none;">
+        <div class="assign-result-label">Ссылка для подрядчика:</div>
+        <div class="assign-result-row">
+            <input id="resultUrl" type="text" readonly />
+            <button type="button" class="content-btn secondary" onclick="copyLink()">
+                <i class="fas fa-copy"></i>
+                <span>Скопировать</span>
+            </button>
+        </div>
+        <div id="resultMeta" class="assign-result-meta"></div>
+    </div>
+
+    <div id="errorBox" class="assign-error" style="display:none;"></div>
+</div>
+
+<style>
+    .assign-section { padding: 24px; }
+    .assign-hint { color: #6b8195; font-size: 14px; max-width: 680px; margin-bottom: 24px; }
+    .assign-form {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 6px;
+        max-width: 480px;
+    }
+    .assign-form label { font-size: 13px; color: #51677b; font-weight: 600; margin-top: 10px; }
+    .assign-select {
+        padding: 10px 12px;
+        border: 1px solid #dbe4ec;
+        border-radius: 10px;
+        font-size: 14px;
+        color: #20364d;
+        background: #fff;
+    }
+    .assign-form button { margin-top: 20px; align-self: flex-start; }
+    .assign-result {
+        margin-top: 28px;
+        padding: 18px;
+        border-radius: 12px;
+        background: #eef8f0;
+        border: 1px solid #cdeed6;
+        max-width: 680px;
+    }
+    .assign-result-label { font-weight: 600; color: #20364d; margin-bottom: 8px; }
+    .assign-result-row { display: flex; gap: 10px; }
+    .assign-result-row input {
+        flex: 1;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid #cdeed6;
+        font-size: 14px;
+    }
+    .assign-result-meta { margin-top: 10px; font-size: 12px; color: #6b8195; }
+    .assign-error {
+        margin-top: 20px;
+        padding: 14px 18px;
+        border-radius: 10px;
+        background: #fdebed;
+        color: #b14e5b;
+        max-width: 680px;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        async function loadOptions() {
+            const stageSelect = document.getElementById('stageSelect');
+            const contractorSelect = document.getElementById('contractorSelect');
+
+            try {
+                const stagesResp = await fetch('/api/v1/contractor-assignment/stages', { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                if (stagesResp.ok) {
+                    const stages = await stagesResp.json();
+                    stageSelect.innerHTML = stages.map(s =>
+                        `<option value="${s.productionTaskId}">${s.dealTitle} / ${s.orderItemName} — ${s.stageName} (${s.status})</option>`
+                    ).join('') || '<option value="">Нет доступных этапов</option>';
+                }
+            } catch (e) {
+                console.error('Не удалось загрузить этапы', e);
+            }
+
+            try {
+                const contractorsResp = await fetch('/ContractorData/lookup?requireTotalCount=false', { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                if (contractorsResp.ok) {
+                    const payload = await contractorsResp.json();
+                    const items = payload.data || payload;
+                    contractorSelect.innerHTML = items.map(c =>
+                        `<option value="${c.ContractorId}">${c.Name}</option>`
+                    ).join('') || '<option value="">Нет активных подрядчиков</option>';
+                }
+            } catch (e) {
+                console.error('Не удалось загрузить подрядчиков', e);
+            }
+        }
+
+        async function generateLink() {
+            const stageId = parseInt(document.getElementById('stageSelect').value, 10);
+            const contractorId = parseInt(document.getElementById('contractorSelect').value, 10);
+            const expiresInDays = parseInt(document.getElementById('expiresInput').value, 10) || 30;
+
+            const errorBox = document.getElementById('errorBox');
+            const resultBox = document.getElementById('resultBox');
+            errorBox.style.display = 'none';
+            resultBox.style.display = 'none';
+
+            if (!stageId || !contractorId) {
+                errorBox.textContent = 'Выберите этап и подрядчика.';
+                errorBox.style.display = 'block';
+                return;
+            }
+
+            try {
+                const resp = await fetch('/api/v1/contractor-assignment/generate-link', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    body: JSON.stringify({ productionTaskId: stageId, contractorId: contractorId, expiresInDays: expiresInDays })
+                });
+
+                if (!resp.ok) {
+                    const err = await resp.json().catch(() => ({}));
+                    errorBox.textContent = err.message || 'Не удалось создать ссылку.';
+                    errorBox.style.display = 'block';
+                    return;
+                }
+
+                const data = await resp.json();
+                const fullUrl = window.location.origin + data.url;
+                document.getElementById('resultUrl').value = fullUrl;
+                document.getElementById('resultMeta').textContent =
+                    'Создана: ' + new Date(data.createdAt).toLocaleString('ru-RU') +
+                    (data.expiresAt ? ('. Действует до: ' + new Date(data.expiresAt).toLocaleString('ru-RU')) : '');
+                resultBox.style.display = 'block';
+            } catch (e) {
+                errorBox.textContent = 'Ошибка сети при создании ссылки.';
+                errorBox.style.display = 'block';
+            }
+        }
+
+        function copyLink() {
+            const input = document.getElementById('resultUrl');
+            input.select();
+            input.setSelectionRange(0, 99999);
+            navigator.clipboard?.writeText(input.value);
+        }
+
+        document.addEventListener('DOMContentLoaded', loadOptions);
+    </script>
+}
