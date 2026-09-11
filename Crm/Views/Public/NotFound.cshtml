@@ -1,0 +1,63 @@
+@{
+    // Показывается, когда PublicToken не найден. Намеренно не уточняем причину
+    // (сделка удалена / токен неверный / что угодно ещё) — единое сообщение.
+}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Заказ не найден</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: #f4f5fb;
+            color: #1e293b;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 18px;
+            box-shadow: 0 6px 24px rgba(30, 41, 59, 0.06);
+            padding: 36px 28px;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .icon {
+            font-size: 40px;
+            margin-bottom: 12px;
+        }
+
+        h1 {
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+
+        p {
+            font-size: 14px;
+            color: #64748b;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="icon">🔍</div>
+        <h1>Заказ не найден</h1>
+        <p>Проверьте ссылку на отслеживание заказа или обратитесь к вашему менеджеру за актуальной ссылкой.</p>
+    </div>
+</body>
+</html>
