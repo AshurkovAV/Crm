@@ -41,6 +41,10 @@
     <script src="~/js/devextreme/dx.all.js"></script>
     <script src="~/js/devextreme/bootstrap.js"></script>
 
+    <!-- Нужны для DataGrid.exportToExcel() -->
+    <script src="~/js/devextreme/exceljs.min.js"></script>
+    <script src="~/js/devextreme/FileSaver.min.js"></script>
+
     <script src="~/js/devextreme/aspnet/dx.aspnet.mvc.js"></script>
     <script src="~/js/devextreme/aspnet/dx.aspnet.data.js"></script>
     <script src="~/js/devextreme/localization/dx.messages.ru.js"></script>
@@ -555,6 +559,7 @@
         /* Основное содержимое */
         .main-content {
             flex: 1;
+            min-width: 0;
             padding: 28px;
             margin-left: 260px;
             transition: margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1);

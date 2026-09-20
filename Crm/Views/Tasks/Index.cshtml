@@ -19,6 +19,16 @@
             <i class="fas fa-download"></i>
             <span>Экспорт</span>
         </button>
+        <div class="view-toggle" role="group" aria-label="Переключение вида">
+            <button type="button" class="view-toggle-btn active" id="viewToggleList" onclick="switchTasksView('list')">
+                <i class="fas fa-list"></i>
+                <span>Список</span>
+            </button>
+            <button type="button" class="view-toggle-btn" id="viewToggleKanban" onclick="switchTasksView('kanban')">
+                <i class="fas fa-columns"></i>
+                <span>Канбан</span>
+            </button>
+        </div>
     </div>
 </div>
 
@@ -43,7 +53,7 @@
 </div>
 
 <div class="content-section">
-    <div class="grid-wrapper">
+    <div class="grid-wrapper" id="taskListView">
         @(Html.DevExtreme().DataGrid<TaskDTO>()
             .ID("tasksGrid")
             .DataSource(ds => ds.Mvc()
@@ -352,17 +362,24 @@
                     });
             })
             .OnContentReady("function(e) { updateStatistics(e.component); }")
-            .OnRowUpdated("function(e) { updateStatistics(e.component); }")
-            .OnRowInserted("function(e) { updateStatistics(e.component); }")
-            .OnRowRemoved("function(e) { updateStatistics(e.component); }")
+            .OnRowUpdated("function(e) { updateStatistics(e.component); onTasksGridDataChanged(); }")
+            .OnRowInserted("function(e) { updateStatistics(e.component); onTasksGridDataChanged(); }")
+            .OnRowRemoved("function(e) { updateStatistics(e.component); onTasksGridDataChanged(); }")
             .AllowColumnReordering(true)
             .AllowColumnResizing(true)
             .Selection(s => s.Mode(SelectionMode.Single))
-            .FilterRow(f => f.Visible(true).ApplyFilter(GridApplyFilterMode.Auto))
+            .Export(e => e.Enabled(true).AllowExportSelectedData(false))
+            .FilterRow(f => f.Visible(false).ApplyFilter(GridApplyFilterMode.Auto))
             .HeaderFilter(f => f.Visible(true))
             .GroupPanel(p => p.Visible(true))
             .SearchPanel(s => s.Visible(true).Width(240).Placeholder("Поиск задач..."))
         )
+    </div>
+
+    <div class="kanban-wrapper" id="taskKanbanView" style="display:none;">
+        <div class="kanban-board" id="kanbanBoard">
+            <div class="kanban-loading">Загрузка задач...</div>
+        </div>
     </div>
 </div>
 
@@ -465,6 +482,178 @@
 
         .content-btn.secondary:hover {
             background: #bdc3c7;
+        }
+
+        /* Переключатель Список/Канбан */
+        .view-toggle {
+            display: flex;
+            background: #ecf0f1;
+            border-radius: 6px;
+            padding: 3px;
+            gap: 2px;
+        }
+
+        .view-toggle-btn {
+            padding: 7px 14px;
+            border: none;
+            background: transparent;
+            color: #34495e;
+            border-radius: 5px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            transition: all 0.15s;
+        }
+
+        .view-toggle-btn:hover {
+            background: rgba(255,255,255,0.6);
+        }
+
+        .view-toggle-btn.active {
+            background: #ffffff;
+            color: #2980b9;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+            font-weight: 600;
+        }
+
+        /* Канбан-доска */
+        .kanban-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            padding-bottom: 8px;
+        }
+
+        .kanban-board {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+            min-height: 200px;
+        }
+
+        .kanban-loading {
+            padding: 40px;
+            color: #7f8c8d;
+        }
+
+        .kanban-column {
+            background: #f4f6f8;
+            border-radius: 10px;
+            width: 280px;
+            min-width: 280px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            max-height: calc(100vh - 320px);
+        }
+
+        .kanban-column.drag-over {
+            background: #dfeeff;
+            outline: 2px dashed #3498db;
+            outline-offset: -2px;
+        }
+
+        .kanban-column-header {
+            padding: 12px 14px;
+            font-weight: 600;
+            color: #2c3e50;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e0e4e8;
+        }
+
+        .kanban-column-count {
+            background: #dfe4ea;
+            color: #57606f;
+            border-radius: 10px;
+            padding: 1px 9px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .kanban-column-body {
+            padding: 10px;
+            overflow-y: auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .kanban-card {
+            background: white;
+            border-radius: 8px;
+            padding: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+            cursor: grab;
+            border-left: 3px solid #bdc3c7;
+        }
+
+        .kanban-card:active {
+            cursor: grabbing;
+        }
+
+        .kanban-card.dragging {
+            opacity: 0.4;
+        }
+
+        .kanban-card.overdue {
+            border-left-color: #c62828;
+        }
+
+        .kanban-card-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            word-break: break-word;
+        }
+
+        .kanban-card-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+
+        .kanban-card-deadline {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .kanban-card-deadline.overdue {
+            color: #c62828;
+            font-weight: 600;
+        }
+
+        .kanban-card-assignee {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 6px;
+            color: #57606f;
+        }
+
+        .kanban-empty-column {
+            padding: 16px;
+            text-align: center;
+            color: #b2bec3;
+            font-size: 13px;
+        }
+
+        /* Список остаётся смонтированным (грид не теряет состояние), но визуально убран
+           за пределы экрана, когда активен канбан — так попап редактирования из канбана
+           продолжает работать, а пользователь не "перескакивает" на список. */
+        .view-offscreen {
+            position: absolute !important;
+            left: -10000px !important;
+            top: 0 !important;
+            width: 1300px;
         }
 
         /* Контейнер для грида - фиксированная ширина, своя прокрутка */
@@ -728,7 +917,7 @@
         function showFilters() {
             const dataGrid = $('#tasksGrid').dxDataGrid('instance');
             if (dataGrid) {
-                dataGrid.showHeaderFilter();
+                dataGrid.option('filterRow.visible', !dataGrid.option('filterRow.visible'));
             }
         }
 
@@ -775,13 +964,243 @@
                     adaptGridToScreen();
                 }
             }, 100);
-            
+
             // Следим за изменением размера окна
             let resizeTimer;
             $(window).on('resize', function() {
                 clearTimeout(resizeTimer);
                 resizeTimer = setTimeout(adaptGridToScreen, 250);
             });
+
+            // Восстанавливаем последний выбранный вид (Список/Канбан)
+            var savedView = null;
+            try { savedView = localStorage.getItem('tasksViewMode'); } catch (e) { }
+            if (savedView === 'kanban') {
+                switchTasksView('kanban');
+            }
         });
+
+        // ========== Канбан-доска (перетаскивание задач по статусу) ==========
+
+        var kanbanUsersById = {};
+        var kanbanStatuses = [];
+        var kanbanDraggedTaskId = null;
+
+        function switchTasksView(mode) {
+            var isKanban = mode === 'kanban';
+            // Список не скрываем через display:none, а уводим за пределы экрана —
+            // виджет грида остаётся "живым", чтобы попап редактирования из канбана работал.
+            document.getElementById('taskListView').classList.toggle('view-offscreen', isKanban);
+            document.getElementById('taskKanbanView').style.display = isKanban ? '' : 'none';
+            document.getElementById('viewToggleList').classList.toggle('active', !isKanban);
+            document.getElementById('viewToggleKanban').classList.toggle('active', isKanban);
+
+            try { localStorage.setItem('tasksViewMode', mode); } catch (e) { }
+
+            if (isKanban) {
+                loadKanbanBoard();
+            }
+        }
+
+        function isKanbanActive() {
+            return document.getElementById('taskListView').classList.contains('view-offscreen');
+        }
+
+        // Если задачу отредактировали через попап, пока пользователь смотрел на канбан
+        // (или изменили в списке, когда канбан открыт в фоне) — обновляем доску.
+        function onTasksGridDataChanged() {
+            if (isKanbanActive()) {
+                loadKanbanBoard();
+            }
+        }
+
+        function loadKanbanBoard() {
+            var board = document.getElementById('kanbanBoard');
+            board.innerHTML = '<div class="kanban-loading">Загрузка задач...</div>';
+
+            Promise.all([
+                fetch('/TaskData').then(function (r) { return r.json(); }),
+                fetch('/StatusData/Get').then(function (r) { return r.json(); }),
+                fetch('/UserData/GetUsers').then(function (r) { return r.json(); })
+            ]).then(function (results) {
+                var tasks = normalizeDxResult(results[0]);
+                var statuses = normalizeDxResult(results[1]);
+                var users = normalizeDxResult(results[2]);
+
+                kanbanStatuses = statuses;
+                kanbanUsersById = {};
+                users.forEach(function (u) { kanbanUsersById[u.Id] = u.FullName; });
+
+                renderKanbanBoard(tasks, statuses);
+                updateStatisticsFromTasks(tasks);
+            }).catch(function (err) {
+                console.error('Не удалось загрузить канбан-доску', err);
+                board.innerHTML = '<div class="kanban-loading">Не удалось загрузить задачи. Попробуйте обновить страницу.</div>';
+            });
+        }
+
+        // DevExtreme DataSourceLoader без paging-параметров отдаёт либо чистый массив,
+        // либо { data: [...] } — приводим к массиву в любом случае.
+        function normalizeDxResult(result) {
+            if (Array.isArray(result)) return result;
+            if (result && Array.isArray(result.data)) return result.data;
+            return [];
+        }
+
+        function renderKanbanBoard(tasks, statuses) {
+            var board = document.getElementById('kanbanBoard');
+            board.innerHTML = '';
+
+            statuses.forEach(function (status) {
+                var columnTasks = tasks.filter(function (t) { return t.Status === status.Id; });
+
+                var column = document.createElement('div');
+                column.className = 'kanban-column';
+                column.dataset.statusId = status.Id;
+
+                var header = document.createElement('div');
+                header.className = 'kanban-column-header';
+                header.innerHTML = '<span>' + escapeHtml(status.Name) + '</span>' +
+                    '<span class="kanban-column-count">' + columnTasks.length + '</span>';
+                column.appendChild(header);
+
+                var body = document.createElement('div');
+                body.className = 'kanban-column-body';
+
+                if (columnTasks.length === 0) {
+                    var empty = document.createElement('div');
+                    empty.className = 'kanban-empty-column';
+                    empty.textContent = 'Нет задач';
+                    body.appendChild(empty);
+                } else {
+                    columnTasks.forEach(function (task) {
+                        body.appendChild(createKanbanCard(task));
+                    });
+                }
+
+                column.appendChild(body);
+
+                column.addEventListener('dragover', function (e) {
+                    e.preventDefault();
+                    column.classList.add('drag-over');
+                });
+                column.addEventListener('dragleave', function () {
+                    column.classList.remove('drag-over');
+                });
+                column.addEventListener('drop', function (e) {
+                    e.preventDefault();
+                    column.classList.remove('drag-over');
+                    if (kanbanDraggedTaskId !== null) {
+                        onTaskDroppedOnStatus(kanbanDraggedTaskId, status.Id);
+                    }
+                });
+
+                board.appendChild(column);
+            });
+        }
+
+        function createKanbanCard(task) {
+            var overdue = isOverdue(task.Deadline) && task.Status !== 4 && task.Status !== 5;
+
+            var card = document.createElement('div');
+            card.className = 'kanban-card' + (overdue ? ' overdue' : '');
+            card.draggable = true;
+            card.dataset.taskId = task.Id;
+
+            var title = document.createElement('div');
+            title.className = 'kanban-card-title';
+            title.textContent = task.Name || '(без названия)';
+            card.appendChild(title);
+
+            var meta = document.createElement('div');
+            meta.className = 'kanban-card-meta';
+
+            if (task.Priority) {
+                var priorityBadge = document.createElement('span');
+                priorityBadge.className = 'priority-badge priority-' + task.Priority;
+                priorityBadge.textContent = task.Priority;
+                meta.appendChild(priorityBadge);
+            }
+
+            if (task.Deadline) {
+                var deadline = document.createElement('span');
+                deadline.className = 'kanban-card-deadline' + (overdue ? ' overdue' : '');
+                deadline.innerHTML = '<i class="far fa-clock"></i> ' + formatDate(task.Deadline);
+                meta.appendChild(deadline);
+            }
+
+            card.appendChild(meta);
+
+            var assigneeName = task.Assignee ? kanbanUsersById[task.Assignee] : null;
+            if (assigneeName) {
+                var assignee = document.createElement('div');
+                assignee.className = 'kanban-card-assignee';
+                assignee.innerHTML = '<i class="far fa-user"></i> ' + escapeHtml(assigneeName);
+                card.appendChild(assignee);
+            }
+
+            card.addEventListener('dragstart', function () {
+                kanbanDraggedTaskId = task.Id;
+                card.classList.add('dragging');
+            });
+            card.addEventListener('dragend', function () {
+                kanbanDraggedTaskId = null;
+                card.classList.remove('dragging');
+            });
+            card.addEventListener('click', function () {
+                openTaskFromKanban(task.Id);
+            });
+
+            return card;
+        }
+
+        function onTaskDroppedOnStatus(taskId, newStatusId) {
+            fetch('/TaskData', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'key=' + encodeURIComponent(taskId) + '&values=' + encodeURIComponent(JSON.stringify({ Status: newStatusId }))
+            }).then(function (response) {
+                if (!response.ok) throw new Error('Не удалось обновить статус задачи');
+                loadKanbanBoard();
+                refreshGrid();
+            }).catch(function (err) {
+                console.error(err);
+                alert('Не удалось изменить статус задачи. Попробуйте ещё раз.');
+                loadKanbanBoard();
+            });
+        }
+
+        function openTaskFromKanban(taskId) {
+            // Остаёмся на канбане: грид смонтирован за пределами экрана (см. .view-offscreen),
+            // поэтому popup редактирования открывается прямо поверх канбан-доски.
+            var dataGrid = $('#tasksGrid').dxDataGrid('instance');
+            if (!dataGrid) return;
+            var result = dataGrid.getRowIndexByKey(taskId);
+            if (result && typeof result.then === 'function') {
+                result.then(function (index) {
+                    if (index > -1) dataGrid.editRow(index);
+                });
+            } else if (typeof result === 'number' && result > -1) {
+                dataGrid.editRow(result);
+            }
+        }
+
+        function updateStatisticsFromTasks(tasks) {
+            var total = tasks.length;
+            var inProgress = tasks.filter(function (t) { return t.Status === 2; }).length;
+            var overdue = tasks.filter(function (t) { return isOverdue(t.Deadline) && t.Status !== 4; }).length;
+            var completed = tasks.filter(function (t) { return t.Status === 4; }).length;
+
+            $('.stat-card:eq(0) .stat-value').text(total);
+            $('.stat-card:eq(1) .stat-value').text(inProgress);
+            $('.stat-card:eq(2) .stat-value').text(overdue);
+            $('.stat-card:eq(3) .stat-value').text(completed);
+        }
+
+        function escapeHtml(text) {
+            var div = document.createElement('div');
+            div.textContent = text == null ? '' : String(text);
+            return div.innerHTML;
+        }
     </script>
 }
