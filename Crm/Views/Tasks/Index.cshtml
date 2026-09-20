@@ -637,6 +637,15 @@
             color: #57606f;
         }
 
+        /* Попап задачи должен читаться как карточка, парящая над страницей, а не прижатая к краю панель */
+        .dx-popup-normal.dx-popup-inherit-height,
+        .dx-popup-normal .dx-overlay-content,
+        .dx-overlay-content.dx-popup-normal {
+            border-radius: 18px;
+            box-shadow: 0 24px 64px rgba(15, 23, 42, 0.35);
+            overflow: hidden;
+        }
+
         .task-full-form-toggle {
             display: inline-block;
             margin: 0 20px 16px;
@@ -1228,21 +1237,24 @@
                     }
                 });
             } else {
-                // Редактирование — большая панель, выезжающая справа, не перекрывает меню
+                // Редактирование — панель, выезжающая справа, с отступами со всех сторон,
+                // чтобы читалась как отдельная плавающая карточка над страницей, а не прижатый край.
+                var topGap = 76, sideGap = 24, bottomGap = 24;
+                var editOffset = '-' + sideGap + ' ' + topGap;
                 popup.option({
-                    width: function () { return Math.max(window.innerWidth - 260, 480); },
-                    height: function () { return window.innerHeight - 60; },
+                    width: 640,
+                    height: function () { return window.innerHeight - topGap - bottomGap; },
                     shading: false,
-                    position: { my: 'right top', at: 'right top', of: window, offset: '0 60' },
+                    position: { my: 'right top', at: 'right top', of: window, offset: editOffset },
                     animation: {
                         show: {
                             type: 'slide', duration: 300,
                             from: { position: { my: 'left top', at: 'right top', of: window } },
-                            to: { position: { my: 'right top', at: 'right top', of: window, offset: '0 60' } }
+                            to: { position: { my: 'right top', at: 'right top', of: window, offset: editOffset } }
                         },
                         hide: {
                             type: 'slide', duration: 250,
-                            from: { position: { my: 'right top', at: 'right top', of: window, offset: '0 60' } },
+                            from: { position: { my: 'right top', at: 'right top', of: window, offset: editOffset } },
                             to: { position: { my: 'left top', at: 'right top', of: window } }
                         }
                     }
