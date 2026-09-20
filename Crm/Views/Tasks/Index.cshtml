@@ -94,48 +94,72 @@
                     .ShowCloseButton(true)
                     .DragEnabled(false)
                     .ResizeEnabled(false)
-                    .Shading(false)
                     .HideOnOutsideClick(true)
-                    .Width(440)
-                    .Height(new JS("function() { return window.innerHeight - 60; }"))
-                    .Position(pos => pos
-                        .My(HorizontalAlignment.Right, VerticalAlignment.Top)
-                        .At(HorizontalAlignment.Right, VerticalAlignment.Top)
-                        .Of(new JS("window"))
-                        .Offset(0, 60)
-                    )
-                    .Animation(a => a
-                        .Show(s => s
-                            .Type(AnimationType.Slide)
-                            .Duration(300)
-                            .From(new JS("{ position: { my: 'left top', at: 'right top', of: window } }"))
-                            .To(new JS("{ position: { my: 'right top', at: 'right top', of: window, offset: '0 60' } }"))
-                        )
-                        .Hide(h => h
-                            .Type(AnimationType.Slide)
-                            .Duration(250)
-                            .From(new JS("{ position: { my: 'right top', at: 'right top', of: window, offset: '0 60' } }"))
-                            .To(new JS("{ position: { my: 'left top', at: 'right top', of: window } }"))
-                        )
-                    )
+                    .OnShowing("onTaskPopupShowing")
+                    .OnShown("onTaskPopupShown")
                 )
                 .Form(f => f
-                    .ColCount(1)
+                    .ColCount(2)
                     .LabelLocation(FormLabelLocation.Top)
                     .Items(items =>
                     {
-                        // Основное
+                        // Быстрые поля — видны всегда, в том числе в свёрнутой форме создания
                         items.AddGroup()
                             .Caption("Основное")
+                            .ColSpan(2)
                             .Items(groupItems =>
                             {
                                 groupItems.AddSimpleFor(m => m.Name)
                                     .Label(l => l.Text("Название задачи*"))
+                                    .ColSpan(2)
                                     .Editor(editor => editor
                                         .TextBox()
                                         .Placeholder("Введите название задачи")
                                     );
 
+                                groupItems.AddSimpleFor(m => m.Description)
+                                    .Label(l => l.Text("Описание задачи"))
+                                    .ColSpan(2)
+                                    .Editor(editor => editor
+                                        .TextArea()
+                                        .Height(80)
+                                        .Placeholder("Опишите задачу подробнее")
+                                    );
+
+                                groupItems.AddSimpleFor(m => m.Assignee)
+                                    .Label(l => l.Text("Исполнитель*"))
+                                    .Editor(editor => editor
+                                        .SelectBox()
+                                        .DataSource(d => d.Mvc()
+                                            .Controller("UserData")
+                                            .LoadAction("GetUsers")
+                                            .Key("Id")
+                                        )
+                                        .ValueExpr("Id")
+                                        .DisplayExpr("FullName")
+                                        .Placeholder("Выберите исполнителя")
+                                        .ShowClearButton(true)
+                                    );
+
+                                groupItems.AddSimpleFor(m => m.Deadline)
+                                    .Label(l => l.Text("Крайний срок"))
+                                    .Editor(editor => editor
+                                        .DateBox()
+                                        .Type(DateBoxType.DateTime)
+                                        .Placeholder("Выберите дату и время")
+                                        .Min(DateTime.Now)
+                                    );
+                            });
+
+                        // Расширенные поля — скрыты в свёрнутой форме создания задачи,
+                        // раскрываются по ссылке "Полная форма" (см. onTaskPopupShown в скриптах).
+                        // При редактировании существующей задачи видны сразу.
+                        items.AddGroup()
+                            .Name("extraFieldsGroup")
+                            .Caption("Дополнительные поля")
+                            .ColSpan(2)
+                            .Items(groupItems =>
+                            {
                                 groupItems.AddSimpleFor(m => m.Status)
                                     .Label(l => l.Text("Статус"))
                                     .Editor(editor => editor
@@ -162,13 +186,7 @@
                                         })
                                         .Placeholder("Выберите приоритет")
                                     );
-                            });
 
-                        // Назначение и сроки
-                        items.AddGroup()
-                            .Caption("Назначение и сроки")
-                            .Items(groupItems =>
-                            {
                                 groupItems.AddSimpleFor(m => m.ProjectId)
                                     .Label(l => l.Text("Проект"))
                                     .Editor(editor => editor
@@ -184,30 +202,6 @@
                                         .ShowClearButton(true)
                                     );
 
-                                groupItems.AddSimpleFor(m => m.Assignee)
-                                    .Label(l => l.Text("Исполнитель*"))
-                                    .Editor(editor => editor
-                                        .SelectBox()
-                                        .DataSource(d => d.Mvc()
-                                            .Controller("UserData")
-                                            .LoadAction("GetUsers")
-                                            .Key("Id")
-                                        )
-                                        .ValueExpr("Id")
-                                        .DisplayExpr("FullName")
-                                        .Placeholder("Выберите исполнителя")
-                                        .ShowClearButton(true)
-                                    );
-
-                                groupItems.AddSimpleFor(m => m.Deadline)
-                                    .Label(l => l.Text("Крайний срок"))
-                                    .Editor(editor => editor
-                                        .DateBox()
-                                        .Type(DateBoxType.DateTime)
-                                        .Placeholder("Выберите дату и время")
-                                        .Min(DateTime.Now)
-                                    );
-
                                 groupItems.AddSimpleFor(m => m.EstimatedHours)
                                     .Label(l => l.Text("Оценка времени (часы)"))
                                     .Editor(editor => editor
@@ -218,23 +212,9 @@
                                         .Format("#.##")
                                     );
 
-                                groupItems.AddSimpleFor(m => m.Activity)
-                                    .Label(l => l.Text("Последняя активность"))
-                                    .Editor(editor => editor
-                                        .DateBox()
-                                        .Type(DateBoxType.DateTime)
-                                        .Disabled(true)
-                                    )
-                                    .Visible(false);
-                            });
-
-                        // Дополнительно
-                        items.AddGroup()
-                            .Caption("Дополнительно")
-                            .Items(groupItems =>
-                            {
                                 groupItems.AddSimpleFor(m => m.Tags)
                                     .Label(l => l.Text("Теги"))
+                                    .ColSpan(2)
                                     .Editor(editor => editor
                                         .TagBox()
                                         .DataSource(new[] {
@@ -246,21 +226,24 @@
                                         .ShowClearButton(true)
                                     );
 
-                                groupItems.AddSimpleFor(m => m.Description)
-                                    .Label(l => l.Text("Описание задачи"))
-                                    .Editor(editor => editor
-                                        .TextArea()
-                                        .Height(80)
-                                        .Placeholder("Опишите задачу подробнее")
-                                    );
-
                                 groupItems.AddSimpleFor(m => m.Comments)
                                     .Label(l => l.Text("Комментарии"))
+                                    .ColSpan(2)
                                     .Editor(editor => editor
                                         .TextArea()
                                         .Height(80)
                                         .Placeholder("Добавьте комментарий к задаче...")
                                     );
+
+                                groupItems.AddSimpleFor(m => m.Activity)
+                                    .Label(l => l.Text("Последняя активность"))
+                                    .ColSpan(2)
+                                    .Editor(editor => editor
+                                        .DateBox()
+                                        .Type(DateBoxType.DateTime)
+                                        .Disabled(true)
+                                    )
+                                    .Visible(false);
                             });
                     })
                 )
@@ -374,7 +357,8 @@
                         b.Add().Name(GridColumnButtonName.Delete).Hint("Удалить").Icon("trash");
                     });
             })
-            .OnInitNewRow("function(e) { e.data.Status = 1; e.data.Priority = 'Средний'; }")
+            .OnInitNewRow("function(e) { window.__taskFormIsNew = true; e.data.Status = 1; e.data.Priority = 'Средний'; }")
+            .OnEditingStart("function(e) { window.__taskFormIsNew = false; }")
             .OnContentReady("function(e) { updateStatistics(e.component); }")
             .OnRowUpdated("function(e) { updateStatistics(e.component); onTasksGridDataChanged(); }")
             .OnRowInserted("function(e) { updateStatistics(e.component); onTasksGridDataChanged(); }")
@@ -651,6 +635,20 @@
             gap: 4px;
             margin-top: 6px;
             color: #57606f;
+        }
+
+        .task-full-form-toggle {
+            display: inline-block;
+            margin: 0 20px 16px;
+            color: #2980b9;
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .task-full-form-toggle:hover {
+            text-decoration: underline;
         }
 
         .kanban-empty-column {
@@ -1209,6 +1207,69 @@
             $('.stat-card:eq(1) .stat-value').text(inProgress);
             $('.stat-card:eq(2) .stat-value').text(overdue);
             $('.stat-card:eq(3) .stat-value').text(completed);
+        }
+
+        // ========== Попап задачи: большая панель при редактировании, свёрнутая форма при создании ==========
+
+        window.__taskFormIsNew = false;
+
+        function onTaskPopupShowing(e) {
+            var popup = e.component;
+            if (window.__taskFormIsNew) {
+                // Быстрое создание — компактный центрированный диалог
+                popup.option({
+                    width: 480,
+                    height: 'auto',
+                    shading: true,
+                    position: { my: 'center', at: 'center', of: window },
+                    animation: {
+                        show: { type: 'pop', duration: 200 },
+                        hide: { type: 'pop', duration: 150 }
+                    }
+                });
+            } else {
+                // Редактирование — большая панель, выезжающая справа, не перекрывает меню
+                popup.option({
+                    width: function () { return Math.max(window.innerWidth - 260, 480); },
+                    height: function () { return window.innerHeight - 60; },
+                    shading: false,
+                    position: { my: 'right top', at: 'right top', of: window, offset: '0 60' },
+                    animation: {
+                        show: {
+                            type: 'slide', duration: 300,
+                            from: { position: { my: 'left top', at: 'right top', of: window } },
+                            to: { position: { my: 'right top', at: 'right top', of: window, offset: '0 60' } }
+                        },
+                        hide: {
+                            type: 'slide', duration: 250,
+                            from: { position: { my: 'right top', at: 'right top', of: window, offset: '0 60' } },
+                            to: { position: { my: 'left top', at: 'right top', of: window } }
+                        }
+                    }
+                });
+            }
+        }
+
+        function onTaskPopupShown(e) {
+            var $content = $(e.component.content());
+            $content.find('.task-full-form-toggle').remove();
+
+            var $form = $content.find('.dx-form').first();
+            var form = $form.length ? $form.dxForm('instance') : null;
+            if (!form) return;
+
+            if (window.__taskFormIsNew) {
+                form.itemOption('extraFieldsGroup', 'visible', false);
+                var $link = $('<a href="#" class="task-full-form-toggle">Полная форма →</a>');
+                $link.on('click', function (ev) {
+                    ev.preventDefault();
+                    form.itemOption('extraFieldsGroup', 'visible', true);
+                    $link.remove();
+                });
+                $form.after($link);
+            } else {
+                form.itemOption('extraFieldsGroup', 'visible', true);
+            }
         }
 
         function escapeHtml(text) {
