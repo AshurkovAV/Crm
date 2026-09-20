@@ -89,25 +89,44 @@
                 .AllowDeleting(true)
                 .UseIcons(true)
                 .Popup(p => p
-                    .Title("Редактирование задачи")
+                    .Title("Задача")
                     .ShowTitle(true)
-                    .Width(900)
-                    .Height(750)
+                    .ShowCloseButton(true)
+                    .DragEnabled(false)
+                    .ResizeEnabled(false)
+                    .Shading(false)
+                    .HideOnOutsideClick(true)
+                    .Width(440)
+                    .Height(new JS("function() { return window.innerHeight - 60; }"))
                     .Position(pos => pos
-                        .My(HorizontalAlignment.Center, VerticalAlignment.Center)
-                        .At(HorizontalAlignment.Center, VerticalAlignment.Center)
+                        .My(HorizontalAlignment.Right, VerticalAlignment.Top)
+                        .At(HorizontalAlignment.Right, VerticalAlignment.Top)
                         .Of(new JS("window"))
+                        .Offset(0, 60)
+                    )
+                    .Animation(a => a
+                        .Show(s => s
+                            .Type(AnimationType.Slide)
+                            .Duration(300)
+                            .From(new JS("{ position: { my: 'left top', at: 'right top', of: window } }"))
+                            .To(new JS("{ position: { my: 'right top', at: 'right top', of: window, offset: '0 60' } }"))
+                        )
+                        .Hide(h => h
+                            .Type(AnimationType.Slide)
+                            .Duration(250)
+                            .From(new JS("{ position: { my: 'right top', at: 'right top', of: window, offset: '0 60' } }"))
+                            .To(new JS("{ position: { my: 'left top', at: 'right top', of: window } }"))
+                        )
                     )
                 )
                 .Form(f => f
-                    .ColCount(2)
+                    .ColCount(1)
                     .LabelLocation(FormLabelLocation.Top)
                     .Items(items =>
                     {
-                        // Основная информация
+                        // Основное
                         items.AddGroup()
-                            .Caption("Основная информация")
-                            .ColSpan(2)
+                            .Caption("Основное")
                             .Items(groupItems =>
                             {
                                 groupItems.AddSimpleFor(m => m.Name)
@@ -115,23 +134,39 @@
                                     .Editor(editor => editor
                                         .TextBox()
                                         .Placeholder("Введите название задачи")
-                                    )
-                                    .ColSpan(2);
+                                    );
 
-                                groupItems.AddSimpleFor(m => m.Description)
-                                    .Label(l => l.Text("Описание задачи"))
+                                groupItems.AddSimpleFor(m => m.Status)
+                                    .Label(l => l.Text("Статус"))
                                     .Editor(editor => editor
-                                        .TextArea()
-                                        .Height(100)
-                                        .Placeholder("Опишите задачу подробнее")
-                                    )
-                                    .ColSpan(2);
+                                        .SelectBox()
+                                        .DataSource(d => d.Mvc()
+                                            .Controller("StatusData")
+                                            .LoadAction("Get")
+                                            .Key("Id")
+                                        )
+                                        .ValueExpr("Id")
+                                        .DisplayExpr("Name")
+                                        .Placeholder("Выберите статус")
+                                        .ShowClearButton(true)
+                                    );
+
+                                groupItems.AddSimpleFor(m => m.Priority)
+                                    .Label(l => l.Text("Приоритет"))
+                                    .Editor(editor => editor
+                                        .SelectBox()
+                                        .DataSource(new[] {
+                                            "Высокий",
+                                            "Средний",
+                                            "Низкий"
+                                        })
+                                        .Placeholder("Выберите приоритет")
+                                    );
                             });
 
-                        // Первая колонка - детали
+                        // Назначение и сроки
                         items.AddGroup()
-                            .Caption("Детали задачи")
-                            .ColSpan(1)
+                            .Caption("Назначение и сроки")
                             .Items(groupItems =>
                             {
                                 groupItems.AddSimpleFor(m => m.ProjectId)
@@ -164,53 +199,6 @@
                                         .ShowClearButton(true)
                                     );
 
-                                groupItems.AddSimpleFor(m => m.Priority)
-                                    .Label(l => l.Text("Приоритет"))
-                                    .Editor(editor => editor
-                                        .SelectBox()
-                                        .DataSource(new[] { 
-                                            "Высокий", 
-                                            "Средний", 
-                                            "Низкий" 
-                                        })
-                                        .Placeholder("Выберите приоритет")
-                                    );
-
-                                groupItems.AddSimpleFor(m => m.Tags)
-                                    .Label(l => l.Text("Теги"))
-                                    .Editor(editor => editor
-                                        .TagBox()
-                                        .DataSource(new[] {
-                                            "Срочно", "Важно", "Бэклог", "Баг", 
-                                            "Улучшение", "Документация", "Тестирование"
-                                        })
-                                        .Placeholder("Выберите или добавьте теги")
-                                        .ShowSelectionControls(true)
-                                        .ShowClearButton(true)
-                                    );
-                            });
-
-                        // Вторая колонка - сроки и статус
-                        items.AddGroup()
-                            .Caption("Сроки и статус")
-                            .ColSpan(1)
-                            .Items(groupItems =>
-                            {
-                                groupItems.AddSimpleFor(m => m.Status)
-                                    .Label(l => l.Text("Статус"))
-                                    .Editor(editor => editor
-                                        .SelectBox()
-                                        .DataSource(d => d.Mvc()
-                                            .Controller("StatusData")
-                                            .LoadAction("Get")
-                                            .Key("Id")
-                                        )
-                                        .ValueExpr("Id")
-                                        .DisplayExpr("Name")
-                                        .Placeholder("Выберите статус")
-                                        .ShowClearButton(true)
-                                    );
-
                                 groupItems.AddSimpleFor(m => m.Deadline)
                                     .Label(l => l.Text("Крайний срок"))
                                     .Editor(editor => editor
@@ -240,15 +228,40 @@
                                     .Visible(false);
                             });
 
-                        // Комментарии на всю ширину
-                        items.AddSimpleFor(m => m.Comments)
-                            .Label(l => l.Text("Комментарии"))
-                            .Editor(editor => editor
-                                .TextArea()
-                                .Height(120)
-                                .Placeholder("Добавьте комментарий к задаче...")
-                            )
-                            .ColSpan(2);
+                        // Дополнительно
+                        items.AddGroup()
+                            .Caption("Дополнительно")
+                            .Items(groupItems =>
+                            {
+                                groupItems.AddSimpleFor(m => m.Tags)
+                                    .Label(l => l.Text("Теги"))
+                                    .Editor(editor => editor
+                                        .TagBox()
+                                        .DataSource(new[] {
+                                            "Срочно", "Важно", "Бэклог", "Баг",
+                                            "Улучшение", "Документация", "Тестирование"
+                                        })
+                                        .Placeholder("Выберите или добавьте теги")
+                                        .ShowSelectionControls(true)
+                                        .ShowClearButton(true)
+                                    );
+
+                                groupItems.AddSimpleFor(m => m.Description)
+                                    .Label(l => l.Text("Описание задачи"))
+                                    .Editor(editor => editor
+                                        .TextArea()
+                                        .Height(80)
+                                        .Placeholder("Опишите задачу подробнее")
+                                    );
+
+                                groupItems.AddSimpleFor(m => m.Comments)
+                                    .Label(l => l.Text("Комментарии"))
+                                    .Editor(editor => editor
+                                        .TextArea()
+                                        .Height(80)
+                                        .Placeholder("Добавьте комментарий к задаче...")
+                                    );
+                            });
                     })
                 )
             )
@@ -361,6 +374,7 @@
                         b.Add().Name(GridColumnButtonName.Delete).Hint("Удалить").Icon("trash");
                     });
             })
+            .OnInitNewRow("function(e) { e.data.Status = 1; e.data.Priority = 'Средний'; }")
             .OnContentReady("function(e) { updateStatistics(e.component); }")
             .OnRowUpdated("function(e) { updateStatistics(e.component); onTasksGridDataChanged(); }")
             .OnRowInserted("function(e) { updateStatistics(e.component); onTasksGridDataChanged(); }")
