@@ -120,7 +120,6 @@
                                 groupItems.AddSimpleFor(m => m.Description)
                                     .Label(l => l.Text("Описание задачи *"))
                                     .ColSpan(2)
-                                    .IsRequired(true)
                                     .ValidationRules(rules => rules.AddCustom()
                                         .ValidationCallback("isTaskDescriptionFilled")
                                         .Message("Опишите задачу — поле обязательно")
@@ -1258,64 +1257,79 @@
         window.__taskFormIsNew = false;
 
         function onTaskPopupShowing(e) {
-            var popup = e.component;
-            if (window.__taskFormIsNew) {
-                // Быстрое создание — компактный центрированный диалог
-                popup.option({
-                    width: 480,
-                    height: 'auto',
-                    shading: true,
-                    position: { my: 'center', at: 'center', of: window },
-                    animation: {
-                        show: { type: 'pop', duration: 200 },
-                        hide: { type: 'pop', duration: 150 }
-                    }
-                });
-            } else {
-                // Редактирование — панель, выезжающая справа, с отступами со всех сторон,
-                // чтобы читалась как отдельная плавающая карточка над страницей, а не прижатый край.
-                var topGap = 76, sideGap = 24, bottomGap = 24;
-                var editOffset = '-' + sideGap + ' ' + topGap;
-                popup.option({
-                    width: 640,
-                    height: function () { return window.innerHeight - topGap - bottomGap; },
-                    shading: false,
-                    position: { my: 'right top', at: 'right top', of: window, offset: editOffset },
-                    animation: {
-                        show: {
-                            type: 'slide', duration: 300,
-                            from: { position: { my: 'left top', at: 'right top', of: window } },
-                            to: { position: { my: 'right top', at: 'right top', of: window, offset: editOffset } }
-                        },
-                        hide: {
-                            type: 'slide', duration: 250,
-                            from: { position: { my: 'right top', at: 'right top', of: window, offset: editOffset } },
-                            to: { position: { my: 'left top', at: 'right top', of: window } }
+            try {
+                var popup = e.component;
+                if (window.__taskFormIsNew) {
+                    // Быстрое создание — компактный центрированный диалог.
+                    // Ширина подстраивается под экран, чтобы не вылезать за края на телефоне.
+                    var compactWidth = Math.min(480, window.innerWidth - 32);
+                    popup.option({
+                        width: compactWidth,
+                        height: 'auto',
+                        maxHeight: '90vh',
+                        shading: true,
+                        position: { my: 'center', at: 'center', of: window },
+                        animation: {
+                            show: { type: 'pop', duration: 200 },
+                            hide: { type: 'pop', duration: 150 }
                         }
-                    }
-                });
+                    });
+                } else {
+                    // Редактирование — панель, выезжающая справа, с отступами со всех сторон.
+                    // На узких экранах отступы и ширина уменьшаются, чтобы панель не "вылезала" за экран.
+                    var narrow = window.innerWidth < 760;
+                    var sideGap = narrow ? 8 : 24;
+                    var topGap = narrow ? 12 : 76;
+                    var bottomGap = narrow ? 8 : 24;
+                    var editWidth = Math.min(640, window.innerWidth - sideGap * 2);
+                    var editOffset = '-' + sideGap + ' ' + topGap;
+                    popup.option({
+                        width: editWidth,
+                        height: function () { return window.innerHeight - topGap - bottomGap; },
+                        shading: false,
+                        position: { my: 'right top', at: 'right top', of: window, offset: editOffset },
+                        animation: {
+                            show: {
+                                type: 'slide', duration: 300,
+                                from: { position: { my: 'left top', at: 'right top', of: window } },
+                                to: { position: { my: 'right top', at: 'right top', of: window, offset: editOffset } }
+                            },
+                            hide: {
+                                type: 'slide', duration: 250,
+                                from: { position: { my: 'right top', at: 'right top', of: window, offset: editOffset } },
+                                to: { position: { my: 'left top', at: 'right top', of: window } }
+                            }
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error('onTaskPopupShowing failed', err);
             }
         }
 
         function onTaskPopupShown(e) {
-            var $content = $(e.component.content());
-            $content.find('.task-full-form-toggle').remove();
+            try {
+                var $content = $(e.component.content());
+                $content.find('.task-full-form-toggle').remove();
 
-            var $form = $content.find('.dx-form').first();
-            var form = $form.length ? $form.dxForm('instance') : null;
-            if (!form) return;
+                var $form = $content.find('.dx-form').first();
+                var form = $form.length ? $form.dxForm('instance') : null;
+                if (!form) return;
 
-            if (window.__taskFormIsNew) {
-                form.itemOption('extraFieldsGroup', 'visible', false);
-                var $link = $('<a href="#" class="task-full-form-toggle">Полная форма →</a>');
-                $link.on('click', function (ev) {
-                    ev.preventDefault();
+                if (window.__taskFormIsNew) {
+                    form.itemOption('extraFieldsGroup', 'visible', false);
+                    var $link = $('<a href="#" class="task-full-form-toggle">Полная форма →</a>');
+                    $link.on('click', function (ev) {
+                        ev.preventDefault();
+                        form.itemOption('extraFieldsGroup', 'visible', true);
+                        $link.remove();
+                    });
+                    $form.after($link);
+                } else {
                     form.itemOption('extraFieldsGroup', 'visible', true);
-                    $link.remove();
-                });
-                $form.after($link);
-            } else {
-                form.itemOption('extraFieldsGroup', 'visible', true);
+                }
+            } catch (err) {
+                console.error('onTaskPopupShown failed', err);
             }
         }
 
@@ -1328,6 +1342,7 @@
         }
 
         function onTaskDescriptionEditorInitialized(e) {
+          try {
             var $content = $(e.element).find('.dx-htmleditor-content').first();
             if (!$content.length) return;
 
@@ -1382,6 +1397,9 @@
 
                 uploadAndInsertTaskDescriptionImage(files[0], $content[0]);
             });
+          } catch (err) {
+            console.error('onTaskDescriptionEditorInitialized failed', err);
+          }
         }
 
         function uploadAndInsertTaskDescriptionImage(file, editableEl) {
