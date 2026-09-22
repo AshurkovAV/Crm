@@ -16,6 +16,7 @@
     <ProjectReference Include="..\Crm.Entity\Crm.Entity.csproj" />
     <ProjectReference Include="..\Crm.Infrastructure\Crm.Infrastructure.csproj" />
     <PackageReference Include="DevExtreme.AspNet.Core" Version="22.2.5" />
+    <PackageReference Include="HtmlSanitizer" Version="9.2.995" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="wwwroot\js\company\" />

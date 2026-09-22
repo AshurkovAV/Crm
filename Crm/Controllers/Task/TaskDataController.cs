@@ -3,6 +3,7 @@ using Crm.Entity.ModelsCrm;
 using Crm.Entity.Services;
 using DevExtreme.AspNet.Data;
 using DevExtreme.AspNet.Mvc;
+using Ganss.Xss;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
@@ -18,22 +19,124 @@ namespace Crm.Controllers
     [Route("[controller]")]
     public class TaskDataController : Controller
     {
+        private static readonly string[] AllowedDescriptionImageContentTypes =
+        {
+            "image/png", "image/jpeg", "image/webp", "image/gif"
+        };
+
+        private const long MaxDescriptionImageSizeBytes = 10 * 1024 * 1024; // 10 РњР‘
+
+        private static readonly HtmlSanitizer DescriptionSanitizer = CreateDescriptionSanitizer();
+
         private readonly ILogger<TaskDataController> _logger;
         private ICrmRepository _crmRepository;
         private IUserContextService _userContextService;
         private IUserRepository _userRepository;
+        private readonly IWebHostEnvironment _webHostEnvironment;
 
         public TaskDataController(
             ILogger<TaskDataController> logger,
-            ICrmRepository crmRepository, 
+            ICrmRepository crmRepository,
             IUserContextService userContextService,
-            IUserRepository userRepository)
+            IUserRepository userRepository,
+            IWebHostEnvironment webHostEnvironment)
         {
             _logger = logger;
             _crmRepository = crmRepository;
             _userContextService = userContextService;
             _userRepository = userRepository;
+            _webHostEnvironment = webHostEnvironment;
         }
+
+        /// <summary>
+        /// POST /TaskData/upload-image вЂ” Р·Р°РіСЂСѓР·РєР° РєР°СЂС‚РёРЅРєРё, РІСЃС‚Р°РІР»СЏРµРјРѕР№ РІ РѕРїРёСЃР°РЅРёРµ Р·Р°РґР°С‡Рё
+        /// (HtmlEditor: paste/drop/РєРЅРѕРїРєР° "РР·РѕР±СЂР°Р¶РµРЅРёРµ"). РќРµ РїСЂРёРІСЏР·Р°РЅР° Рє Id Р·Р°РґР°С‡Рё, С‚Р°Рє РєР°Рє
+        /// Сѓ РЅРѕРІРѕР№ Р·Р°РґР°С‡Рё РµС‰С‘ РЅРµС‚ Id РЅР° РјРѕРјРµРЅС‚ РІСЃС‚Р°РІРєРё РєР°СЂС‚РёРЅРєРё РІ СЂРµРґР°РєС‚РѕСЂ.
+        /// </summary>
+        [HttpPost("upload-image")]
+        [RequestSizeLimit(MaxDescriptionImageSizeBytes)]
+        public async Task<IActionResult> UploadDescriptionImage(IFormFile? file)
+        {
+            var userId = GetUserId();
+            if (!userId.HasValue)
+                return Unauthorized();
+
+            if (file == null || file.Length == 0)
+                return BadRequest(new { message = "Р¤Р°Р№Р» РЅРµ РїРµСЂРµРґР°РЅ." });
+
+            if (file.Length > MaxDescriptionImageSizeBytes)
+                return BadRequest(new { message = "Р¤Р°Р№Р» СЃР»РёС€РєРѕРј Р±РѕР»СЊС€РѕР№ (РјР°РєСЃРёРјСѓРј 10 РњР‘)." });
+
+            var contentType = file.ContentType?.ToLowerInvariant();
+            if (contentType == null || !AllowedDescriptionImageContentTypes.Contains(contentType))
+                return BadRequest(new { message = "Р”РѕРїСѓСЃРєР°СЋС‚СЃСЏ С‚РѕР»СЊРєРѕ РёР·РѕР±СЂР°Р¶РµРЅРёСЏ (PNG, JPG, WEBP, GIF)." });
+
+            var extension = contentType switch
+            {
+                "image/png" => ".png",
+                "image/webp" => ".webp",
+                "image/gif" => ".gif",
+                _ => ".jpg"
+            };
+
+            var folderAbsolute = Path.Combine(_webHostEnvironment.WebRootPath, "uploads", "tasks");
+            Directory.CreateDirectory(folderAbsolute);
+
+            var fileName = $"{Guid.NewGuid():N}{extension}";
+            var fullPath = Path.Combine(folderAbsolute, fileName);
+
+            await using (var stream = System.IO.File.Create(fullPath))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            return Json(new { url = $"/uploads/tasks/{fileName}" });
+        }
+
+        /// <summary>
+        /// РЎР°РЅРёС‚Р°Р№Р·РµСЂ РѕРїРёСЃР°РЅРёСЏ Р·Р°РґР°С‡Рё: СЂР°Р·СЂРµС€Р°РµС‚ Р±Р°Р·РѕРІС‹Рµ С‚РµРіРё С„РѕСЂРјР°С‚РёСЂРѕРІР°РЅРёСЏ РёР· РїР°РЅРµР»Рё
+        /// HtmlEditor (Р¶РёСЂРЅС‹Р№/РєСѓСЂСЃРёРІ/РїРѕРґС‡С‘СЂРєРЅСѓС‚С‹Р№/СЃРїРёСЃРєРё/СЃСЃС‹Р»РєР°/РёР·РѕР±СЂР°Р¶РµРЅРёРµ) Рё Р·Р°РїСЂРµС‰Р°РµС‚
+        /// РєР°СЂС‚РёРЅРєРё СЃ src РІРЅРµ РїР°РїРєРё /uploads/tasks/ (С‡С‚РѕР±С‹ С‡РµСЂРµР· РѕРїРёСЃР°РЅРёРµ РЅРµР»СЊР·СЏ Р±С‹Р»Рѕ
+        /// Р·Р°С‚Р°С‰РёС‚СЊ РїСЂРѕРёР·РІРѕР»СЊРЅС‹Р№ РІРЅРµС€РЅРёР№ РєРѕРЅС‚РµРЅС‚ РёР»Рё СЃРѕСЃР»Р°С‚СЊСЃСЏ РЅР° С‡СѓР¶РѕР№ С„Р°Р№Р» РЅР° СЃРµСЂРІРµСЂРµ).
+        /// </summary>
+        private static HtmlSanitizer CreateDescriptionSanitizer()
+        {
+            var sanitizer = new HtmlSanitizer();
+
+            sanitizer.AllowedTags.Clear();
+            foreach (var tag in new[] { "p", "br", "b", "strong", "i", "em", "u", "s", "ul", "ol", "li", "a", "img", "blockquote", "h1", "h2", "h3" })
+                sanitizer.AllowedTags.Add(tag);
+
+            sanitizer.AllowedAttributes.Clear();
+            sanitizer.AllowedAttributes.Add("href");
+            sanitizer.AllowedAttributes.Add("src");
+            sanitizer.AllowedAttributes.Add("alt");
+            sanitizer.AllowedAttributes.Add("target");
+            sanitizer.AllowedAttributes.Add("rel");
+
+            sanitizer.AllowedCssProperties.Clear();
+
+            sanitizer.FilterUrl += (sender, args) =>
+            {
+                if (string.Equals(args.Tag.TagName, "img", StringComparison.OrdinalIgnoreCase)
+                    && !args.OriginalUrl.StartsWith("/uploads/tasks/", StringComparison.OrdinalIgnoreCase))
+                {
+                    args.SanitizedUrl = null;
+                }
+            };
+
+            return sanitizer;
+        }
+
+        private static string? SanitizeDescription(string? html)
+            => string.IsNullOrWhiteSpace(html) ? html : DescriptionSanitizer.Sanitize(html);
+
+        /// <summary>
+        /// РџСѓСЃС‚РѕРµ РѕРїРёСЃР°РЅРёРµ СЃ С‚РѕС‡РєРё Р·СЂРµРЅРёСЏ Р±РёР·РЅРµСЃ-РїСЂР°РІРёР»Р° "РѕР±СЏР·Р°С‚РµР»СЊРЅРѕ" вЂ” СѓС‡РёС‚С‹РІР°РµС‚
+        /// HtmlEditor, РєРѕС‚РѕСЂС‹Р№ РґР»СЏ РїСѓСЃС‚РѕРіРѕ РїРѕР»СЏ РІСЃС‘ СЂР°РІРЅРѕ РѕС‚РґР°С‘С‚ "&lt;p&gt;&lt;br&gt;&lt;/p&gt;".
+        /// </summary>
+        private static bool IsDescriptionEmpty(string? html)
+            => string.IsNullOrWhiteSpace(Regex.Replace(html ?? string.Empty, "<[^>]*>", string.Empty).Trim());
 
         public IActionResult Index()
         {
@@ -47,7 +150,7 @@ namespace Crm.Controllers
             if (userId != null)
             {              
                 var tasks = _crmRepository.GetTasksWithAccess(Convert.ToInt32(userId));
-                // Проецируем данные с преобразованием Tags в массив
+                // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ Tags пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
                 var tasksWithTagsArray = tasks.Select(t => new
                 {
                     t.Id,
@@ -77,32 +180,43 @@ namespace Crm.Controllers
         [HttpPost]
         public HttpResponseMessage Post(Wet form)
         {
-            Console.WriteLine(@$"Вставить новую задачу {DateTime.Now}");
+            Console.WriteLine(@$"пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ {DateTime.Now}");
 
             var key = Convert.ToInt32(form.key);
             var values = form.values;
 
-            // ПРЕОБРАЗОВАНИЕ ТЕГОВ: из массива JSON в строку через запятую
+            // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ: пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ JSON пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
             values = ConvertTagsJsonToString(values);           
 
             var resultData = _crmRepository.GetTaskCrm(key);
 
-            // Заполняем данные задачи
+            // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
             JsonConvert.PopulateObject(values, resultData.Data);
 
-            // Устанавливаем служебные поля
+            resultData.Data.Description = SanitizeDescription(resultData.Data.Description);
+            if (IsDescriptionEmpty(resultData.Data.Description))
+            {
+                return new HttpResponseMessage(HttpStatusCode.BadRequest)
+                {
+                    Content = new StringContent(
+                        JsonConvert.SerializeObject(new { message = "РћРїРёСЃР°РЅРёРµ Р·Р°РґР°С‡Рё РѕР±СЏР·Р°С‚РµР»СЊРЅРѕ." }),
+                        System.Text.Encoding.UTF8, "application/json")
+                };
+            }
+
+            // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
             resultData.Data.Activity = DateTime.Now;
             resultData.Data.CreatedDate = DateTime.Now;
             resultData.Data.ModifiedDate = DateTime.Now;            
 
             if (string.IsNullOrEmpty(resultData.Data.Priority))
-                resultData.Data.Priority = "Средний";
+                resultData.Data.Priority = "пїЅпїЅпїЅпїЅпїЅпїЅпїЅ";
 
-            // Устанавливаем автора
+            // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
             var userId = _userContextService.GetCurrentUserId();
             resultData.Data.Author = userId;
 
-            // Проверка просрочки
+            // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
             if (resultData.Data.Deadline.HasValue && resultData.Data.Deadline < DateTime.Now)
             {
                 resultData.Data.IsOverdue = true;
@@ -115,7 +229,7 @@ namespace Crm.Controllers
                 resultData.Data.IsOverdue = false;
             }
 
-            // Вставляем в базу
+            // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ
             var result = _crmRepository.InsertTaskCrm(resultData.Data);
 
             HttpResponseMessage response = new HttpResponseMessage();
@@ -126,12 +240,12 @@ namespace Crm.Controllers
 
 
         /// <summary>
-        /// Преобразует JSON массив тегов в строку через запятую
-        /// Пример: {"Tags":["Срочно","Важно"]} -> {"Tags":"Срочно,Важно"}
+        /// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ JSON пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+        /// пїЅпїЅпїЅпїЅпїЅпїЅ: {"Tags":["пїЅпїЅпїЅпїЅпїЅпїЅ","пїЅпїЅпїЅпїЅпїЅ"]} -> {"Tags":"пїЅпїЅпїЅпїЅпїЅпїЅ,пїЅпїЅпїЅпїЅпїЅ"}
         /// </summary>
         private string ConvertTagsJsonToString(string json)
         {
-            // Ищем поле Tags с массивом
+            // пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ Tags пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
             var pattern = @"""Tags"":\s*\[(.*?)\]";
 
             return System.Text.RegularExpressions.Regex.Replace(json, pattern, match =>
@@ -141,7 +255,7 @@ namespace Crm.Controllers
                 if (string.IsNullOrWhiteSpace(tagsContent))
                     return @"""Tags"":null";
 
-                // Извлекаем значения тегов из массива
+                // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
                 var tags = System.Text.RegularExpressions.Regex.Matches(tagsContent, @"""([^""]*)""")
                     .Cast<Match>()
                     .Select(m => m.Groups[1].Value)
@@ -151,7 +265,7 @@ namespace Crm.Controllers
                 if (!tags.Any())
                     return @"""Tags"":null";
 
-                // Соединяем через запятую
+                // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
                 var tagsString = string.Join(",", tags);
 
                 return $@"""Tags"":""{tagsString}""";
@@ -161,50 +275,65 @@ namespace Crm.Controllers
         [HttpPut]
         public HttpResponseMessage Put(int key, Wet form)
         {
-            Console.WriteLine(@$"Обновиь запись {DateTime.Now}");          
+            Console.WriteLine(@$"пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ {DateTime.Now}");          
             var values = form.values;
             var task = _crmRepository.GetTaskCrm(key);
 
-            // Десериализуем значения
+            // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
             var updateData = JsonConvert.DeserializeObject<Dictionary<string, object>>(values);
 
             if (updateData.ContainsKey("Tags"))
             {
-                // Проверяем тип: может быть массивом строк или массивом int
+                // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ: пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ int
                 var tagsObject = updateData["Tags"];
 
                 List<string> tagsList = new List<string>();
 
-                // Если это JArray (массив)
+                // пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ JArray (пїЅпїЅпїЅпїЅпїЅпїЅ)
                 if (tagsObject is Newtonsoft.Json.Linq.JArray jArray)
                 {
                     tagsList = jArray.Select(t => t.ToString()).ToList();
                 }
-                // Если это уже List<string>
+                // пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅ List<string>
                 else if (tagsObject is List<string> stringList)
                 {
                     tagsList = stringList;
                 }
-                // Если это string[]
+                // пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ string[]
                 else if (tagsObject is string[] stringArray)
                 {
                     tagsList = stringArray.ToList();
                 }
 
-                // Преобразуем массив тегов в строку через запятую
+                // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
                 var tagsString = string.Join(",", tagsList.Select(t => t.Trim()));
 
-                // Обновляем Tags в задаче
+                // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ Tags пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
                 task.Data.Tags = tagsString;
 
-                // Удаляем Tags из обновляемых данных, чтобы не обрабатывать повторно
+                // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ Tags пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
                 updateData.Remove("Tags");
                 values = JsonConvert.SerializeObject(updateData);
             }
             task.Data.Activity = DateTime.Now;
             task.Data.ModifiedDate = DateTime.Now;
-            // Обновляем остальные поля
+            // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
+            var descriptionTouched = updateData.ContainsKey("Description");
             JsonConvert.PopulateObject(values, task.Data);
+
+            if (descriptionTouched)
+            {
+                task.Data.Description = SanitizeDescription(task.Data.Description);
+                if (IsDescriptionEmpty(task.Data.Description))
+                {
+                    return new HttpResponseMessage(HttpStatusCode.BadRequest)
+                    {
+                        Content = new StringContent(
+                            JsonConvert.SerializeObject(new { message = "РћРїРёСЃР°РЅРёРµ Р·Р°РґР°С‡Рё РѕР±СЏР·Р°С‚РµР»СЊРЅРѕ." }),
+                            System.Text.Encoding.UTF8, "application/json")
+                    };
+                }
+            }
 
             var result = _crmRepository.UpdataTaskCrm(task.Data);
             HttpResponseMessage response = new HttpResponseMessage();
@@ -240,27 +369,27 @@ namespace Crm.Controllers
         {
             try
             {
-                // 1. Получаем текущих активных участников проекта
+                // 1. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
                 var currentParticipants = _crmRepository.GetProjectUsers(projectId)
                     .Where(pu => pu.IsActive)
                     .ToList();
 
                 var currentUserIds = currentParticipants.Select(pu => pu.UserId).ToList();
 
-                // 2. Определяем, кого нужно добавить
+                // 2. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
                 var usersToAdd = selectedUserIds.Except(currentUserIds).ToList();
 
-                // 3. Определяем, кого нужно деактивировать (удалить)
+                // 3. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅпїЅпїЅ)
                 var usersToDeactivate = currentUserIds.Except(selectedUserIds).ToList();
 
-                // 4. Добавляем новых участников
+                // 4. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
                 foreach (var userId in usersToAdd)
                 {
                     var projectUser = new ProjectUser
                     {
                         ProjectId = projectId,
                         UserId = userId,
-                        Role = "Participant", // или другая роль по умолчанию
+                        Role = "Participant", // пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
                         JoinedDate = DateTime.Now,
                         IsActive = true
                     };
@@ -268,7 +397,7 @@ namespace Crm.Controllers
                     _crmRepository.AddProjectUser(projectUser);
                 }
 
-                // 5. Деактивируем удаленных участников
+                // 5. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
                 foreach (var userId in usersToDeactivate)
                 {
                     var projectUser = currentParticipants.FirstOrDefault(pu => pu.UserId == userId);
@@ -279,7 +408,7 @@ namespace Crm.Controllers
                     }
                 }
 
-                // 6. Активируем ранее удаленных, если их снова добавили
+                // 6. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
                 var previouslyDeactivated = _crmRepository.GetProjectUsers(projectId)
                     .Where(pu => !pu.IsActive && selectedUserIds.Contains(pu.UserId))
                     .ToList();
@@ -291,13 +420,13 @@ namespace Crm.Controllers
                     _crmRepository.UpdateProjectUser(projectUser);
                 }
 
-                Console.WriteLine($"Синхронизировано участников проекта {projectId}: " +
-                                 $"добавлено {usersToAdd.Count}, " +
-                                 $"деактивировано {usersToDeactivate.Count}");
+                Console.WriteLine($"пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ {projectId}: " +
+                                 $"пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ {usersToAdd.Count}, " +
+                                 $"пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ {usersToDeactivate.Count}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка синхронизации участников: {ex.Message}");
+                Console.WriteLine($"пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ: {ex.Message}");
                 throw;
             }
         }
