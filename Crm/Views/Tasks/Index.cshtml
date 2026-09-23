@@ -670,16 +670,6 @@
             overflow: hidden;
         }
 
-        .task-desc-upload-indicator {
-            display: inline-block;
-            padding: 2px 10px;
-            border-radius: 12px;
-            background: #eef2f7;
-            color: #7f8c8d;
-            font-size: 12px;
-            font-style: italic;
-        }
-
         .task-full-form-toggle {
             display: inline-block;
             margin: 0 20px 16px;
@@ -1343,15 +1333,17 @@
 
         function onTaskDescriptionEditorInitialized(e) {
           try {
-            var $content = $(e.element).find('.dx-htmleditor-content').first();
-            if (!$content.length) return;
+            var htmlEditor = e.component;
+            var quill = htmlEditor.getQuillInstance && htmlEditor.getQuillInstance();
+            if (!quill) return;
 
-            // На случай повторной инициализации того же DOM-узла (popup переиспользуется)
-            $content.off('.taskDescImages');
+            var editableEl = quill.root; // настоящий contenteditable-элемент Quill
 
-            $content.on('paste.taskDescImages', function (ev) {
-                var clipboardData = ev.originalEvent.clipboardData;
-                var items = clipboardData && clipboardData.items;
+            // capture:true — наш обработчик должен сработать РАНЬШЕ встроенного обработчика
+            // Quill (у него своя логика paste, включая вставку картинки как base64), поэтому
+            // перехватываем событие на фазе погружения и останавливаем дальнейшую обработку.
+            editableEl.addEventListener('paste', function (ev) {
+                var items = ev.clipboardData && ev.clipboardData.items;
                 if (!items) return;
 
                 for (var i = 0; i < items.length; i++) {
@@ -1359,53 +1351,50 @@
                         var file = items[i].getAsFile();
                         if (file) {
                             ev.preventDefault();
-                            uploadAndInsertTaskDescriptionImage(file, $content[0]);
+                            ev.stopImmediatePropagation();
+                            uploadAndInsertTaskDescriptionImage(file, quill);
                         }
-                        break;
+                        return;
                     }
                 }
-            });
+            }, true);
 
-            $content.on('dragover.taskDescImages', function (ev) {
+            editableEl.addEventListener('dragover', function (ev) {
                 ev.preventDefault();
-            });
+            }, true);
 
-            $content.on('drop.taskDescImages', function (ev) {
-                var oe = ev.originalEvent;
-                var files = oe.dataTransfer && oe.dataTransfer.files;
+            editableEl.addEventListener('drop', function (ev) {
+                var files = ev.dataTransfer && ev.dataTransfer.files;
                 if (!files || !files.length || !files[0].type || files[0].type.indexOf('image') !== 0) return;
 
                 ev.preventDefault();
+                ev.stopImmediatePropagation();
 
-                // Ставим курсор туда, куда перетащили файл, иначе изображение уйдёт в конец текста
-                var range = null;
+                // Ставим курсор туда, куда перетащили файл, чтобы Quill вставил изображение
+                // именно в точке дропа, а не в конец текста.
                 if (document.caretRangeFromPoint) {
-                    range = document.caretRangeFromPoint(oe.clientX, oe.clientY);
-                } else if (document.caretPositionFromPoint) {
-                    var pos = document.caretPositionFromPoint(oe.clientX, oe.clientY);
-                    if (pos) {
-                        range = document.createRange();
-                        range.setStart(pos.offsetNode, pos.offset);
-                        range.collapse(true);
+                    var range = document.caretRangeFromPoint(ev.clientX, ev.clientY);
+                    if (range) {
+                        var sel = window.getSelection();
+                        sel.removeAllRanges();
+                        sel.addRange(range);
                     }
                 }
-                if (range) {
-                    var sel = window.getSelection();
-                    sel.removeAllRanges();
-                    sel.addRange(range);
-                }
+                editableEl.focus();
 
-                uploadAndInsertTaskDescriptionImage(files[0], $content[0]);
-            });
+                uploadAndInsertTaskDescriptionImage(files[0], quill);
+            }, true);
           } catch (err) {
             console.error('onTaskDescriptionEditorInitialized failed', err);
           }
         }
 
-        function uploadAndInsertTaskDescriptionImage(file, editableEl) {
-            editableEl.focus();
-            document.execCommand('insertHTML', false,
-                '<span class="task-desc-upload-indicator" contenteditable="false">Загрузка изображения…</span>');
+        function uploadAndInsertTaskDescriptionImage(file, quill) {
+            var selection = quill.getSelection(true) || { index: quill.getLength(), length: 0 };
+            var insertIndex = selection.index;
+            var placeholder = '⏳ Загрузка изображения…';
+
+            quill.insertText(insertIndex, placeholder, 'italic', true, 'user');
 
             var formData = new FormData();
             formData.append('file', file);
@@ -1420,19 +1409,14 @@
                     return response.json();
                 })
                 .then(function (data) {
-                    replaceTaskDescUploadIndicator(editableEl, '<img src="' + data.url + '" style="max-width:100%;" />');
+                    quill.deleteText(insertIndex, placeholder.length, 'user');
+                    quill.insertEmbed(insertIndex, 'image', data.url, 'user');
+                    quill.setSelection(insertIndex + 1, 0, 'user');
                 })
                 .catch(function (err) {
-                    replaceTaskDescUploadIndicator(editableEl, '');
+                    quill.deleteText(insertIndex, placeholder.length, 'user');
                     notifyTaskDescError(err && err.message ? err.message : 'Не удалось загрузить изображение');
                 });
-        }
-
-        function replaceTaskDescUploadIndicator(editableEl, html) {
-            var indicator = editableEl.querySelector('.task-desc-upload-indicator');
-            if (indicator) {
-                indicator.outerHTML = html;
-            }
         }
 
         function notifyTaskDescError(message) {
