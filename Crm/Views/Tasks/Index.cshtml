@@ -147,7 +147,6 @@
                                             toolbarItems.Add().Name(HtmlEditorToolbarItem.Separator);
                                             toolbarItems.Add().Name(HtmlEditorToolbarItem.Clear);
                                         }))
-                                        .OnInitialized("onTaskDescriptionEditorInitialized")
                                     );
 
                                 groupItems.AddSimpleFor(m => m.Assignee)
@@ -1331,63 +1330,74 @@
             return text.length > 0;
         }
 
-        function onTaskDescriptionEditorInitialized(e) {
-          try {
-            var htmlEditor = e.component;
-            var quill = htmlEditor.getQuillInstance && htmlEditor.getQuillInstance();
+        // Регистрируем ОДИН РАЗ глобально на document, а не в onInitialized конкретного
+        // редактора: Quill вешает свой собственный обработчик 'paste' прямо на quill.root
+        // при инициализации виджета — и для двух слушателей на ОДНОМ И ТОМ ЖЕ узле порядок
+        // срабатывания определяется порядком регистрации, а не capture/bubble. Раз Quill
+        // подписывается раньше нас, единственный надёжный способ сработать первыми —
+        // перехватить событие выше по дереву (document) на фазе погружения, пока оно ещё
+        // не дошло до узла редактора. Если регистрировать это внутри onInitialized (который
+        // при каждом открытии попапа может вызываться заново для нового инстанса виджета),
+        // получим утечку и задвоение обработчиков — поэтому вешаем один раз и внутри
+        // обработчика на лету определяем, к какому HtmlEditor относится событие.
+        function findTaskDescriptionQuill(targetEl) {
+            var $editorRoot = $(targetEl).closest('.dx-htmleditor');
+            if (!$editorRoot.length) return null;
+            var htmlEditor = $editorRoot.dxHtmlEditor('instance');
+            if (!htmlEditor || !htmlEditor.getQuillInstance) return null;
+            return htmlEditor.getQuillInstance();
+        }
+
+        document.addEventListener('paste', function (ev) {
+            var quill = findTaskDescriptionQuill(ev.target);
             if (!quill) return;
 
-            var editableEl = quill.root; // настоящий contenteditable-элемент Quill
+            var items = ev.clipboardData && ev.clipboardData.items;
+            if (!items) return;
 
-            // capture:true — наш обработчик должен сработать РАНЬШЕ встроенного обработчика
-            // Quill (у него своя логика paste, включая вставку картинки как base64), поэтому
-            // перехватываем событие на фазе погружения и останавливаем дальнейшую обработку.
-            editableEl.addEventListener('paste', function (ev) {
-                var items = ev.clipboardData && ev.clipboardData.items;
-                if (!items) return;
-
-                for (var i = 0; i < items.length; i++) {
-                    if (items[i].type && items[i].type.indexOf('image') === 0) {
-                        var file = items[i].getAsFile();
-                        if (file) {
-                            ev.preventDefault();
-                            ev.stopImmediatePropagation();
-                            uploadAndInsertTaskDescriptionImage(file, quill);
-                        }
-                        return;
+            for (var i = 0; i < items.length; i++) {
+                if (items[i].type && items[i].type.indexOf('image') === 0) {
+                    var file = items[i].getAsFile();
+                    if (file) {
+                        ev.preventDefault();
+                        ev.stopImmediatePropagation();
+                        uploadAndInsertTaskDescriptionImage(file, quill);
                     }
+                    return;
                 }
-            }, true);
+            }
+        }, true);
 
-            editableEl.addEventListener('dragover', function (ev) {
+        document.addEventListener('dragover', function (ev) {
+            if (findTaskDescriptionQuill(ev.target)) {
                 ev.preventDefault();
-            }, true);
+            }
+        }, true);
 
-            editableEl.addEventListener('drop', function (ev) {
-                var files = ev.dataTransfer && ev.dataTransfer.files;
-                if (!files || !files.length || !files[0].type || files[0].type.indexOf('image') !== 0) return;
+        document.addEventListener('drop', function (ev) {
+            var quill = findTaskDescriptionQuill(ev.target);
+            if (!quill) return;
 
-                ev.preventDefault();
-                ev.stopImmediatePropagation();
+            var files = ev.dataTransfer && ev.dataTransfer.files;
+            if (!files || !files.length || !files[0].type || files[0].type.indexOf('image') !== 0) return;
 
-                // Ставим курсор туда, куда перетащили файл, чтобы Quill вставил изображение
-                // именно в точке дропа, а не в конец текста.
-                if (document.caretRangeFromPoint) {
-                    var range = document.caretRangeFromPoint(ev.clientX, ev.clientY);
-                    if (range) {
-                        var sel = window.getSelection();
-                        sel.removeAllRanges();
-                        sel.addRange(range);
-                    }
+            ev.preventDefault();
+            ev.stopImmediatePropagation();
+
+            // Ставим курсор туда, куда перетащили файл, чтобы Quill вставил изображение
+            // именно в точке дропа, а не в конец текста.
+            if (document.caretRangeFromPoint) {
+                var range = document.caretRangeFromPoint(ev.clientX, ev.clientY);
+                if (range) {
+                    var sel = window.getSelection();
+                    sel.removeAllRanges();
+                    sel.addRange(range);
                 }
-                editableEl.focus();
+            }
+            quill.root.focus();
 
-                uploadAndInsertTaskDescriptionImage(files[0], quill);
-            }, true);
-          } catch (err) {
-            console.error('onTaskDescriptionEditorInitialized failed', err);
-          }
-        }
+            uploadAndInsertTaskDescriptionImage(files[0], quill);
+        }, true);
 
         function uploadAndInsertTaskDescriptionImage(file, quill) {
             var selection = quill.getSelection(true) || { index: quill.getLength(), length: 0 };
