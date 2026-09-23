@@ -365,22 +365,24 @@ namespace Crm.Controllers
         {
             try
             {
-                var viewModel = new User
-                {
-                    DefaultEmail = email,
-                    FirstName = name
-                };
                 var user = _userRepository.GetUser(email);
+                if (user.Data == null)
+                {
+                    Console.WriteLine($"[YandexAuthSuccess] Пользователь '{email}' не найден после CreateUserYandexCommand.");
+                    return RedirectToAction("Login", new { error = "auth_failed" });
+                }
+
                 await _authenticationService.AuthenticateWithCookiesAsync(user.Data);
 
                 // Вместо JSON возвращаем View с JavaScript для закрытия окна
                 return View("YandexAuthSuccess", new { Email = email, Name = name });
             }
             catch (Exception ex)
-            {                
+            {
+                Console.WriteLine($"[YandexAuthSuccess] email='{email}': {ex}");
                 return RedirectToAction("Login", new { error = "auth_failed" });
             }
-        } 
+        }
     }
 
 

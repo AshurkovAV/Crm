@@ -78,7 +78,10 @@ namespace Crm.Application.Features.Accounts.Commands.ExternalAuth.Yandex
             newUser.IsActive = true;
             newUser.IsValidation = true;
             newUser.ModifiedDate = DateTime.UtcNow;
-            var result =  _userRepository.AddOrUpdateAsync(newUser);
+            // Раньше здесь не было await — метод возвращал Task, который никто не ждал
+            // (fire-and-forget). Обработчик мог вернуть результат и уйти в редирект раньше,
+            // чем сохранение реально попадёт в БД, а любая ошибка сохранения потерялась бы молча.
+            await _userRepository.AddOrUpdateAsync(newUser);
 
             return new CreateUserResult
             {
