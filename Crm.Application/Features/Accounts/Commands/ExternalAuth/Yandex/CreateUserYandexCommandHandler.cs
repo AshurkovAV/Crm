@@ -26,9 +26,25 @@ namespace Crm.Application.Features.Accounts.Commands.ExternalAuth.Yandex
             // 2. Получаем информацию о пользователе
             var userInfo = await _yandexAuthService.GetUserInfoAsync(tokenResponse.AccessToken);
 
+            // У части аккаунтов Яндекс отдаёт default_email пустым, хотя список emails
+            // заполнен (известная особенность их API) — без этой подстраховки email
+            // пользователя терялся, GetUser('') не находил его, и весь вход падал.
+            var email = !string.IsNullOrWhiteSpace(userInfo.DefaultEmail)
+                ? userInfo.DefaultEmail
+                : userInfo.Emails?.FirstOrDefault(e => !string.IsNullOrWhiteSpace(e));
+
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                return new CreateUserResult
+                {
+                    Succeeded = false,
+                    Errors = { "Яндекс не передал ни одного email — проверьте права доступа (scope) приложения." }
+                };
+            }
+
             // 3. Проверяем, существует ли пользователь.
-            var existingUser = _userRepository.GetUser(userInfo.DefaultEmail);
-            var newUser = Crm.Entity.Entities.User.Create(userInfo.DefaultEmail);
+            var existingUser = _userRepository.GetUser(email);
+            var newUser = Crm.Entity.Entities.User.Create(email);
 
             // ВАЖНО: AddOrUpdateAsync делает db.Users.Update(user), который перезаписывает
             // ВСЕ колонки строки, а не только изменённые. User.Create() задаёт лишь горстку
@@ -74,7 +90,7 @@ namespace Crm.Application.Features.Accounts.Commands.ExternalAuth.Yandex
             newUser.Login = userInfo.Login;
             newUser.DisplayName = userInfo.DisplayName;
             newUser.RealName = userInfo.RealName;
-            newUser.DefaultEmail = userInfo.DefaultEmail;
+            newUser.DefaultEmail = email;
             newUser.IsActive = true;
             newUser.IsValidation = true;
             newUser.ModifiedDate = DateTime.UtcNow;
