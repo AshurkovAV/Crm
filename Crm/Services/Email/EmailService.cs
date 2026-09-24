@@ -1,4 +1,5 @@
 ﻿using Crm.Core.Features.Email.Models;
+using Crm.Services.Notifications;
 using System.Net.Mail;
 using System.Net;
 
@@ -8,11 +9,262 @@ namespace Crm.Services.Email
     {
         private readonly IConfiguration _configuration;
         private readonly ILogger<EmailService> _logger;
+        private readonly string _baseUrl;
 
         public EmailService(IConfiguration configuration, ILogger<EmailService> logger)
         {
             _configuration = configuration;
             _logger = logger;
+            _baseUrl = configuration["BaseUrl"] ?? "https://crm.biglv.ru";
+        }
+
+        public async Task SendTaskNotificationEmailAsync(TaskNotificationContext context)
+        {
+            if (string.IsNullOrWhiteSpace(context.AssigneeEmail))
+                return;
+
+            var isNew = context.Kind == TaskNotificationKind.Created;
+            var currentYear = DateTime.Now.Year;
+            var tasksUrl = $"{_baseUrl}/Tasks";
+
+            var headingText = isNew ? "Новая задача" : "Задача изменена";
+            var introText = isNew
+                ? $"Вам назначена новая задача от {context.AuthorName ?? "коллеги"}."
+                : $"Задача, которую вам поручили, была изменена{(context.AuthorName != null ? $" ({context.AuthorName})" : "")}.";
+
+            var priorityColor = context.Priority switch
+            {
+                "Высокий" => "#c62828",
+                "Средний" => "#b7791f",
+                "Низкий" => "#2e7d32",
+                _ => "#4a5568"
+            };
+
+            var detailsRows = "";
+            if (!string.IsNullOrWhiteSpace(context.ProjectName))
+                detailsRows += $@"<tr><td class='detail-label'>Проект</td><td class='detail-value'>{System.Net.WebUtility.HtmlEncode(context.ProjectName)}</td></tr>";
+            if (context.Deadline.HasValue)
+                detailsRows += $@"<tr><td class='detail-label'>Срок</td><td class='detail-value'>{context.Deadline.Value:dd.MM.yyyy HH:mm}</td></tr>";
+            if (!string.IsNullOrWhiteSpace(context.Priority))
+                detailsRows += $@"<tr><td class='detail-label'>Приоритет</td><td class='detail-value'><span style='color:{priorityColor}; font-weight:600;'>{System.Net.WebUtility.HtmlEncode(context.Priority)}</span></td></tr>";
+            if (!string.IsNullOrWhiteSpace(context.AuthorName))
+                detailsRows += $@"<tr><td class='detail-label'>Постановщик</td><td class='detail-value'>{System.Net.WebUtility.HtmlEncode(context.AuthorName)}</td></tr>";
+
+            // Description — это уже санитайзенный HTML из HtmlEditor (см. TaskDataController),
+            // поэтому вставляем как есть (не HtmlEncode), иначе письмо покажет сырые теги
+            // вместо форматирования. Относительные ссылки на картинки (/uploads/tasks/...)
+            // превращаем в абсолютные — почтовый клиент не знает, с какого домена их брать.
+            var descriptionHtml = context.Description;
+            if (!string.IsNullOrWhiteSpace(descriptionHtml))
+                descriptionHtml = descriptionHtml.Replace("src=\"/uploads/", $"src=\"{_baseUrl}/uploads/");
+
+            var descriptionBlock = string.IsNullOrWhiteSpace(descriptionHtml)
+                ? ""
+                : $@"<div class='description-box'><div class='description-label'>Описание</div>{descriptionHtml}</div>";
+
+            var changedFieldsBlock = "";
+            if (!isNew && context.ChangedFields.Count > 0)
+            {
+                var items = string.Join("", context.ChangedFields.Select(f => $"<li>{System.Net.WebUtility.HtmlEncode(f)}</li>"));
+                changedFieldsBlock = $@"<div class='changed-box'><div class='changed-label'>Что изменилось</div><ul>{items}</ul></div>";
+            }
+
+            var emailBody = $@"
+<!DOCTYPE html>
+<html lang='ru'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <style>
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #1a1a2e;
+            background-color: #f5f7fb;
+        }}
+
+        .email-wrapper {{
+            max-width: 600px;
+            margin: 0 auto;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 20px;
+        }}
+
+        .email-container {{
+            background: #ffffff;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15), 0 5px 15px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }}
+
+        .email-header {{
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px;
+            text-align: center;
+            color: white;
+        }}
+
+        .logo-icon {{
+            width: 72px;
+            height: 72px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }}
+
+        .logo-icon svg {{ width: 40px; height: 40px; color: white; }}
+
+        .email-header h1 {{ font-size: 28px; font-weight: 700; margin: 0 0 8px; }}
+        .email-header p {{ font-size: 16px; opacity: 0.95; margin: 0; }}
+
+        .email-body {{ padding: 40px; background: #ffffff; }}
+
+        .message-box {{
+            background: linear-gradient(135deg, #f8f9ff 0%, #f0f2ff 100%);
+            border-left: 4px solid #667eea;
+            padding: 20px 24px;
+            border-radius: 16px;
+            margin-bottom: 28px;
+        }}
+
+        .message-box p {{ margin: 0; font-size: 16px; color: #2d3748; }}
+
+        .task-title {{
+            font-size: 22px;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin-bottom: 20px;
+        }}
+
+        .details-table {{ width: 100%; border-collapse: collapse; margin-bottom: 24px; }}
+        .detail-label {{
+            padding: 10px 0;
+            color: #718096;
+            font-size: 14px;
+            width: 130px;
+            vertical-align: top;
+            border-bottom: 1px solid #edf2f7;
+        }}
+        .detail-value {{
+            padding: 10px 0;
+            color: #2d3748;
+            font-size: 15px;
+            font-weight: 500;
+            border-bottom: 1px solid #edf2f7;
+        }}
+
+        .description-box {{
+            background: #f7fafc;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            border: 1px solid #e2e8f0;
+        }}
+        .description-label, .changed-label {{
+            font-size: 12px;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }}
+        .description-box p {{ color: #2d3748; font-size: 15px; white-space: pre-wrap; }}
+
+        .changed-box {{
+            background: #fef5e7;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+        }}
+        .changed-box ul {{ margin: 0; padding-left: 20px; color: #7c5e10; font-size: 14px; }}
+
+        .cta-button {{
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white !important;
+            text-decoration: none;
+            padding: 14px 36px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 16px;
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }}
+
+        .cta-wrap {{ text-align: center; margin-top: 8px; }}
+
+        .email-footer {{
+            background: #f7fafc;
+            padding: 28px 40px;
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+        }}
+        .copyright {{ color: #a0aec0; font-size: 13px; }}
+
+        @@media (max-width: 600px) {{
+            .email-wrapper {{ padding: 20px 10px; }}
+            .email-header {{ padding: 30px 24px; }}
+            .email-body {{ padding: 28px 24px; }}
+        }}
+    </style>
+</head>
+<body>
+    <div class='email-wrapper'>
+        <div class='email-container'>
+            <div class='email-header'>
+                <div class='logo-icon'>
+                    <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>
+                        <path d='M9 11l3 3L22 4'/>
+                        <path d='M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11'/>
+                    </svg>
+                </div>
+                <h1>{headingText}</h1>
+                <p>{context.AssigneeName}, у вас есть обновление по задаче</p>
+            </div>
+
+            <div class='email-body'>
+                <div class='message-box'>
+                    <p>{introText}</p>
+                </div>
+
+                <div class='task-title'>{System.Net.WebUtility.HtmlEncode(context.TaskName)}</div>
+
+                <table class='details-table'>{detailsRows}</table>
+
+                {descriptionBlock}
+                {changedFieldsBlock}
+
+                <div class='cta-wrap'>
+                    <a href='{tasksUrl}' class='cta-button'>Открыть задачи</a>
+                </div>
+            </div>
+
+            <div class='email-footer'>
+                <div class='copyright'>
+                    © {currentYear} Crm.System.<br>
+                    Это автоматическое письмо, пожалуйста, не отвечайте на него.
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>";
+
+            var mail = new Mail
+            {
+                EmailFrom = "ashurkovav@yandex.ru",
+                EmailTo = context.AssigneeEmail,
+                EmailSubject = isNew
+                    ? $"📋 Новая задача: {context.TaskName}"
+                    : $"✏️ Задача изменена: {context.TaskName}",
+                EmailBody = emailBody
+            };
+
+            await SendEmailAsync(mail);
         }
 
         public async Task SendInvitationEmailAsync(string email, string link, string customMessage = null, string companyName = "CRM System")

@@ -1,6 +1,7 @@
 using Crm.Application.Interfaces;
 using Crm.Entity.ModelsCrm;
 using Crm.Entity.Services;
+using Crm.Services.Notifications;
 using DevExtreme.AspNet.Data;
 using DevExtreme.AspNet.Mvc;
 using Ganss.Xss;
@@ -33,19 +34,22 @@ namespace Crm.Controllers
         private IUserContextService _userContextService;
         private IUserRepository _userRepository;
         private readonly IWebHostEnvironment _webHostEnvironment;
+        private readonly ITaskNotificationDispatcher _taskNotificationDispatcher;
 
         public TaskDataController(
             ILogger<TaskDataController> logger,
             ICrmRepository crmRepository,
             IUserContextService userContextService,
             IUserRepository userRepository,
-            IWebHostEnvironment webHostEnvironment)
+            IWebHostEnvironment webHostEnvironment,
+            ITaskNotificationDispatcher taskNotificationDispatcher)
         {
             _logger = logger;
             _crmRepository = crmRepository;
             _userContextService = userContextService;
             _userRepository = userRepository;
             _webHostEnvironment = webHostEnvironment;
+            _taskNotificationDispatcher = taskNotificationDispatcher;
         }
 
         /// <summary>
@@ -178,7 +182,7 @@ namespace Crm.Controllers
         }
 
         [HttpPost]
-        public HttpResponseMessage Post(Wet form)
+        public async Task<HttpResponseMessage> Post(Wet form)
         {
             Console.WriteLine(@$"�������� ����� ������ {DateTime.Now}");
 
@@ -232,6 +236,8 @@ namespace Crm.Controllers
             // ��������� � ����
             var result = _crmRepository.InsertTaskCrm(resultData.Data);
 
+            await NotifyAssigneeAsync(resultData.Data, TaskNotificationKind.Created, new List<string>(), userId);
+
             HttpResponseMessage response = new HttpResponseMessage();
             response.StatusCode = HttpStatusCode.Created;
 
@@ -273,11 +279,20 @@ namespace Crm.Controllers
         }
 
         [HttpPut]
-        public HttpResponseMessage Put(int key, Wet form)
+        public async Task<HttpResponseMessage> Put(int key, Wet form)
         {
-            Console.WriteLine(@$"������� ������ {DateTime.Now}");          
+            Console.WriteLine(@$"������� ������ {DateTime.Now}");
             var values = form.values;
             var task = _crmRepository.GetTaskCrm(key);
+
+            // Снимок "до" — чтобы после сохранения понять, что реально изменилось, и стоит ли
+            // об этом писать исполнителю (например, простой перенос карточки в канбане меняет
+            // только Status — на это отдельное письмо не шлём, чтобы не спамить).
+            var oldName = task.Data.Name;
+            var oldDeadline = task.Data.Deadline;
+            var oldPriority = task.Data.Priority;
+            var oldDescription = task.Data.Description;
+            var oldAssignee = task.Data.Assignee;
 
             // ������������� ��������
             var updateData = JsonConvert.DeserializeObject<Dictionary<string, object>>(values);
@@ -336,6 +351,25 @@ namespace Crm.Controllers
             }
 
             var result = _crmRepository.UpdataTaskCrm(task.Data);
+
+            var reassigned = oldAssignee != task.Data.Assignee;
+            var changedFields = new List<string>();
+            if (!reassigned)
+            {
+                if (oldName != task.Data.Name) changedFields.Add("Название");
+                if (oldDeadline != task.Data.Deadline) changedFields.Add("Срок");
+                if (oldPriority != task.Data.Priority) changedFields.Add("Приоритет");
+                if (oldDescription != task.Data.Description) changedFields.Add("Описание");
+            }
+
+            // Если сменили исполнителя — для НОВОГО исполнителя это по сути новая задача,
+            // даже если строка в базе технически обновилась, а не создалась заново.
+            if (reassigned || changedFields.Count > 0)
+            {
+                var kind = reassigned ? TaskNotificationKind.Created : TaskNotificationKind.Updated;
+                await NotifyAssigneeAsync(task.Data, kind, changedFields, GetUserId() ?? 0);
+            }
+
             HttpResponseMessage response = new HttpResponseMessage();
             response.StatusCode = HttpStatusCode.OK;
 
@@ -363,6 +397,58 @@ namespace Crm.Controllers
         {
             var value = User.FindFirstValue(ClaimTypes.NameIdentifier);
             return int.TryParse(value, out var userId) ? userId : null;
+        }
+
+        /// <summary>
+        /// Уведомляет исполнителя задачи (сейчас — по email, канал регистрируется в DI,
+        /// см. Crm/Services/Notifications). Не бросает исключения наружу: сбой уведомления
+        /// не должен ломать сохранение задачи.
+        /// </summary>
+        private async Task NotifyAssigneeAsync(TaskCrm taskData, TaskNotificationKind kind, List<string> changedFields, int currentUserId)
+        {
+            try
+            {
+                if (!taskData.Assignee.HasValue)
+                    return;
+
+                // Не шлём человеку письмо о его же собственном действии (сам себе поставил/поменял задачу).
+                if (taskData.Assignee.Value == currentUserId)
+                    return;
+
+                var assignee = _userRepository.GetUserById(taskData.Assignee.Value)?.Data;
+                if (assignee == null || string.IsNullOrWhiteSpace(assignee.DefaultEmail))
+                    return;
+
+                string? authorName = null;
+                if (taskData.Author.HasValue)
+                    authorName = _userRepository.GetUserById(taskData.Author.Value)?.Data?.DisplayName;
+
+                string? projectName = null;
+                if (taskData.ProjectId.HasValue)
+                    projectName = _crmRepository.GetProject(taskData.ProjectId.Value)?.Data?.Name;
+
+                var context = new TaskNotificationContext
+                {
+                    Kind = kind,
+                    TaskId = taskData.Id,
+                    TaskName = taskData.Name,
+                    Description = taskData.Description,
+                    Deadline = taskData.Deadline,
+                    Priority = taskData.Priority,
+                    ProjectName = projectName,
+                    AuthorName = authorName,
+                    AssigneeUserId = assignee.Id,
+                    AssigneeName = assignee.DisplayName ?? assignee.DefaultEmail,
+                    AssigneeEmail = assignee.DefaultEmail,
+                    ChangedFields = changedFields
+                };
+
+                await _taskNotificationDispatcher.DispatchAsync(context);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Не удалось отправить уведомление по задаче {TaskId}", taskData.Id);
+            }
         }
 
         private void SyncProjectParticipants(int projectId, List<int> selectedUserIds)

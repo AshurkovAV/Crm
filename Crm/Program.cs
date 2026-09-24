@@ -10,6 +10,7 @@ using Crm.Entity.ModelsCrm;
 using Crm.Entity.Services;
 using Crm.Infrastructure.Services;
 using Crm.Services.Email;
+using Crm.Services.Notifications;
 using Crm.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
@@ -53,6 +54,11 @@ builder.Services.AddScoped<IAuthenticationService,       AuthenticationService>(
 
 builder.Services.AddScoped<IInvitationService,           InvitationService>();
 builder.Services.AddScoped<IEmailService,                EmailService>();
+// Уведомления о задачах: сейчас только email. Чтобы добавить Макс — реализовать
+// ITaskNotificationChannel (например MaxTaskNotificationChannel) и зарегистрировать
+// его здесь ещё одной строкой AddScoped — диспетчер подхватит его сам.
+builder.Services.AddScoped<ITaskNotificationChannel,     EmailTaskNotificationChannel>();
+builder.Services.AddScoped<ITaskNotificationDispatcher,  TaskNotificationDispatcher>();
 builder.Services.AddScoped<UserService>();
 
 builder.Services.AddApplication();
