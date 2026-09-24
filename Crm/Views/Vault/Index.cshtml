@@ -147,12 +147,6 @@
     </div>
 </div>
 
-@* Простой попап управления доступом — отдельно от основной формы редактирования,
-   поскольку доступ хранится в отдельной таблице (VaultEntryAccess), а не в самой записи. *@
-<div id="vaultAccessPopup" style="display:none;">
-    <div id="vaultAccessUsersList" class="vault-access-users"></div>
-</div>
-
 @section Styles {
     <style>
         .content-top-bar {
@@ -282,70 +276,73 @@
         }
 
         // ========== Попап управления доступом к записи ==========
-
-        var vaultAccessPopupInstance = null;
-        var vaultAccessCompanyUsers = [];
-
-        function getVaultAccessPopup() {
-            if (!vaultAccessPopupInstance) {
-                vaultAccessPopupInstance = $('#vaultAccessPopup').dxPopup({
-                    title: 'Доступ к записи',
-                    width: 360,
-                    height: 'auto',
-                    showCloseButton: true,
-                    shading: true
-                }).dxPopup('instance');
-            }
-            return vaultAccessPopupInstance;
-        }
-
+        // Попап создаётся заново при каждом открытии через contentTemplate (а не через
+        // готовый скрытый <div> в разметке) — так надёжнее для контента, который зависит
+        // от того, какую строку грида открыли, и не завязано на то, что DevExtreme сделает
+        // с исходной разметкой при инициализации виджета поверх статичного div.
         function openVaultAccessDialog(rowData) {
-            var popup = getVaultAccessPopup();
-            var $list = $('#vaultAccessUsersList');
-            $list.html('<div>Загрузка...</div>');
-            popup.show();
+            var $popupContainer = $('<div></div>').appendTo(document.body);
 
-            Promise.all([
-                fetch('/UserData/GetUsers').then(function (r) { return r.json(); }),
-                fetch('/VaultData/access/' + rowData.Id).then(function (r) { return r.json(); })
-            ]).then(function (results) {
-                var users = normalizeVaultDxResult(results[0]).filter(function (u) { return u.Id !== rowData.CreatedByUserId; });
-                var grantedIds = results[1] || [];
+            $popupContainer.dxPopup({
+                title: 'Доступ к записи',
+                width: 360,
+                height: 'auto',
+                maxHeight: '80vh',
+                showCloseButton: true,
+                shading: true,
+                visible: true,
+                onHidden: function (e) {
+                    e.component.dispose();
+                    $popupContainer.remove();
+                },
+                contentTemplate: function (contentElement) {
+                    var $content = $('<div class="vault-access-users">Загрузка...</div>');
 
-                $list.empty();
-                if (!users.length) {
-                    $list.append('<div>В компании больше нет других пользователей.</div>');
-                }
-                users.forEach(function (u) {
-                    var checked = grantedIds.indexOf(u.Id) > -1 ? 'checked' : '';
-                    var $row = $('<label class="vault-access-user-row"></label>');
-                    $row.append('<input type="checkbox" value="' + u.Id + '" ' + checked + ' />');
-                    $row.append('<span>' + (u.FullName || u.Email || ('Пользователь #' + u.Id)) + '</span>');
-                    $list.append($row);
-                });
+                    Promise.all([
+                        fetch('/UserData/GetUsers').then(function (r) { return r.json(); }),
+                        fetch('/VaultData/access/' + rowData.Id).then(function (r) { return r.json(); })
+                    ]).then(function (results) {
+                        var users = normalizeVaultDxResult(results[0]).filter(function (u) { return u.Id !== rowData.CreatedByUserId; });
+                        var grantedIds = results[1] || [];
 
-                var $save = $('<button type="button" class="content-btn" style="margin-top:12px;">Сохранить</button>');
-                $save.on('click', function () {
-                    var selected = [];
-                    $list.find('input[type=checkbox]:checked').each(function () {
-                        selected.push(parseInt($(this).val(), 10));
-                    });
-                    fetch('/VaultData/access', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ EntryId: rowData.Id, UserIds: selected })
-                    }).then(function (resp) {
-                        if (resp.ok) {
-                            notifyVaultAccessSaved();
-                            popup.hide();
-                        } else {
-                            alert('Не удалось сохранить список доступа.');
+                        $content.empty();
+                        if (!users.length) {
+                            $content.append('<div>В компании больше нет других пользователей.</div>');
                         }
+                        users.forEach(function (u) {
+                            var checked = grantedIds.indexOf(u.Id) > -1 ? 'checked' : '';
+                            var $row = $('<label class="vault-access-user-row"></label>');
+                            $row.append('<input type="checkbox" value="' + u.Id + '" ' + checked + ' />');
+                            $row.append('<span>' + (u.FullName || u.Email || ('Пользователь #' + u.Id)) + '</span>');
+                            $content.append($row);
+                        });
+
+                        var $save = $('<button type="button" class="content-btn" style="margin-top:12px;">Сохранить</button>');
+                        $save.on('click', function () {
+                            var selected = [];
+                            $content.find('input[type=checkbox]:checked').each(function () {
+                                selected.push(parseInt($(this).val(), 10));
+                            });
+                            fetch('/VaultData/access', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ EntryId: rowData.Id, UserIds: selected })
+                            }).then(function (resp) {
+                                if (resp.ok) {
+                                    notifyVaultAccessSaved();
+                                    $popupContainer.dxPopup('hide');
+                                } else {
+                                    alert('Не удалось сохранить список доступа.');
+                                }
+                            });
+                        });
+                        $content.append($save);
+                    }).catch(function () {
+                        $content.html('<div>Не удалось загрузить список пользователей.</div>');
                     });
-                });
-                $list.append($save);
-            }).catch(function () {
-                $list.html('<div>Не удалось загрузить список пользователей.</div>');
+
+                    return $content;
+                }
             });
         }
 
