@@ -1,0 +1,364 @@
+@using Crm.Models.Vault
+
+@{
+    ViewData["Title"] = "Пароли";
+}
+
+@* ВАЖНО: пароли в этом разделе хранятся БЕЗ ШИФРОВАНИЯ — сознательное решение
+   заказчика. Доступ к каждой записи ограничен только на уровне приложения:
+   её видит автор и те, кому автор явно открыл доступ (кнопка "Доступ" в гриде). *@
+
+<div class="content-top-bar">
+    <h1 class="content-title">Пароли</h1>
+    <div class="content-actions">
+        <button class="content-btn" onclick="showCreateVaultEntryModal()">
+            <i class="fas fa-plus"></i>
+            <span>Новая запись</span>
+        </button>
+    </div>
+</div>
+
+<div class="content-section">
+    <div class="grid-wrapper">
+        @(Html.DevExtreme().DataGrid<VaultRow>()
+            .ID("vaultGrid")
+            .DataSource(ds => ds.Mvc()
+                .Controller("VaultData")
+                .LoadAction("Get")
+                .InsertAction("Post")
+                .UpdateAction("Put")
+                .DeleteAction("Delete")
+                .Key("Id")
+            )
+            .ShowBorders(true)
+            .ColumnAutoWidth(true)
+            .WordWrapEnabled(false)
+            .ShowColumnLines(true)
+            .ShowRowLines(true)
+            .RowAlternationEnabled(true)
+            .Height("100%")
+            .Paging(p => p.PageSize(20))
+            .Pager(p => p.ShowPageSizeSelector(true).AllowedPageSizes(new[] { 10, 20, 50 }).ShowInfo(true))
+            .FilterRow(f => f.Visible(false))
+            .SearchPanel(s => s.Visible(true).Width(240).Placeholder("Поиск..."))
+            .Editing(e => e
+                .Mode(GridEditMode.Popup)
+                .AllowAdding(true)
+                .AllowUpdating(true)
+                .AllowDeleting(true)
+                .UseIcons(true)
+                .Popup(p => p
+                    .Title("Запись пароля")
+                    .ShowTitle(true)
+                    .Width(520)
+                    .Height("auto")
+                )
+                .Form(f => f
+                    .ColCount(1)
+                    .LabelLocation(FormLabelLocation.Top)
+                    .Items(items =>
+                    {
+                        items.AddSimpleFor(m => m.Title)
+                            .Label(l => l.Text("Название*"))
+                            .Editor(editor => editor.TextBox().Placeholder("Например: Хостинг, почта, CRM клиента..."));
+
+                        items.AddSimpleFor(m => m.Login)
+                            .Label(l => l.Text("Логин"))
+                            .Editor(editor => editor.TextBox().Placeholder("Логин или email"));
+
+                        items.AddSimpleFor(m => m.Password)
+                            .Label(l => l.Text("Пароль"))
+                            .Editor(editor => editor.TextBox().Mode(TextBoxMode.Password).Placeholder("Пароль"));
+
+                        items.AddSimpleFor(m => m.Url)
+                            .Label(l => l.Text("Ссылка"))
+                            .Editor(editor => editor.TextBox().Placeholder("https://..."));
+
+                        items.AddSimpleFor(m => m.Tags)
+                            .Label(l => l.Text("Теги"))
+                            .Editor(editor => editor
+                                .TagBox()
+                                .DataSource(new[] { "Хостинг", "Почта", "Соцсети", "Клиент", "Сервис", "Личное" })
+                                .Placeholder("Выберите или добавьте теги")
+                                .ShowSelectionControls(true)
+                                .ShowClearButton(true)
+                            );
+
+                        items.AddSimpleFor(m => m.Notes)
+                            .Label(l => l.Text("Заметки"))
+                            .Editor(editor => editor.TextArea().Height(80).Placeholder("Дополнительная информация..."));
+                    })
+                )
+            )
+            .Columns(columns =>
+            {
+                columns.Add().DataField("Id").Visible(false);
+                columns.Add().DataField("CreatedByUserId").Visible(false);
+                columns.Add().DataField("IsOwner").Visible(false);
+
+                columns.Add().DataField("Title").Caption("Название").Width(200).MinWidth(150);
+                columns.Add().DataField("Login").Caption("Логин").Width(180).MinWidth(120);
+
+                columns.Add().DataField("Password")
+                    .Caption("Пароль")
+                    .Width(140)
+                    .AllowFiltering(false)
+                    .AllowSorting(false)
+                    .CellTemplate(@<text>
+                        <span class="vault-password-cell">
+                            <span class="vault-password-value" data-value="<%- value || '' %>">••••••••</span>
+                            <button type="button" class="vault-icon-btn vault-toggle-btn" title="Показать/скрыть"><i class="fas fa-eye"></i></button>
+                            <button type="button" class="vault-icon-btn vault-copy-btn" title="Скопировать"><i class="fas fa-copy"></i></button>
+                        </span>
+                    </text>);
+
+                columns.Add().DataField("Url").Caption("Ссылка").Width(200).MinWidth(140)
+                    .CellTemplate(@<text>
+                        <% if (value) { %>
+                            <a href="<%- value %>" target="_blank" rel="noopener" class="vault-url-link"><%- value %></a>
+                        <% } %>
+                    </text>);
+
+                columns.Add().DataField("Tags").Caption("Теги").Width(160).Visible(false);
+                columns.Add().DataField("Notes").Visible(false);
+
+                columns.Add().DataField("ModifiedDate")
+                    .Caption("Изменено")
+                    .DataType(GridColumnDataType.DateTime)
+                    .Format("dd.MM.yyyy HH:mm")
+                    .Width(140)
+                    .AllowEditing(false);
+
+                columns.Add()
+                    .Type(GridCommandColumnType.Buttons)
+                    .Width(120)
+                    .Buttons(b =>
+                    {
+                        b.Add().Name(GridColumnButtonName.Edit).Hint("Редактировать").Icon("edit")
+                            .Visible(new JS("function(e) { return e.row.data.IsOwner; }"));
+                        b.Add().Name(GridColumnButtonName.Delete).Hint("Удалить").Icon("trash")
+                            .Visible(new JS("function(e) { return e.row.data.IsOwner; }"));
+                        b.Add().Hint("Доступ").Icon("user").Visible(new JS("function(e) { return e.row.data.IsOwner; }"))
+                            .OnClick("function(e) { openVaultAccessDialog(e.row.data); }");
+                    });
+            })
+            .OnCellClick("onVaultGridCellClick")
+        )
+    </div>
+</div>
+
+@* Простой попап управления доступом — отдельно от основной формы редактирования,
+   поскольку доступ хранится в отдельной таблице (VaultEntryAccess), а не в самой записи. *@
+<div id="vaultAccessPopup" style="display:none;">
+    <div id="vaultAccessUsersList" class="vault-access-users"></div>
+</div>
+
+@section Styles {
+    <style>
+        .content-top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .content-title {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .content-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            background: #3498db;
+            color: white;
+        }
+
+        .content-btn:hover {
+            background: #2980b9;
+        }
+
+        .content-section {
+            padding: 20px;
+        }
+
+        .vault-password-cell {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .vault-password-value {
+            font-family: monospace;
+            letter-spacing: 1px;
+        }
+
+        .vault-icon-btn {
+            border: none;
+            background: transparent;
+            color: #7f8c8d;
+            cursor: pointer;
+            padding: 2px 4px;
+        }
+
+        .vault-icon-btn:hover {
+            color: #2980b9;
+        }
+
+        .vault-url-link {
+            color: #2980b9;
+            text-decoration: none;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            display: inline-block;
+            max-width: 100%;
+        }
+
+        .vault-access-users {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 16px;
+            max-height: 320px;
+            overflow-y: auto;
+        }
+
+        .vault-access-user-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        function showCreateVaultEntryModal() {
+            const grid = $('#vaultGrid').dxDataGrid('instance');
+            if (grid) grid.addRow();
+        }
+
+        // Клик по кнопкам показать/скопировать внутри ячейки пароля
+        function onVaultGridCellClick(e) {
+            if (!e.cellElement) return;
+            var $cell = $(e.cellElement);
+
+            var $toggle = $cell.find('.vault-toggle-btn');
+            if ($toggle.length && $(e.event.target).closest('.vault-toggle-btn').length) {
+                var $value = $cell.find('.vault-password-value');
+                var real = $value.data('value') || '';
+                var isHidden = $value.text() !== real;
+                $value.text(isHidden ? real : '••••••••');
+                $toggle.find('i').toggleClass('fa-eye fa-eye-slash');
+                return;
+            }
+
+            var $copy = $cell.find('.vault-copy-btn');
+            if ($copy.length && $(e.event.target).closest('.vault-copy-btn').length) {
+                var $value = $cell.find('.vault-password-value');
+                var real = $value.data('value') || '';
+                if (real && navigator.clipboard) {
+                    navigator.clipboard.writeText(real);
+                    notifyVaultCopied();
+                }
+            }
+        }
+
+        function notifyVaultCopied() {
+            if (window.DevExpress && DevExpress.ui && DevExpress.ui.notify) {
+                DevExpress.ui.notify('Скопировано в буфер обмена', 'success', 1500);
+            }
+        }
+
+        // ========== Попап управления доступом к записи ==========
+
+        var vaultAccessPopupInstance = null;
+        var vaultAccessCompanyUsers = [];
+
+        function getVaultAccessPopup() {
+            if (!vaultAccessPopupInstance) {
+                vaultAccessPopupInstance = $('#vaultAccessPopup').dxPopup({
+                    title: 'Доступ к записи',
+                    width: 360,
+                    height: 'auto',
+                    showCloseButton: true,
+                    shading: true
+                }).dxPopup('instance');
+            }
+            return vaultAccessPopupInstance;
+        }
+
+        function openVaultAccessDialog(rowData) {
+            var popup = getVaultAccessPopup();
+            var $list = $('#vaultAccessUsersList');
+            $list.html('<div>Загрузка...</div>');
+            popup.show();
+
+            Promise.all([
+                fetch('/UserData/GetUsers').then(function (r) { return r.json(); }),
+                fetch('/VaultData/access/' + rowData.Id).then(function (r) { return r.json(); })
+            ]).then(function (results) {
+                var users = normalizeVaultDxResult(results[0]).filter(function (u) { return u.Id !== rowData.CreatedByUserId; });
+                var grantedIds = results[1] || [];
+
+                $list.empty();
+                if (!users.length) {
+                    $list.append('<div>В компании больше нет других пользователей.</div>');
+                }
+                users.forEach(function (u) {
+                    var checked = grantedIds.indexOf(u.Id) > -1 ? 'checked' : '';
+                    var $row = $('<label class="vault-access-user-row"></label>');
+                    $row.append('<input type="checkbox" value="' + u.Id + '" ' + checked + ' />');
+                    $row.append('<span>' + (u.FullName || u.Email || ('Пользователь #' + u.Id)) + '</span>');
+                    $list.append($row);
+                });
+
+                var $save = $('<button type="button" class="content-btn" style="margin-top:12px;">Сохранить</button>');
+                $save.on('click', function () {
+                    var selected = [];
+                    $list.find('input[type=checkbox]:checked').each(function () {
+                        selected.push(parseInt($(this).val(), 10));
+                    });
+                    fetch('/VaultData/access', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ EntryId: rowData.Id, UserIds: selected })
+                    }).then(function (resp) {
+                        if (resp.ok) {
+                            notifyVaultAccessSaved();
+                            popup.hide();
+                        } else {
+                            alert('Не удалось сохранить список доступа.');
+                        }
+                    });
+                });
+                $list.append($save);
+            }).catch(function () {
+                $list.html('<div>Не удалось загрузить список пользователей.</div>');
+            });
+        }
+
+        function normalizeVaultDxResult(result) {
+            if (Array.isArray(result)) return result;
+            if (result && Array.isArray(result.data)) return result.data;
+            return [];
+        }
+
+        function notifyVaultAccessSaved() {
+            if (window.DevExpress && DevExpress.ui && DevExpress.ui.notify) {
+                DevExpress.ui.notify('Доступ обновлён', 'success', 1500);
+            }
+        }
+    </script>
+}

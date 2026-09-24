@@ -43,6 +43,7 @@ builder.Services.AddSingleton<IProductTemplateRepository, ProductTemplateReposit
 builder.Services.AddSingleton<IProductTemplateComponentRepository, ProductTemplateComponentRepository>();
 builder.Services.AddSingleton<IOrderItemRepository,       OrderItemRepository>();
 builder.Services.AddSingleton<ICalculationService,        CalculationService>();
+builder.Services.AddSingleton<IVaultRepository,           VaultRepository>();
 builder.Services.AddSingleton<ChatTypingStore>();
 builder.Services.AddScoped<IVerificationTokenRepository, VerificationTokenRepository>();
 builder.Services.AddScoped<IRememberDeviceService,       RememberDeviceService>();
@@ -454,6 +455,61 @@ END");
     catch (Exception exception)
     {
         app.Logger.LogWarning(exception, "Не удалось создать таблицу ContractorAccessToken");
+    }
+
+    // ====== Хранилище паролей (без шифрования — сознательное решение заказчика) ======
+
+    try
+    {
+        await using var db = new CrmContext();
+        await db.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[VaultEntry]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[VaultEntry]
+    (
+        [Id]              INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_VaultEntry] PRIMARY KEY,
+        [CompanyId]       INT NOT NULL,
+        [Title]           NVARCHAR(200) NOT NULL,
+        [Login]           NVARCHAR(255) NULL,
+        [Password]        NVARCHAR(500) NULL,
+        [Url]             NVARCHAR(500) NULL,
+        [Notes]           NVARCHAR(2000) NULL,
+        [Tags]            NVARCHAR(500) NULL,
+        [CreatedByUserId] INT NOT NULL,
+        [CreatedDate]     DATETIME2 NOT NULL CONSTRAINT [DF_VaultEntry_CreatedDate] DEFAULT (SYSUTCDATETIME()),
+        [ModifiedDate]    DATETIME2 NOT NULL CONSTRAINT [DF_VaultEntry_ModifiedDate] DEFAULT (SYSUTCDATETIME()),
+        CONSTRAINT [FK_VaultEntry_Company] FOREIGN KEY ([CompanyId]) REFERENCES [dbo].[Company] ([Id]),
+        CONSTRAINT [FK_VaultEntry_CreatedByUser] FOREIGN KEY ([CreatedByUserId]) REFERENCES [dbo].[Users] ([Id])
+    );
+    CREATE INDEX [IX_VaultEntry_CompanyId] ON [dbo].[VaultEntry]([CompanyId]);
+END");
+    }
+    catch (Exception exception)
+    {
+        app.Logger.LogWarning(exception, "Не удалось создать таблицу VaultEntry");
+    }
+
+    try
+    {
+        await using var db = new CrmContext();
+        await db.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[VaultEntryAccess]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[VaultEntryAccess]
+    (
+        [Id]           INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_VaultEntryAccess] PRIMARY KEY,
+        [VaultEntryId] INT NOT NULL,
+        [UserId]       INT NOT NULL,
+        [GrantedDate]  DATETIME2 NOT NULL CONSTRAINT [DF_VaultEntryAccess_GrantedDate] DEFAULT (SYSUTCDATETIME()),
+        CONSTRAINT [FK_VaultEntryAccess_VaultEntry] FOREIGN KEY ([VaultEntryId]) REFERENCES [dbo].[VaultEntry] ([Id]) ON DELETE CASCADE,
+        CONSTRAINT [FK_VaultEntryAccess_User] FOREIGN KEY ([UserId]) REFERENCES [dbo].[Users] ([Id])
+    );
+    CREATE UNIQUE INDEX [UQ_VaultEntryAccess_Entry_User] ON [dbo].[VaultEntryAccess]([VaultEntryId], [UserId]);
+END");
+    }
+    catch (Exception exception)
+    {
+        app.Logger.LogWarning(exception, "Не удалось создать таблицу VaultEntryAccess");
     }
 }
 

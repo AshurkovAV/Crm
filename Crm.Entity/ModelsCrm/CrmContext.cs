@@ -53,6 +53,10 @@ public partial class CrmContext : DbContext
 
     public virtual DbSet<TaskCrm> TaskCrms { get; set; }
 
+    public virtual DbSet<VaultEntry> VaultEntries { get; set; }
+
+    public virtual DbSet<VaultEntryAccess> VaultEntryAccesses { get; set; }
+
     public virtual DbSet<User> Users { get; set; }
 
     public virtual DbSet<UserToken> UserTokens { get; set; }
@@ -544,6 +548,52 @@ public partial class CrmContext : DbContext
             entity.Property(e => e.DeviceId).HasMaxLength(100);
             entity.Property(e => e.Scope).HasMaxLength(500);
             entity.Property(e => e.TokenType).HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<VaultEntry>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.ToTable("VaultEntry", tb => tb.HasComment(
+                "Хранилище паролей. Password хранится БЕЗ ШИФРОВАНИЯ — сознательное решение " +
+                "заказчика, доступ ограничивается только на уровне приложения (автор + VaultEntryAccess)."));
+
+            entity.Property(e => e.Title).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.Login).HasMaxLength(255);
+            entity.Property(e => e.Password).HasMaxLength(500);
+            entity.Property(e => e.Url).HasMaxLength(500);
+            entity.Property(e => e.Notes).HasMaxLength(2000);
+            entity.Property(e => e.Tags).HasMaxLength(500);
+            entity.Property(e => e.CreatedDate).HasDefaultValueSql("(getutcdate())");
+            entity.Property(e => e.ModifiedDate).HasDefaultValueSql("(getutcdate())");
+            entity.HasIndex(e => e.CompanyId);
+
+            entity.HasOne(e => e.Company)
+                .WithMany()
+                .HasForeignKey(e => e.CompanyId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+
+            entity.HasOne(e => e.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(e => e.CreatedByUserId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+        });
+
+        modelBuilder.Entity<VaultEntryAccess>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.ToTable("VaultEntryAccess");
+
+            entity.Property(e => e.GrantedDate).HasDefaultValueSql("(getutcdate())");
+            entity.HasIndex(e => new { e.VaultEntryId, e.UserId }).IsUnique();
+
+            entity.HasOne(e => e.VaultEntry).WithMany(p => p.AccessList)
+                .HasForeignKey(e => e.VaultEntryId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
         });
 
         modelBuilder.Entity<VerificationToken>(entity =>
