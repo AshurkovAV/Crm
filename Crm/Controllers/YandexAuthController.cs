@@ -13,14 +13,17 @@ namespace Crm.Controllers
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConfiguration _configuration;
         private readonly IMediator _mediator;
+        private readonly ILogger<YandexAuthController> _logger;
 
         public YandexAuthController(IMediator mediator,
             IHttpClientFactory httpClientFactory,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        ILogger<YandexAuthController> logger)
         {
             _mediator = mediator;
             _httpClientFactory = httpClientFactory;
-            _configuration = configuration; 
+            _configuration = configuration;
+            _logger = logger;
         }
 
         [HttpGet("signin")] // GET /api/yandexauth/signin
@@ -113,7 +116,7 @@ namespace Crm.Controllers
             }
             catch (Exception ex)
             {
-                
+                _logger.LogError(ex, "Ошибка авторизации через Яндекс (code={Code})", code);
                 return RedirectToAction("Login", "Account", new { error = "internal_error" });
             }
         }
