@@ -36,7 +36,6 @@ namespace Crm.Entity.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[UserRepository.GetUser] email='{email}': {ex.Message}");
                 result.AddError(ex);
             }
 
