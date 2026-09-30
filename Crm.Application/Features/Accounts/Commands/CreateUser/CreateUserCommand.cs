@@ -15,6 +15,8 @@ namespace Crm.Application.Features.Accounts.Commands.CreateUser
         public bool Succeeded { get; set; }
         public string? UserId { get; set; }
         public Crm.Entity.Entities.User UserBase { get; set; }
+        // Сохранённая запись пользователя (новая или существующая) — для входа по внешнему провайдеру.
+        public Crm.Entity.ModelsCrm.User? User { get; set; }
         public UserToken UserToken { get; set; }
         public List<string> Errors { get; set; } = new();
     }

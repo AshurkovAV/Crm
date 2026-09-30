@@ -26,32 +26,47 @@ namespace Crm.Application.Features.Accounts.Commands.ExternalAuth.Yandex
             // 2. Получаем информацию о пользователе
             var userInfo = await _yandexAuthService.GetUserInfoAsync(tokenResponse.AccessToken);
 
-            // 3. Проверяем, существует ли пользователь
-            var existingUser = _userRepository.GetUser(userInfo.DefaultEmail);
-            var newUser = Crm.Entity.Entities.User.Create(
-                userInfo.DefaultEmail);
+            // У части аккаунтов Яндекс отдаёт default_email пустым, хотя список emails
+            // заполнен. Без подстраховки User.Create('') бросал исключение и вход падал.
+            var email = !string.IsNullOrWhiteSpace(userInfo.DefaultEmail)
+                ? userInfo.DefaultEmail
+                : userInfo.Emails?.FirstOrDefault(e => !string.IsNullOrWhiteSpace(e));
 
-            if (existingUser.Data != null)
+            if (string.IsNullOrWhiteSpace(email))
             {
-                newUser.Id = existingUser.Data.Id;              
+                return new CreateUserResult
+                {
+                    Succeeded = false,
+                    Errors = { "Яндекс не передал email — проверьте права доступа (scope) приложения." }
+                };
             }
 
-            //// 4. Создаем нового пользователя
-            
-            newUser.FirstName = userInfo.FirstName;
-            newUser.LastName = userInfo.LastName;
-            newUser.IdYandex = userInfo.Id;   
-            newUser.Login = userInfo.Login;
-            newUser.DisplayName = userInfo.DisplayName;
-            newUser.RealName = userInfo.RealName;
-            newUser.DefaultEmail = userInfo.DefaultEmail;
-            newUser.IsActive = true;
-            newUser.IsValidation = true;
-            var result =  _userRepository.AddOrUpdateAsync(newUser);            
+            // 3. Проверяем, существует ли пользователь.
+            // Существующую запись обновляем на месте: AddOrUpdateAsync делает db.Users.Update(),
+            // который перезаписывает ВСЕ колонки, поэтому новый объект с одним лишь Id
+            // обнулял бы пароль, текущую компанию и остальной профиль.
+            var existingUser = _userRepository.GetUser(email);
+            var user = existingUser.Data ?? Crm.Entity.Entities.User.Create(email);
 
-            return new CreateUserResult 
-            { 
-                UserBase = newUser,
+            // 4. Данные от Яндекса обновляем при каждом входе
+            user.FirstName = userInfo.FirstName;
+            user.LastName = userInfo.LastName;
+            user.IdYandex = userInfo.Id;
+            user.Login = userInfo.Login;
+            user.DisplayName = userInfo.DisplayName;
+            user.RealName = userInfo.RealName;
+            user.IsActive = true;
+            user.IsValidation = true;
+            user.ModifiedDate = DateTime.UtcNow;
+
+            // Обязательно ждём сохранения: иначе вход выполнялся раньше, чем новый
+            // пользователь попадал в БД, а ошибки сохранения терялись молча.
+            await _userRepository.AddOrUpdateAsync(user);
+
+            return new CreateUserResult
+            {
+                UserBase = user as Crm.Entity.Entities.User,
+                User = user,
                 Succeeded = true,
                 UserId = userInfo.Id,
             };

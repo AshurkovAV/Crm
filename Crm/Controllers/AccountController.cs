@@ -358,29 +358,6 @@ namespace Crm.Controllers
             return Json(new { Succeeded = false, message = result.Errors });
 
         }
-
-        
-        [HttpGet("/Account/YandexAuthSuccess")]
-        public async Task<IActionResult> YandexAuthSuccess(string token, string email, string name)
-        {
-            try
-            {
-                var viewModel = new User
-                {
-                    DefaultEmail = email,
-                    FirstName = name
-                };
-                var user = _userRepository.GetUser(email);
-                await _authenticationService.AuthenticateWithCookiesAsync(user.Data);
-
-                // Вместо JSON возвращаем View с JavaScript для закрытия окна
-                return View("YandexAuthSuccess", new { Email = email, Name = name });
-            }
-            catch (Exception ex)
-            {                
-                return RedirectToAction("Login", new { error = "auth_failed" });
-            }
-        } 
     }
 
 

@@ -1,5 +1,6 @@
 ﻿using Crm.Application.Features.Accounts.Commands.ExternalAuth.Yandex;
 using Crm.Application.Features.Accounts.DTOs;
+using Crm.Models;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
@@ -13,14 +14,20 @@ namespace Crm.Controllers
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConfiguration _configuration;
         private readonly IMediator _mediator;
+        private readonly Crm.Application.Interfaces.IAuthenticationService _authenticationService;
+        private readonly ILogger<YandexAuthController> _logger;
 
         public YandexAuthController(IMediator mediator,
             IHttpClientFactory httpClientFactory,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        Crm.Application.Interfaces.IAuthenticationService authenticationService,
+        ILogger<YandexAuthController> logger)
         {
             _mediator = mediator;
             _httpClientFactory = httpClientFactory;
-            _configuration = configuration; 
+            _configuration = configuration;
+            _authenticationService = authenticationService;
+            _logger = logger;
         }
 
         [HttpGet("signin")] // GET /api/yandexauth/signin
@@ -85,37 +92,48 @@ namespace Crm.Controllers
          string? error = null,
          string? error_description = null)
         {
+            // Callback открывается во всплывающем окне. Раньше при любой ошибке здесь делался
+            // редирект на Account/Login — и в попапе появлялся экран ввода пароля. Теперь попап
+            // всегда получает страницу, которая сообщает результат основному окну и закрывается.
+            if (!string.IsNullOrEmpty(error))
+            {
+                _logger.LogWarning("Яндекс вернул ошибку авторизации: {Error} {Description}", error, error_description);
+                return AuthResult(false, error: "Вход через Яндекс отменён или не разрешён.");
+            }
+
             try
             {
-                if (!string.IsNullOrEmpty(error))
-                {
-                    return RedirectToAction("Login", "Account", new { error = "yandex_auth_failed" });
-                }
-                CreateUserYandexCommand model = new CreateUserYandexCommand 
-                {
-                    Code = code
-                };
-                var result = await _mediator.Send(model);
+                var result = await _mediator.Send(new CreateUserYandexCommand { Code = code });
 
-                if (result.Succeeded)
+                if (!result.Succeeded || result.User == null)
                 {
-                    return RedirectToAction("YandexAuthSuccess", "Account", new
-                    {
-                        // token = tokenData.AccessToken,
-                        email = result.UserBase.DefaultEmail,
-                        name = result.UserBase.DisplayName
-                    });
+                    _logger.LogWarning("Не удалось создать/обновить пользователя Яндекса: {Errors}", string.Join("; ", result.Errors));
+                    return AuthResult(false, error: result.Errors.FirstOrDefault() ?? "Не удалось войти через Яндекс.");
                 }
-                else
-                {
-                    throw new Exception("internal_error");
-                }               
+
+                // Куку выставляем прямо здесь, по пользователю, которого только что сохранили.
+                // Раньше вход делался отдельным GET /Account/YandexAuthSuccess?email=..., который
+                // логинил любого пользователя по email из адресной строки.
+                await _authenticationService.AuthenticateWithCookiesAsync(result.User);
+
+                return AuthResult(true, result.User.DefaultEmail, result.User.DisplayName);
             }
             catch (Exception ex)
             {
-                
-                return RedirectToAction("Login", "Account", new { error = "internal_error" });
+                _logger.LogError(ex, "Ошибка авторизации через Яндекс");
+                return AuthResult(false, error: "Ошибка при входе через Яндекс. Попробуйте ещё раз.");
             }
+        }
+
+        private IActionResult AuthResult(bool succeeded, string? email = null, string? name = null, string? error = null)
+        {
+            return View("~/Views/Account/YandexAuthSuccess.cshtml", new YandexAuthSuccessViewModel
+            {
+                Succeeded = succeeded,
+                Email = email ?? string.Empty,
+                Name = name ?? string.Empty,
+                Error = error ?? string.Empty
+            });
         }
 
         private async Task<YandexUserInfoResponse> GetUserInfo(string accessToken)
