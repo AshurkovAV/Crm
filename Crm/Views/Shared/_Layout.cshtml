@@ -323,6 +323,18 @@
                 box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4);
             }
 
+        /* Фото профиля в шапке и выпадающем меню */
+        .avatar, .profile-avatar {
+            overflow: hidden;
+        }
+
+            .avatar .avatar-img, .profile-avatar .avatar-img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                display: block;
+            }
+
         /* Выпадающее меню профиля */
         .profile-dropdown {
             position: absolute;

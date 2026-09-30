@@ -14,16 +14,19 @@ namespace Crm.Controllers
         private readonly IUserRepository _userRepository;
         private readonly ICompanyRepository _companyRepository;
         private readonly UserService _userService;
+        private readonly AvatarStorage _avatarStorage;
 
         // Вариант 1: Внедрение через конструктор (рекомендуемый)
         public ProfileController(
             IUserRepository userRepository,
             ICompanyRepository companyRepository,
-            UserService userService)
+            UserService userService,
+            AvatarStorage avatarStorage)
         {
             _userRepository = userRepository;
             _companyRepository = companyRepository;
             _userService = userService;
+            _avatarStorage = avatarStorage;
         }
 
         // GET: Profile/Index
@@ -167,6 +170,86 @@ namespace Crm.Controllers
                 return Ok(new { message = "Профиль успешно обновлен" });
             else
                 return BadRequest(new { message = "Не удалось обновить профиль" });
-        }  
+        }
+
+        // POST: api/profile/avatar — загрузка фото профиля.
+        // Браузер присылает уже обрезанный квадрат (см. Profile.cshtml), сервер проверяет
+        // размер и сигнатуру файла и сохраняет его под своим именем.
+        [HttpPost("api/profile/avatar")]
+        [RequestSizeLimit(AvatarStorage.MaxFileSize + 64 * 1024)]
+        public async Task<IActionResult> UploadAvatar(IFormFile file)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new { message = "Пользователь не авторизован" });
+
+            if (file == null || file.Length == 0)
+                return BadRequest(new { message = "Файл не выбран" });
+            if (file.Length > AvatarStorage.MaxFileSize)
+                return BadRequest(new { message = "Файл больше 5 МБ" });
+
+            byte[] content;
+            using (var stream = new MemoryStream())
+            {
+                await file.CopyToAsync(stream);
+                content = stream.ToArray();
+            }
+
+            var extension = AvatarStorage.DetectExtension(content);
+            if (extension == null)
+                return BadRequest(new { message = "Поддерживаются только JPG, PNG и WebP" });
+
+            var user = _userRepository.GetUserById(Convert.ToInt32(userId)).Data;
+            if (user == null)
+                return NotFound(new { message = "Пользователь не найден" });
+
+            var oldAvatarId = user.DefaultAvatarId;
+            var avatarId = await _avatarStorage.SaveAsync(content, extension);
+
+            user.DefaultAvatarId = avatarId;
+            user.IsAvatarEmpty = "false";
+            user.ModifiedDate = DateTime.UtcNow;
+            await _userRepository.AddOrUpdateAsync(user);
+
+            _avatarStorage.Delete(oldAvatarId);
+
+            return Ok(new { avatarUrl = AvatarStorage.GetUrl(user) });
+        }
+
+        // DELETE: api/profile/avatar — удалить фото профиля
+        [HttpDelete("api/profile/avatar")]
+        public async Task<IActionResult> DeleteAvatar()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new { message = "Пользователь не авторизован" });
+
+            var user = _userRepository.GetUserById(Convert.ToInt32(userId)).Data;
+            if (user == null)
+                return NotFound(new { message = "Пользователь не найден" });
+
+            var oldAvatarId = user.DefaultAvatarId;
+            user.DefaultAvatarId = null;
+            user.IsAvatarEmpty = "true";
+            user.ModifiedDate = DateTime.UtcNow;
+            await _userRepository.AddOrUpdateAsync(user);
+
+            _avatarStorage.Delete(oldAvatarId);
+
+            return Ok(new { message = "Фото удалено" });
+        }
+
+        // GET: api/avatars/{id} — отдача фото (этот адрес уже используют списки сотрудников компании)
+        [HttpGet("api/avatars/{id}")]
+        public IActionResult GetAvatar(string id)
+        {
+            var path = _avatarStorage.GetPath(id);
+            if (path == null)
+                return NotFound();
+
+            // Имя файла меняется при каждой загрузке, поэтому кэшировать можно надолго
+            Response.Headers.CacheControl = "private, max-age=31536000, immutable";
+            return PhysicalFile(path, AvatarStorage.GetContentType(id));
+        }
     }
 }

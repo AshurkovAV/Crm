@@ -60,6 +60,7 @@ builder.Services.AddScoped<IEmailService,                EmailService>();
 builder.Services.AddScoped<ITaskNotificationChannel,     EmailTaskNotificationChannel>();
 builder.Services.AddScoped<ITaskNotificationDispatcher,  TaskNotificationDispatcher>();
 builder.Services.AddScoped<UserService>();
+builder.Services.AddSingleton<AvatarStorage>();
 
 builder.Services.AddApplication();
 

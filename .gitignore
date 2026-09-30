@@ -361,3 +361,5 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# Загруженные фото профиля (AvatarStorage)
+Crm/App_Data/avatars/

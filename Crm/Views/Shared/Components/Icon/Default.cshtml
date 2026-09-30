@@ -1,7 +1,11 @@
 ﻿@model Crm.Core.ViewModels.ProfileViewModel
 
 <div class="avatar" id="profileToggle">
-    @if (!string.IsNullOrEmpty(Model.FirstName))
+    @if (!string.IsNullOrEmpty(Model.AvatarUrl))
+    {
+        <img src="@Model.AvatarUrl" alt="" class="avatar-img" data-user-avatar />
+    }
+    else if (!string.IsNullOrEmpty(Model.FirstName))
     {
         @Model.FirstName[0]
     }

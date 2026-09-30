@@ -18,6 +18,22 @@ namespace Crm.Models
         public string Sex { get; set; }
         public string Role { get; set; }
 
+        // Расширенные данные профиля
+        public string MiddleName { get; set; }
+        public string BirthPlace { get; set; }
+        public string AlternativeEmail { get; set; }
+        public string WorkPhone { get; set; }
+        public string Telegram { get; set; }
+        public string WhatsApp { get; set; }
+        public string Position { get; set; }
+        public string Department { get; set; }
+        public string Address { get; set; }
+        public string Bio { get; set; }
+        public string Website { get; set; }
+
+        // Ссылка на фото профиля (null — фото нет, показываем инициалы)
+        public string? AvatarUrl { get; set; }
+
         // Компании пользователя
         public List<UserCompanyInfo> Companies { get; set; }
 

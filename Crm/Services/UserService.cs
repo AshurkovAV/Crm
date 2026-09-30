@@ -41,6 +41,18 @@ namespace Crm.Services
                 Birthday = user.Birthday,
                 Sex = user.Sex,
                 Role = user.Role,
+                MiddleName = user.MiddleName,
+                BirthPlace = user.BirthPlace,
+                AlternativeEmail = user.AlternativeEmail,
+                WorkPhone = user.WorkPhone,
+                Telegram = user.Telegram,
+                WhatsApp = user.WhatsApp,
+                Position = user.Position,
+                Department = user.Department,
+                Address = user.Address,
+                Bio = user.Bio,
+                Website = user.Website,
+                AvatarUrl = AvatarStorage.GetUrl(user),
                 Companies = activeCompanies.Select(cu => new UserCompanyInfo
                 {
                     CompanyId = cu.CompanyId,
