@@ -723,10 +723,11 @@
                     if (url) { el.src = url; el.hidden = false; } else { el.removeAttribute('src'); el.hidden = true; }
                 });
                 document.querySelectorAll('.pf-avatar-initials').forEach(function (el) { el.hidden = !!url; });
-                // Аватар в шапке сайта: обновляем, если он уже картинка; иначе новый вид появится после перезагрузки
+                // Аватар в шапке сайта и в выпадающем меню профиля (компоненты Icon и Profile)
                 document.querySelectorAll('.avatar [data-user-avatar], .profile-avatar [data-user-avatar]').forEach(function (el) {
-                    if (url) el.src = url;
+                    if (url) { el.src = url; el.hidden = false; } else { el.removeAttribute('src'); el.hidden = true; }
                 });
+                document.querySelectorAll('[data-user-initial]').forEach(function (el) { el.hidden = !!url; });
                 removeBtn.hidden = !url;
             }
 

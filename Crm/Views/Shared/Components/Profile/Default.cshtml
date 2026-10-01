@@ -1,20 +1,15 @@
 ﻿
 @model Crm.Core.ViewModels.ProfileViewModel
 
+@{
+    var initial = !string.IsNullOrEmpty(Model.FirstName) ? Model.FirstName[0].ToString() : "А";
+    var hasAvatar = !string.IsNullOrEmpty(Model.AvatarUrl);
+}
+
 <div class="profile-header">
     <div class="profile-avatar">
-        @if (!string.IsNullOrEmpty(Model.AvatarUrl))
-        {
-            <img src="@Model.AvatarUrl" alt="" class="avatar-img" data-user-avatar />
-        }
-        else if (!string.IsNullOrEmpty(Model.FirstName))
-        {
-            @Model.FirstName[0]
-        }
-        else
-        {
-            @:А
-        }
+        <img src="@Model.AvatarUrl" alt="" class="avatar-img" data-user-avatar hidden="@(!hasAvatar)" />
+        <span class="avatar-initial" data-user-initial hidden="@hasAvatar">@initial</span>
     </div>
     <div class="profile-info">
         <h3>@(Model.FirstName ?? "Алексей") @(Model.LastName ?? "Ашурков")</h3>

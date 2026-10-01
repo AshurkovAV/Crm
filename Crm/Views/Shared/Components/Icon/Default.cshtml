@@ -1,16 +1,13 @@
 ﻿@model Crm.Core.ViewModels.ProfileViewModel
 
+@{
+    var initial = !string.IsNullOrEmpty(Model.FirstName) ? Model.FirstName[0].ToString() : "А";
+    var hasAvatar = !string.IsNullOrEmpty(Model.AvatarUrl);
+}
+
 <div class="avatar" id="profileToggle">
-    @if (!string.IsNullOrEmpty(Model.AvatarUrl))
-    {
-        <img src="@Model.AvatarUrl" alt="" class="avatar-img" data-user-avatar />
-    }
-    else if (!string.IsNullOrEmpty(Model.FirstName))
-    {
-        @Model.FirstName[0]
-    }
-    else
-    {
-        @:А
-    }
+    @* Картинка и буква есть всегда: после загрузки/удаления фото страница профиля
+       переключает их без перезагрузки (см. data-user-avatar / data-user-initial) *@
+    <img src="@Model.AvatarUrl" alt="" class="avatar-img" data-user-avatar hidden="@(!hasAvatar)" />
+    <span class="avatar-initial" data-user-initial hidden="@hasAvatar">@initial</span>
 </div>

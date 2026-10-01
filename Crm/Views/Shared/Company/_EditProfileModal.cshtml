@@ -1,510 +1,383 @@
-﻿<!-- Модальное окно для редактирования профиля -->
-<div id="editProfileModal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <div class="modal-header">
-            <div class="modal-header-left">
-                <i class="fas fa-user-edit"></i>
-                <h3>Редактирование профиля</h3>
-            </div>
-            <span class="close">&times;</span>
-        </div>
-        
-        <form id="editProfileForm">
-            <!-- Основная информация -->
-            <div class="form-section">
-                <div class="section-title">
-                    <i class="fas fa-user-circle"></i>
-                    <span>Основная информация</span>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Отображаемое имя <span class="required">*</span></label>
-                        <input type="text" id="editDisplayName" placeholder="Как вас видеть другим" required />
+﻿<!-- Модальное окно редактирования профиля.
+     Классы с префиксом pe- — свои, чтобы не пересекаться с общими .modal/.btn других модалок.
+     Снаружи используется window.openEditModal(userData) и id полей edit*. -->
+<div id="editProfileModal" class="pe-modal" style="display: none;" aria-hidden="true">
+    <div class="pe-dialog" role="dialog" aria-modal="true" aria-labelledby="peTitle">
+        <form id="editProfileForm" novalidate autocomplete="on">
+            <header class="pe-head">
+                <div class="pe-head-user">
+                    <div class="pe-head-avatar" id="peAvatar">
+                        <img id="peAvatarImg" alt="" hidden />
+                        <span id="peAvatarInitials"></span>
                     </div>
-                    <div class="form-group">
-                        <label>Реальное имя</label>
-                        <input type="text" id="editRealName" placeholder="Ваше настоящее имя" />
+                    <div class="pe-head-text">
+                        <h2 id="peTitle">Редактирование профиля</h2>
+                        <span id="peSubtitle">Изменения увидят коллеги в вашей компании</span>
                     </div>
                 </div>
+                <button type="button" class="pe-icon-btn close" aria-label="Закрыть"><i class="fas fa-times"></i></button>
+            </header>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Имя</label>
-                        <input type="text" id="editFirstName" placeholder="Имя" />
-                    </div>
-                    <div class="form-group">
-                        <label>Фамилия</label>
-                        <input type="text" id="editLastName" placeholder="Фамилия" />
-                    </div>
-                    <div class="form-group">
-                        <label>Отчество</label>
-                        <input type="text" id="editMiddleName" placeholder="Отчество" />
-                    </div>
-                </div>
+            <nav class="pe-tabs" role="tablist">
+                <button type="button" class="pe-tab active" role="tab" data-pe-tab="main" aria-selected="true">
+                    <i class="fas fa-user"></i><span>Основное</span>
+                </button>
+                <button type="button" class="pe-tab" role="tab" data-pe-tab="contacts" aria-selected="false">
+                    <i class="fas fa-address-book"></i><span>Контакты</span>
+                </button>
+                <button type="button" class="pe-tab" role="tab" data-pe-tab="work" aria-selected="false">
+                    <i class="fas fa-briefcase"></i><span>Работа</span>
+                </button>
+                <button type="button" class="pe-tab" role="tab" data-pe-tab="about" aria-selected="false">
+                    <i class="fas fa-feather-alt"></i><span>О себе</span>
+                </button>
+            </nav>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Пол</label>
-                        <div class="radio-group">
-                            <label class="radio-label">
+            <div class="pe-body">
+                <!-- Основное -->
+                <section class="pe-panel" data-pe-panel="main">
+                    <div class="pe-grid">
+                        <div class="pe-field pe-span-2">
+                            <label for="editDisplayName">Отображаемое имя <span class="pe-req">*</span></label>
+                            <input type="text" id="editDisplayName" placeholder="Как вас будут видеть коллеги" required maxlength="100" autocomplete="off" />
+                            <small class="pe-hint">Показывается в шапке, задачах и чатах</small>
+                        </div>
+                        <div class="pe-field">
+                            <label for="editLastName">Фамилия</label>
+                            <input type="text" id="editLastName" placeholder="Иванов" autocomplete="family-name" />
+                        </div>
+                        <div class="pe-field">
+                            <label for="editFirstName">Имя</label>
+                            <input type="text" id="editFirstName" placeholder="Иван" autocomplete="given-name" />
+                        </div>
+                        <div class="pe-field">
+                            <label for="editMiddleName">Отчество</label>
+                            <input type="text" id="editMiddleName" placeholder="Иванович" autocomplete="additional-name" />
+                        </div>
+                        <div class="pe-field">
+                            <label for="editRealName">Полное имя</label>
+                            <input type="text" id="editRealName" placeholder="Как в документах" autocomplete="off" />
+                        </div>
+                        <div class="pe-field">
+                            <span class="pe-label" id="peSexLabel">Пол</span>
+                            <div class="pe-segment" role="radiogroup" aria-labelledby="peSexLabel">
                                 <input type="radio" name="sex" value="male" id="sexMale">
-                                <span>👨 Мужской</span>
-                            </label>
-                            <label class="radio-label">
+                                <label for="sexMale">Мужской</label>
                                 <input type="radio" name="sex" value="female" id="sexFemale">
-                                <span>👩 Женский</span>
-                            </label>
+                                <label for="sexFemale">Женский</label>
+                            </div>
+                        </div>
+                        <div class="pe-field">
+                            <label for="editBirthday">Дата рождения</label>
+                            <input type="date" id="editBirthday" autocomplete="bday" />
+                        </div>
+                        <div class="pe-field pe-span-2">
+                            <label for="editBirthPlace">Место рождения</label>
+                            <input type="text" id="editBirthPlace" placeholder="Город, страна" autocomplete="off" />
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label>Дата рождения</label>
-                        <input type="date" id="editBirthday" />
-                    </div>
-                    <div class="form-group">
-                        <label>Место рождения</label>
-                        <input type="text" id="editBirthPlace" placeholder="Город, страна" />
-                    </div>
-                </div>
-            </div>
+                </section>
 
-            <!-- Контактная информация -->
-            <div class="form-section">
-                <div class="section-title">
-                    <i class="fas fa-address-card"></i>
-                    <span>Контактная информация</span>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Основной email</label>
-                        <input type="email" id="editDefaultEmail" placeholder="example@mail.com" />
-                    </div>
-                    <div class="form-group">
-                        <label>Альтернативный email</label>
-                        <input type="email" id="editAlternativeEmail" placeholder="backup@mail.com" />
-                    </div>
-                </div>
+                <!-- Контакты -->
+                <section class="pe-panel" data-pe-panel="contacts" hidden>
+                    <div class="pe-grid">
+                        <div class="pe-field">
+                            <label for="editDefaultEmail">Основной email</label>
+                            <div class="pe-input-icon">
+                                <i class="fas fa-envelope"></i>
+                                <input type="email" id="editDefaultEmail" placeholder="name@company.ru" autocomplete="email" />
+                            </div>
+                        </div>
+                        <div class="pe-field">
+                            <label for="editAlternativeEmail">Дополнительный email</label>
+                            <div class="pe-input-icon">
+                                <i class="fas fa-at"></i>
+                                <input type="email" id="editAlternativeEmail" placeholder="backup@mail.ru" autocomplete="off" />
+                            </div>
+                        </div>
+                        <div class="pe-field">
+                            <label for="editDefaultPhone">Мобильный телефон</label>
+                            <div class="pe-input-icon">
+                                <i class="fas fa-mobile-alt"></i>
+                                <input type="tel" id="editDefaultPhone" placeholder="+7 900 000-00-00" autocomplete="tel" />
+                            </div>
+                        </div>
+                        <div class="pe-field">
+                            <label for="editWorkPhone">Рабочий телефон</label>
+                            <div class="pe-input-icon">
+                                <i class="fas fa-phone"></i>
+                                <input type="tel" id="editWorkPhone" placeholder="+7 495 000-00-00, доб. 100" autocomplete="off" />
+                            </div>
+                        </div>
+                        <div class="pe-field">
+                            <label for="editAlternativePhone">Дополнительный телефон</label>
+                            <div class="pe-input-icon">
+                                <i class="fas fa-phone-alt"></i>
+                                <input type="tel" id="editAlternativePhone" placeholder="+7 900 000-00-00" autocomplete="off" />
+                            </div>
+                        </div>
+                        <div class="pe-field pe-field-empty" aria-hidden="true"></div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Основной телефон</label>
-                        <input type="tel" id="editDefaultPhone" placeholder="+7 (XXX) XXX-XX-XX" />
-                    </div>
-                    <div class="form-group">
-                        <label>Альтернативный телефон</label>
-                        <input type="tel" id="editAlternativePhone" placeholder="+7 (XXX) XXX-XX-XX" />
-                    </div>
-                    <div class="form-group">
-                        <label>Рабочий телефон</label>
-                        <input type="tel" id="editWorkPhone" placeholder="+7 (XXX) XXX-XX-XX" />
-                    </div>
-                </div>
+                        <div class="pe-divider pe-span-2"><span>Мессенджеры</span></div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Telegram</label>
-                        <div class="input-icon">
-                            <i class="fab fa-telegram"></i>
-                            <input type="text" id="editTelegram" placeholder="@@username" />
+                        <div class="pe-field">
+                            <label for="editTelegram">Telegram</label>
+                            <div class="pe-input-icon">
+                                <i class="fab fa-telegram-plane"></i>
+                                <input type="text" id="editTelegram" placeholder="@@username" autocomplete="off" />
+                            </div>
+                        </div>
+                        <div class="pe-field">
+                            <label for="editWhatsApp">WhatsApp</label>
+                            <div class="pe-input-icon">
+                                <i class="fab fa-whatsapp"></i>
+                                <input type="tel" id="editWhatsApp" placeholder="+7 900 000-00-00" autocomplete="off" />
+                            </div>
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label>WhatsApp</label>
-                        <div class="input-icon">
-                            <i class="fab fa-whatsapp"></i>
-                            <input type="text" id="editWhatsApp" placeholder="+7 (XXX) XXX-XX-XX" />
+                </section>
+
+                <!-- Работа -->
+                <section class="pe-panel" data-pe-panel="work" hidden>
+                    <div class="pe-grid">
+                        <div class="pe-field">
+                            <label for="editPosition">Должность</label>
+                            <input type="text" id="editPosition" placeholder="Например, менеджер по продажам" autocomplete="organization-title" />
+                        </div>
+                        <div class="pe-field">
+                            <label for="editDepartment">Отдел</label>
+                            <input type="text" id="editDepartment" placeholder="Например, коммерческий отдел" autocomplete="off" />
+                        </div>
+                        <div class="pe-field">
+                            <label for="editWebsite">Сайт / портфолио</label>
+                            <div class="pe-input-icon">
+                                <i class="fas fa-globe"></i>
+                                <input type="url" id="editWebsite" placeholder="https://example.ru" autocomplete="url" />
+                            </div>
+                        </div>
+                        <div class="pe-field">
+                            <label for="editLinkedIn">LinkedIn</label>
+                            <div class="pe-input-icon">
+                                <i class="fab fa-linkedin-in"></i>
+                                <input type="url" id="editLinkedIn" placeholder="https://linkedin.com/in/username" autocomplete="off" />
+                            </div>
+                        </div>
+                        <div class="pe-field pe-span-2">
+                            <label for="editAddress">Адрес</label>
+                            <div class="pe-input-icon">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <input type="text" id="editAddress" placeholder="Город, улица, дом" autocomplete="street-address" />
+                            </div>
                         </div>
                     </div>
-                </div>
+                </section>
+
+                <!-- О себе -->
+                <section class="pe-panel" data-pe-panel="about" hidden>
+                    <div class="pe-field">
+                        <label for="editBio">О себе</label>
+                        <textarea id="editBio" rows="7" maxlength="1000" placeholder="Чем занимаетесь, в чём можете помочь коллегам, интересы..."></textarea>
+                        <small class="pe-hint pe-counter"><span id="peBioCount">0</span> / 1000</small>
+                    </div>
+                </section>
             </div>
 
-            <!-- Работа -->
-            <div class="form-section">
-                <div class="section-title">
-                    <i class="fas fa-briefcase"></i>
-                    <span>Работа</span>
+            <footer class="pe-foot">
+                <div id="editProfileError" class="pe-message" style="display: none;" role="status"></div>
+                <div class="pe-foot-actions">
+                    <button type="button" class="pe-btn pe-btn-ghost" id="cancelEditModalBtn">Отмена</button>
+                    <button type="submit" class="pe-btn pe-btn-primary" id="submitEditProfileBtn">
+                        <i class="fas fa-check"></i> Сохранить
+                    </button>
                 </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Должность</label>
-                        <input type="text" id="editPosition" placeholder="Ваша должность" />
-                    </div>
-                    <div class="form-group">
-                        <label>Отдел</label>
-                        <input type="text" id="editDepartment" placeholder="Отдел" />
-                    </div>
-                </div>
-            </div>
-
-            <!-- Личное -->
-            <div class="form-section">
-                <div class="section-title">
-                    <i class="fas fa-heart"></i>
-                    <span>Личное</span>
-                </div>
-                <div class="form-row">
-                    <div class="form-group full-width">
-                        <label>Адрес</label>
-                        <input type="text" id="editAddress" placeholder="Город, улица, дом" />
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group full-width">
-                        <label>О себе</label>
-                        <textarea id="editBio" rows="4" placeholder="Расскажите о себе, своих интересах, навыках..."></textarea>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Сайт / Портфолио</label>
-                        <div class="input-icon">
-                            <i class="fas fa-globe"></i>
-                            <input type="url" id="editWebsite" placeholder="https://example.com" />
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>LinkedIn</label>
-                        <div class="input-icon">
-                            <i class="fab fa-linkedin"></i>
-                            <input type="url" id="editLinkedIn" placeholder="https://linkedin.com/in/username" />
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="modal-buttons">
-                <button type="button" class="btn btn-secondary" id="cancelEditModalBtn">
-                    <i class="fas fa-times"></i> Отмена
-                </button>
-                <button type="submit" class="btn btn-primary" id="submitEditProfileBtn">
-                    <i class="fas fa-save"></i> Сохранить изменения
-                </button>
-            </div>
-            <div id="editProfileError" class="error-message" style="display: none;"></div>
+            </footer>
         </form>
     </div>
 </div>
 
 <style>
-    /* Красивые стили для модального окна */
-    .modal {
+    .pe-modal {
+        --pe-accent: #4f46e5;
+        --pe-accent-hover: #4338ca;
+        --pe-accent-soft: #eef0ff;
+        --pe-ink: #0f172a;
+        --pe-muted: #5b6475;
+        --pe-line: #e4e7ee;
+        --pe-field: #f7f8fa;
         position: fixed;
-        z-index: 1000;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.6);
-        backdrop-filter: blur(4px);
-        display: none;
+        inset: 0;
+        z-index: 2000;
+        background: rgba(15, 23, 42, .5);
+        backdrop-filter: blur(3px);
         align-items: center;
         justify-content: center;
+        padding: 16px;
+        color: var(--pe-ink);
     }
 
-    .modal-content {
-        background: white;
-        border-radius: 24px;
-        width: 700px;
-        max-width: 90%;
-        max-height: 85vh;
-        position: relative;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        animation: modalFadeIn 0.3s ease;
+    .pe-dialog {
+        width: 100%;
+        max-width: 760px;
+        max-height: calc(100vh - 32px);
+        background: #fff;
+        border-radius: 20px;
+        box-shadow: 0 24px 60px rgba(15, 23, 42, .25);
         overflow: hidden;
         display: flex;
-        flex-direction: column;
+        animation: pe-in .18s ease-out;
     }
 
-    @@keyframes modalFadeIn {
-        from {
-            opacity: 0;
-            transform: scale(0.95);
-        }
-        to {
-            opacity: 1;
-            transform: scale(1);
-        }
+        .pe-dialog form { display: flex; flex-direction: column; width: 100%; min-height: 0; margin: 0; }
+
+    @@keyframes pe-in {
+        from { opacity: 0; transform: translateY(8px) scale(.98); }
+        to { opacity: 1; transform: none; }
     }
 
-    /* Заголовок */
-    .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 20px 24px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-    }
-
-    .modal-header-left {
+    /* Шапка */
+    .pe-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 24px; }
+    .pe-head-user { display: flex; align-items: center; gap: 14px; min-width: 0; }
+    .pe-head-avatar {
+        width: 48px;
+        height: 48px;
+        flex-shrink: 0;
+        border-radius: 50%;
+        background: var(--pe-accent);
+        color: #fff;
         display: flex;
         align-items: center;
-        gap: 12px;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 17px;
+        overflow: hidden;
     }
+        .pe-head-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .pe-head-avatar [hidden] { display: none; }
+    .pe-head-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+        .pe-head-text h2 { margin: 0; font-size: 18px; font-weight: 800; color: var(--pe-ink); }
+        .pe-head-text span { font-size: 13px; color: var(--pe-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-    .modal-header-left i {
-        font-size: 24px;
-    }
+    .pe-icon-btn { width: 40px; height: 40px; flex-shrink: 0; border-radius: 10px; border: 0; background: #f1f2f6; color: var(--pe-ink); cursor: pointer; font-size: 15px; }
+        .pe-icon-btn:hover { background: #e7e9f0; }
 
-    .modal-header-left h3 {
-        margin: 0;
-        font-size: 18px;
-        font-weight: 600;
-    }
-
-    .close {
-        font-size: 28px;
-        cursor: pointer;
-        color: white;
-        transition: transform 0.2s;
-        line-height: 1;
-    }
-
-    .close:hover {
-        transform: rotate(90deg);
-    }
-
-    /* Форма с прокруткой */
-    #editProfileForm {
-        overflow-y: auto;
-        padding: 0 24px;
-        max-height: calc(85vh - 140px);
-    }
-
-    /* Секции */
-    .form-section {
-        margin: 24px 0;
-        padding-bottom: 24px;
-        border-bottom: 1px solid #f0f0f0;
-    }
-
-    .form-section:last-child {
-        border-bottom: none;
-        margin-bottom: 16px;
-    }
-
-    .section-title {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 20px;
-        font-size: 16px;
-        font-weight: 600;
-        color: #1e293b;
-    }
-
-    .section-title i {
-        font-size: 18px;
-        color: #667eea;
-    }
-
-    .section-title span {
-        font-size: 15px;
-    }
-
-    /* Строки формы */
-    .form-row {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 16px;
-        margin-bottom: 16px;
-    }
-
-    .form-group {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .form-group.full-width {
-        grid-column: 1 / -1;
-    }
-
-    .form-group label {
-        font-size: 12px;
-        font-weight: 600;
-        color: #64748b;
-        margin-bottom: 6px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .form-group .required {
-        color: #e53e3e;
-    }
-
-    /* Поля ввода */
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
-        padding: 12px;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        font-size: 14px;
-        transition: all 0.2s;
-        font-family: inherit;
-        background: #f8fafc;
-    }
-
-    .form-group input:focus,
-    .form-group select:focus,
-    .form-group textarea:focus {
-        outline: none;
-        border-color: #667eea;
-        background: white;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    }
-
-    /* Поля с иконками */
-    .input-icon {
-        position: relative;
-        display: flex;
-        align-items: center;
-    }
-
-    .input-icon i {
-        position: absolute;
-        left: 12px;
-        color: #94a3b8;
-        font-size: 16px;
-    }
-
-    .input-icon input {
-        padding-left: 36px;
-        width: 100%;
-    }
-
-    /* Радио кнопки */
-    .radio-group {
-        display: flex;
-        gap: 20px;
-        padding: 8px 0;
-    }
-
-    .radio-label {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        cursor: pointer;
-        font-size: 14px;
-        color: #475569;
-    }
-
-    .radio-label input[type="radio"] {
-        width: 18px;
-        height: 18px;
-        cursor: pointer;
-        accent-color: #667eea;
-    }
-
-    /* Кнопки */
-    .modal-buttons {
-        display: flex;
-        gap: 12px;
-        justify-content: flex-end;
-        padding: 16px 0 24px 0;
-        border-top: 1px solid #f0f0f0;
-        margin-top: 8px;
-    }
-
-    .btn {
-        padding: 10px 20px;
-        border: none;
-        border-radius: 12px;
-        font-size: 14px;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.2s;
+    /* Вкладки */
+    .pe-tabs { display: flex; gap: 4px; padding: 0 24px; border-bottom: 1px solid var(--pe-line); overflow-x: auto; scrollbar-width: none; }
+        .pe-tabs::-webkit-scrollbar { display: none; }
+    .pe-tab {
         display: inline-flex;
         align-items: center;
         gap: 8px;
+        height: 48px;
+        padding: 0 12px;
+        border: 0;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -1px;
+        background: transparent;
+        color: var(--pe-muted);
+        font-size: 14px;
+        font-weight: 700;
+        white-space: nowrap;
+        cursor: pointer;
     }
+        .pe-tab i { font-size: 13px; }
+        .pe-tab:hover { color: var(--pe-ink); }
+        .pe-tab.active { color: var(--pe-ink); border-bottom-color: var(--pe-accent); }
+        .pe-tab.has-error { color: #b91c1c; }
+            .pe-tab.has-error::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #dc2626; }
 
-    .btn-primary {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-    }
+    /* Поля */
+    .pe-body { padding: 24px; overflow-y: auto; flex: 1; min-height: 0; }
+    .pe-panel[hidden] { display: none; }
+    .pe-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 20px; }
+    .pe-span-2 { grid-column: 1 / -1; }
 
-    .btn-primary:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-    }
+    .pe-field { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+        .pe-field label, .pe-label { margin: 0; font-size: 13px; font-weight: 600; color: #334155; text-transform: none; letter-spacing: 0; }
+    .pe-req { color: #dc2626; }
+    .pe-hint { font-size: 12px; color: var(--pe-muted); }
+    .pe-counter { align-self: flex-end; }
 
-    .btn-primary:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-        transform: none;
-    }
-
-    .btn-secondary {
-        background: #f1f5f9;
-        color: #475569;
-    }
-
-    .btn-secondary:hover {
-        background: #e2e8f0;
-    }
-
-    /* Сообщения об ошибках */
-    .error-message {
-        margin-top: 16px;
-        font-size: 13px;
-        text-align: center;
-        padding: 12px;
+    .pe-field input[type=text], .pe-field input[type=email], .pe-field input[type=tel],
+    .pe-field input[type=url], .pe-field input[type=date], .pe-field textarea {
+        width: 100%;
+        box-sizing: border-box;
+        height: 44px;
+        padding: 0 14px;
+        border: 1px solid var(--pe-line);
         border-radius: 12px;
+        background: var(--pe-field);
+        color: var(--pe-ink);
+        font: inherit;
+        font-size: 14px;
+        transition: border-color .15s, box-shadow .15s, background .15s;
     }
 
-    .error-message.error {
-        color: #e53e3e;
-        background-color: #fff5f5;
-        border: 1px solid #feb2b2;
+    .pe-field textarea { height: auto; min-height: 160px; padding: 12px 14px; line-height: 1.55; resize: vertical; }
+
+    .pe-field input::placeholder, .pe-field textarea::placeholder { color: #9aa3b2; }
+
+    .pe-field input:hover, .pe-field textarea:hover { border-color: #cdd2de; }
+
+    .pe-field input:focus, .pe-field textarea:focus {
+        outline: none;
+        background: #fff;
+        border-color: var(--pe-accent);
+        box-shadow: 0 0 0 4px rgba(79, 70, 229, .14);
     }
 
-    .error-message.success {
-        color: #38a169;
-        background-color: #f0fff4;
-        border: 1px solid #9ae6b4;
-    }
+    .pe-field input.pe-invalid { border-color: #dc2626; background: #fff; box-shadow: 0 0 0 4px rgba(220, 38, 38, .1); }
 
-    /* Адаптивность */
-    @@media (max-width: 768px) {
-        .form-row {
-            grid-template-columns: 1fr;
-            gap: 12px;
-        }
+    .pe-input-icon { position: relative; }
+        .pe-input-icon i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #8a93a6; font-size: 14px; pointer-events: none; width: 16px; text-align: center; }
+        .pe-input-icon input { padding-left: 40px !important; }
+        .pe-input-icon:focus-within i { color: var(--pe-accent); }
 
-        .modal-content {
-            width: 95%;
-            max-height: 90vh;
-        }
+    /* Переключатель пола */
+    .pe-segment { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 4px; height: 44px; box-sizing: border-box; border-radius: 12px; background: #eef0f4; }
+        .pe-segment input { position: absolute; opacity: 0; pointer-events: none; }
+        .pe-segment label { display: flex; align-items: center; justify-content: center; border-radius: 9px; font-size: 14px; font-weight: 600; color: var(--pe-muted); cursor: pointer; transition: background .15s, color .15s; }
+        .pe-segment input:checked + label { background: #fff; color: var(--pe-ink); box-shadow: 0 1px 3px rgba(15, 23, 42, .12); }
+        .pe-segment input:focus-visible + label { outline: 2px solid var(--pe-accent); outline-offset: 1px; }
 
-        .modal-header {
-            padding: 16px 20px;
-        }
+    .pe-divider { display: flex; align-items: center; gap: 12px; margin-top: 6px; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--pe-muted); }
+        .pe-divider::after { content: ""; flex: 1; height: 1px; background: var(--pe-line); }
 
-        #editProfileForm {
-            padding: 0 20px;
-        }
+    /* Подвал */
+    .pe-foot { display: flex; align-items: center; gap: 12px; padding: 16px 24px; border-top: 1px solid var(--pe-line); background: #fff; }
+    .pe-foot-actions { display: flex; gap: 12px; margin-left: auto; }
+    .pe-message { flex: 1; min-width: 0; padding: 10px 14px; border-radius: 10px; font-size: 13px; font-weight: 600; }
+        .pe-message.error { background: #fef2f2; color: #b91c1c; }
+        .pe-message.success { background: #ecfdf5; color: #047857; }
 
-        .modal-buttons {
-            flex-direction: column;
-        }
+    .pe-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 44px; padding: 0 20px; border-radius: 12px; border: 1px solid transparent; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: background .15s; }
+    .pe-btn-primary { background: var(--pe-accent); color: #fff; }
+        .pe-btn-primary:hover { background: var(--pe-accent-hover); }
+        .pe-btn-primary:disabled { background: #a5abc0; cursor: default; }
+    .pe-btn-ghost { background: #fff; border-color: #dadfe8; color: var(--pe-ink); }
+        .pe-btn-ghost:hover { background: #f1f2f6; }
 
-        .modal-buttons .btn {
-            width: 100%;
-            justify-content: center;
-        }
+    @@media (max-width: 640px) {
+        .pe-modal { padding: 0; align-items: flex-end; }
+        .pe-dialog { max-height: 94vh; border-radius: 20px 20px 0 0; }
+        .pe-head, .pe-body { padding-left: 16px; padding-right: 16px; }
+        .pe-tabs { padding: 0 8px; }
+        .pe-tab span { font-size: 13px; }
+        .pe-grid { grid-template-columns: minmax(0, 1fr); }
+        .pe-field-empty { display: none; }
+        .pe-foot { flex-direction: column; align-items: stretch; padding: 12px 16px 16px; }
+        .pe-foot-actions { margin-left: 0; }
+            .pe-foot-actions .pe-btn { flex: 1; }
     }
 </style>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Получаем элементы
         const editModal = document.getElementById('editProfileModal');
         const editErrorDiv = document.getElementById('editProfileError');
         const submitEditBtn = document.getElementById('submitEditProfileBtn');
         const cancelEditBtn = document.getElementById('cancelEditModalBtn');
-        
+        const form = document.getElementById('editProfileForm');
+
         // Поля формы
         const fields = {
             displayName: document.getElementById('editDisplayName'),
@@ -528,25 +401,65 @@
             website: document.getElementById('editWebsite'),
             linkedIn: document.getElementById('editLinkedIn')
         };
-        
+
         if (!editModal || !fields.displayName || !editErrorDiv || !submitEditBtn) {
             console.error('Элементы модального окна не найдены');
             return;
         }
-        
+
+        const tabs = editModal.querySelectorAll('.pe-tab');
+        const panels = editModal.querySelectorAll('.pe-panel');
+        const bioCount = document.getElementById('peBioCount');
+
+        // ===== Вкладки =====
+        function showTab(name) {
+            tabs.forEach(t => {
+                const active = t.dataset.peTab === name;
+                t.classList.toggle('active', active);
+                t.setAttribute('aria-selected', active ? 'true' : 'false');
+            });
+            panels.forEach(p => { p.hidden = p.dataset.pePanel !== name; });
+        }
+        tabs.forEach(t => t.addEventListener('click', () => showTab(t.dataset.peTab)));
+
+        // ===== Шапка окна: аватар и имя берём с текущей страницы =====
+        function fillHeader(userData) {
+            const name = (userData.displayName || [userData.firstName, userData.lastName].filter(Boolean).join(' ') || userData.defaultEmail || '').trim();
+            document.getElementById('peTitle').textContent = name || 'Редактирование профиля';
+
+            const initials = ((userData.firstName || '')[0] || '') + ((userData.lastName || '')[0] || '');
+            document.getElementById('peAvatarInitials').textContent = (initials || (name[0] || 'U')).toUpperCase();
+
+            const pageAvatar = document.querySelector('[data-user-avatar]:not([hidden])');
+            const img = document.getElementById('peAvatarImg');
+            if (pageAvatar && pageAvatar.getAttribute('src')) {
+                img.src = pageAvatar.getAttribute('src');
+                img.hidden = false;
+                document.getElementById('peAvatarInitials').hidden = true;
+            } else {
+                img.hidden = true;
+                img.removeAttribute('src');
+                document.getElementById('peAvatarInitials').hidden = false;
+            }
+        }
+
+        function updateBioCount() {
+            bioCount.textContent = fields.bio.value.length;
+        }
+        fields.bio.addEventListener('input', updateBioCount);
+
         function openEditModal(userData) {
-            // Заполняем все поля
+            userData = userData || {};
             fields.displayName.value = userData.displayName || '';
             fields.realName.value = userData.realName || '';
             fields.firstName.value = userData.firstName || '';
             fields.lastName.value = userData.lastName || '';
             fields.middleName.value = userData.middleName || '';
-            
-            // Радио кнопки
+
             const sex = userData.sex || '';
             document.getElementById('sexMale').checked = (sex === 'male');
             document.getElementById('sexFemale').checked = (sex === 'female');
-            
+
             fields.birthday.value = userData.birthday || '';
             fields.birthPlace.value = userData.birthPlace || '';
             fields.defaultEmail.value = userData.defaultEmail || '';
@@ -562,68 +475,113 @@
             fields.bio.value = userData.bio || '';
             fields.website.value = userData.website || '';
             fields.linkedIn.value = userData.linkedIn || '';
-            
-            editModal.style.display = 'flex';
+
+            updateBioCount();
+            fillHeader(userData);
+            clearInvalid();
             clearEditMessage();
-            fields.displayName.focus();
+            showTab('main');
+
+            editModal.style.display = 'flex';
+            editModal.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+            document.addEventListener('keydown', onKeyDown);
+            setTimeout(() => fields.displayName.focus(), 50);
         }
-        
+
         function closeEditModal() {
             editModal.style.display = 'none';
+            editModal.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+            document.removeEventListener('keydown', onKeyDown);
             clearEditMessage();
         }
-        
+
+        function onKeyDown(e) {
+            if (e.key === 'Escape') closeEditModal();
+        }
+
         function getSexValue() {
             if (document.getElementById('sexMale').checked) return 'male';
             if (document.getElementById('sexFemale').checked) return 'female';
             return '';
         }
-        
+
         function showEditMessage(message, isError = true) {
             editErrorDiv.textContent = message;
             editErrorDiv.style.display = 'block';
-            editErrorDiv.className = 'error-message ' + (isError ? 'error' : 'success');
+            editErrorDiv.className = 'pe-message ' + (isError ? 'error' : 'success');
         }
-        
+
         function clearEditMessage() {
             editErrorDiv.style.display = 'none';
             editErrorDiv.textContent = '';
         }
-        
-        // Закрытие модального окна
-        const closeModalBtn = editModal.querySelector('.close');
-        if (closeModalBtn) closeModalBtn.addEventListener('click', closeEditModal);
-        if (cancelEditBtn) cancelEditBtn.addEventListener('click', closeEditModal);
-        
-        window.addEventListener('click', (e) => {
+
+        // ===== Проверка полей: ошибку подсвечиваем и открываем вкладку, где она =====
+        function clearInvalid() {
+            editModal.querySelectorAll('.pe-invalid').forEach(el => el.classList.remove('pe-invalid'));
+            tabs.forEach(t => t.classList.remove('has-error'));
+        }
+
+        function validate() {
+            clearInvalid();
+            if (!fields.displayName.value.trim()) fields.displayName.value = '';
+            const invalid = Array.from(form.querySelectorAll('input')).filter(el => !el.checkValidity());
+            if (!invalid.length) return null;
+
+            invalid.forEach(el => {
+                el.classList.add('pe-invalid');
+                const panel = el.closest('.pe-panel');
+                const tab = panel && editModal.querySelector('.pe-tab[data-pe-tab="' + panel.dataset.pePanel + '"]');
+                if (tab) tab.classList.add('has-error');
+            });
+
+            const first = invalid[0];
+            showTab(first.closest('.pe-panel').dataset.pePanel);
+            first.focus();
+
+            if (first === fields.displayName) return 'Введите отображаемое имя';
+            if (first.type === 'email') return 'Проверьте адрес электронной почты';
+            if (first.type === 'url') return 'Ссылка должна начинаться с https://';
+            return 'Проверьте заполнение полей';
+        }
+
+        form.addEventListener('input', e => {
+            if (e.target.classList.contains('pe-invalid') && e.target.checkValidity()) {
+                e.target.classList.remove('pe-invalid');
+            }
+        });
+
+        // Закрытие
+        editModal.querySelector('.close')?.addEventListener('click', closeEditModal);
+        cancelEditBtn?.addEventListener('click', closeEditModal);
+        editModal.addEventListener('mousedown', e => {
             if (e.target === editModal) closeEditModal();
         });
-        
-        // Отправка формы
+
+        // ===== Сохранение =====
         async function handleEditProfile(event) {
             event.preventDefault();
-            
-            const displayName = fields.displayName.value.trim();
-            
-            if (!displayName) {
-                showEditMessage('Введите отображаемое имя');
+
+            const validationError = validate();
+            if (validationError) {
+                showEditMessage(validationError);
                 return;
             }
-            
+
             submitEditBtn.disabled = true;
             const originalText = submitEditBtn.innerHTML;
             submitEditBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Сохранение...';
             clearEditMessage();
-            
+
             try {
                 const response = await fetch('/api/profile/edit', {
                     method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + (localStorage.getItem('accessToken') || '')
-                    },
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
                     body: JSON.stringify({
-                        displayName: displayName,
+                        displayName: fields.displayName.value.trim(),
                         realName: fields.realName.value.trim(),
                         firstName: fields.firstName.value.trim(),
                         lastName: fields.lastName.value.trim(),
@@ -646,36 +604,33 @@
                         linkedIn: fields.linkedIn.value.trim()
                     })
                 });
-                
+
                 if (response.ok) {
-                    showEditMessage('✓ Профиль успешно обновлен!', false);
+                    showEditMessage('Профиль сохранён', false);
                     setTimeout(() => {
                         closeEditModal();
-                        setTimeout(() => location.reload(), 500);
-                    }, 1000);
-                } else {
-                    const error = await response.json();
-                    showEditMessage(error.message || 'Не удалось обновить профиль');
+                        location.reload();
+                    }, 700);
+                    return;
                 }
+
+                let message = 'Не удалось обновить профиль';
+                try {
+                    const error = await response.json();
+                    if (error && error.message) message = error.message;
+                } catch (e) { }
+                showEditMessage(message);
             } catch (err) {
                 console.error('Error:', err);
                 showEditMessage('Ошибка сети. Проверьте подключение.');
-            } finally {
-                submitEditBtn.disabled = false;
-                submitEditBtn.innerHTML = originalText;
             }
+
+            submitEditBtn.disabled = false;
+            submitEditBtn.innerHTML = originalText;
         }
-        
-        const form = document.getElementById('editProfileForm');
-        if (form) form.addEventListener('submit', handleEditProfile);
-        
-        fields.displayName.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !submitEditBtn.disabled) {
-                e.preventDefault();
-                handleEditProfile(e);
-            }
-        });
-        
+
+        form.addEventListener('submit', handleEditProfile);
+
         window.openEditModal = openEditModal;
     });
 </script>
