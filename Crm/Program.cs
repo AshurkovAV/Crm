@@ -61,6 +61,7 @@ builder.Services.AddScoped<ITaskNotificationChannel,     EmailTaskNotificationCh
 builder.Services.AddScoped<ITaskNotificationDispatcher,  TaskNotificationDispatcher>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddSingleton<AvatarStorage>();
+builder.Services.AddScoped<Crm.Services.Workspace.IWorkspaceService, Crm.Services.Workspace.WorkspaceService>();
 
 builder.Services.AddApplication();
 
