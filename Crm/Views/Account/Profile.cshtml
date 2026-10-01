@@ -2,722 +2,845 @@
 @{
     ViewData["Title"] = "Мой профиль";
     Layout = "~/Views/Shared/_Layout.cshtml";
+
+    var fullName = string.Join(" ", new[] { Model.FirstName, Model.LastName }.Where(s => !string.IsNullOrWhiteSpace(s)));
+    var title = !string.IsNullOrWhiteSpace(Model.DisplayName) ? Model.DisplayName : (!string.IsNullOrWhiteSpace(fullName) ? fullName : Model.Email);
+
+    string initials;
+    if (!string.IsNullOrWhiteSpace(Model.FirstName) && !string.IsNullOrWhiteSpace(Model.LastName))
+        initials = $"{Model.FirstName.Trim()[0]}{Model.LastName.Trim()[0]}";
+    else
+        initials = (title?.Trim().FirstOrDefault() ?? 'U').ToString();
+    initials = initials.ToUpper();
+
+    var subtitle = string.Join(" · ", new[] { Model.Position, Model.Department }.Where(s => !string.IsNullOrWhiteSpace(s)));
+
+    // Насколько заполнен профиль — подсказка пользователю, что ещё добавить
+    var checks = new[]
+    {
+        !string.IsNullOrWhiteSpace(Model.FirstName),
+        !string.IsNullOrWhiteSpace(Model.LastName),
+        !string.IsNullOrWhiteSpace(Model.Phone),
+        Model.Birthday.HasValue,
+        !string.IsNullOrWhiteSpace(Model.Position),
+        !string.IsNullOrWhiteSpace(Model.Department),
+        !string.IsNullOrWhiteSpace(Model.Telegram) || !string.IsNullOrWhiteSpace(Model.WhatsApp),
+        !string.IsNullOrWhiteSpace(Model.Bio),
+        !string.IsNullOrWhiteSpace(Model.AvatarUrl)
+    };
+    var completeness = (int)Math.Round(100.0 * checks.Count(c => c) / checks.Length);
+
+    var sexText = Model.Sex switch { "male" => "Мужской", "female" => "Женский", _ => null };
+
+    var contacts = new List<(string Icon, string Label, string Value)>();
+    if (!string.IsNullOrWhiteSpace(Model.Email)) contacts.Add(("fa-envelope", "Email", Model.Email));
+    if (!string.IsNullOrWhiteSpace(Model.AlternativeEmail)) contacts.Add(("fa-at", "Доп. email", Model.AlternativeEmail));
+    if (!string.IsNullOrWhiteSpace(Model.Phone)) contacts.Add(("fa-phone", "Телефон", Model.Phone));
+    if (!string.IsNullOrWhiteSpace(Model.WorkPhone)) contacts.Add(("fa-briefcase", "Рабочий телефон", Model.WorkPhone));
+    if (!string.IsNullOrWhiteSpace(Model.Telegram)) contacts.Add(("fa-paper-plane", "Telegram", Model.Telegram));
+    if (!string.IsNullOrWhiteSpace(Model.WhatsApp)) contacts.Add(("fa-comment-dots", "WhatsApp", Model.WhatsApp));
+
+    var personal = new List<(string Label, string? Value)>
+    {
+        ("Фамилия", Model.LastName),
+        ("Имя", Model.FirstName),
+        ("Отчество", Model.MiddleName),
+        ("Пол", sexText),
+        ("Дата рождения", Model.Birthday?.ToString("dd.MM.yyyy")),
+        ("Место рождения", Model.BirthPlace),
+        ("Должность", Model.Position),
+        ("Отдел", Model.Department),
+        ("Сайт", Model.Website),
+        ("Адрес", Model.Address)
+    };
+
+    var otherCompanies = Model.Companies.Where(c => c.CompanyId != Model.CurrentCompanyId).ToList();
 }
 
-<div class="content-section">
-    <div class="dx-grid-container">
-        <div class="profile-layout">
-            <!-- Левая колонка - профиль пользователя -->
-            <div class="profile-left">
-                <div class="profile-card">
-                    <div class="profile-card-body text-center">
-                        <!-- Аватар -->
-                        <div class="profile-avatar-wrapper">
-                            <div class="profile-avatar-circle">
-                                <span class="profile-avatar-initial">
-                                    @(Model.DisplayName?.FirstOrDefault().ToString().ToUpper() ?? "U")
-                                </span>
-                            </div>
-                        </div>
+<div class="pf-page">
 
-                        <h3 class="profile-name">@Model.DisplayName</h3>
-                        @if (!string.IsNullOrEmpty(Model.RealName) && Model.RealName != Model.DisplayName)
-                        {
-                            <p class="profile-realname">@Model.RealName</p>
-                        }
+    <!-- Шапка профиля -->
+    <section class="pf-card pf-hero">
+        <div class="pf-hero-cover"></div>
+        <div class="pf-hero-body">
+            <button type="button" class="pf-avatar" id="pfAvatarBtn" aria-label="Изменить фото профиля">
+                <img class="pf-avatar-img" data-user-avatar src="@Model.AvatarUrl" alt="Фото профиля" hidden="@(string.IsNullOrEmpty(Model.AvatarUrl))" />
+                <span class="pf-avatar-initials" hidden="@(!string.IsNullOrEmpty(Model.AvatarUrl))">@initials</span>
+                <span class="pf-avatar-overlay">
+                    <i class="fas fa-camera"></i>
+                    <span>Сменить фото</span>
+                </span>
+            </button>
 
-                        <div class="profile-badges">
-                            <span class="profile-badge profile-badge-primary">
-                                <i class="fas fa-user-tag"></i> @Model.Role
-                            </span>
-                           
-                        </div>
-
-                        <div class="profile-info-list">
-                            <div class="profile-info-item">
-                                <div class="profile-info-icon">
-                                    <i class="fas fa-envelope"></i>
-                                </div>
-                                <div class="profile-info-content">
-                                    <small>Email</small>
-                                    <span>@Model.Email</span>
-                                </div>
-                            </div>
-
-                            @if (!string.IsNullOrEmpty(Model.Phone))
-                            {
-                                <div class="profile-info-item">
-                                    <div class="profile-info-icon">
-                                        <i class="fas fa-phone"></i>
-                                    </div>
-                                    <div class="profile-info-content">
-                                        <small>Телефон</small>
-                                        <span>@Model.Phone</span>
-                                    </div>
-                                </div>
-                            }
-
-                            @if (Model.Birthday.HasValue)
-                            {
-                                <div class="profile-info-item">
-                                    <div class="profile-info-icon">
-                                        <i class="fas fa-calendar-alt"></i>
-                                    </div>
-                                    <div class="profile-info-content">
-                                        <small>Дата рождения</small>
-                                        <span>@Model.Birthday.Value.ToString("dd MMMM yyyy")</span>
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                    </div>
+            <div class="pf-hero-info">
+                <div class="pf-hero-title">
+                    <h1 class="pf-name">@title</h1>
+                    @if (!string.IsNullOrWhiteSpace(Model.Role))
+                    {
+                        <span class="pf-chip pf-chip-accent">@Model.Role</span>
+                    }
                 </div>
-
-                <!-- Действия -->
-                <div class="profile-actions">
-                    <a href="#" class="profile-btn profile-btn-outline" id="editProfileBtn">
-                        <i class="fas fa-pencil-alt"></i> Редактировать профиль
-                    </a>
-                    <a href="#" class="profile-btn profile-btn-primary" id="createCompanyBtn">
-                        <i class="fas fa-building"></i> Создать компанию
-                    </a>
-                    <a href="#" class="profile-btn profile-btn-success" id="joinCompanyBtn">
-                        <i class="fas fa-user-plus"></i> Присоединиться к компании
-                    </a>
-                  
+                @if (!string.IsNullOrWhiteSpace(subtitle))
+                {
+                    <div class="pf-subtitle">@subtitle</div>
+                }
+                else if (!string.IsNullOrWhiteSpace(fullName) && fullName != title)
+                {
+                    <div class="pf-subtitle">@fullName</div>
+                }
+                <div class="pf-progress">
+                    <div class="pf-progress-bar"><div style="width: @(completeness)%"></div></div>
+                    <span>Профиль заполнен на @(completeness)%</span>
                 </div>
             </div>
 
-            <!-- Правая колонка - компании -->
-            <div class="profile-right">
-                <!-- Текущая компания -->
+            <div class="pf-hero-actions">
+                <a href="#" class="pf-btn pf-btn-outline" id="editProfileBtn">
+                    <i class="fas fa-pen"></i> Редактировать
+                </a>
+                <a href="#" class="pf-btn pf-btn-primary" id="createCompanyBtn">
+                    <i class="fas fa-plus"></i> Создать компанию
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <div class="pf-grid">
+
+        <!-- Левая колонка -->
+        <div class="pf-col">
+            <section class="pf-card pf-pad">
+                <h2 class="pf-card-title">Контакты</h2>
+                @if (contacts.Any())
+                {
+                    <div class="pf-contacts">
+                        @foreach (var c in contacts)
+                        {
+                            <div class="pf-contact">
+                                <div class="pf-contact-icon"><i class="fas @c.Icon"></i></div>
+                                <div class="pf-contact-text">
+                                    <small>@c.Label</small>
+                                    <span title="@c.Value">@c.Value</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="pf-muted">Контакты не заполнены</p>
+                }
+            </section>
+
+            <section class="pf-card pf-pad">
+                <h2 class="pf-card-title">О себе</h2>
+                @if (!string.IsNullOrWhiteSpace(Model.Bio))
+                {
+                    <p class="pf-bio">@Model.Bio</p>
+                }
+                else
+                {
+                    <p class="pf-muted">Расскажите коллегам о себе — нажмите «Редактировать».</p>
+                }
+                @if (Model.Birthday.HasValue || !string.IsNullOrWhiteSpace(Model.Address))
+                {
+                    <div class="pf-chips">
+                        @if (Model.Birthday.HasValue)
+                        {
+                            <span class="pf-chip"><i class="fas fa-birthday-cake"></i> @Model.Birthday.Value.ToString("dd.MM.yyyy")</span>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.Address))
+                        {
+                            <span class="pf-chip"><i class="fas fa-map-marker-alt"></i> @Model.Address</span>
+                        }
+                    </div>
+                }
+            </section>
+        </div>
+
+        <!-- Правая колонка -->
+        <section class="pf-card">
+            <div class="pf-tabs" role="tablist">
+                <button type="button" class="pf-tab active" role="tab" data-tab="companies" aria-selected="true">Компании</button>
+                <button type="button" class="pf-tab" role="tab" data-tab="personal" aria-selected="false">Личные данные</button>
+            </div>
+
+            <div class="pf-tab-panel" data-panel="companies">
                 @if (Model.CurrentCompany != null)
                 {
-                    <div class="current-company-card">
-                        <div class="current-company-header">
+                    <div class="pf-current">
+                        <div class="pf-current-head">
                             <div>
-                                <h6 class="current-company-label">
-                                    <i class="fas fa-star text-warning"></i> ТЕКУЩАЯ КОМПАНИЯ
-                                </h6>
-                                <h3 class="current-company-name">@Model.CurrentCompany.CompanyName</h3>
+                                <div class="pf-current-label">ТЕКУЩАЯ КОМПАНИЯ</div>
+                                <div class="pf-current-name">@Model.CurrentCompany.CompanyName</div>
                                 @if (!string.IsNullOrEmpty(Model.CurrentCompany.CompanyDescription))
                                 {
-                                    <p class="current-company-desc">@Model.CurrentCompany.CompanyDescription</p>
+                                    <div class="pf-current-desc">@Model.CurrentCompany.CompanyDescription</div>
                                 }
                             </div>
                             @if (Model.CurrentCompany.IsOwner)
                             {
-                                <span class="owner-badge">
-                                    <i class="fas fa-crown"></i> Владелец
-                                </span>
+                                <span class="pf-current-badge"><i class="fas fa-crown"></i> Владелец</span>
                             }
                         </div>
-
-                        <div class="current-company-stats">
-                            <div class="stat-card">
-                                <small><i class="fas fa-user-tag"></i> Ваша роль</small>
-                                <span>@Model.CurrentCompany.UserRole</span>
-                            </div>
-                            <div class="stat-card">
-                                <small><i class="fas fa-briefcase"></i> Должность</small>
-                                <span>@(string.IsNullOrEmpty(Model.CurrentCompany.Position) ? "—" : Model.CurrentCompany.Position)</span>
-                            </div>
-                            <div class="stat-card">
-                                <small><i class="fas fa-calendar-check"></i> Дата присоединения</small>
-                                <span>@(Model.CurrentCompany.JoinedDate?.ToString("dd.MM.yyyy") ?? "—")</span>
-                            </div>
+                        <div class="pf-current-stats">
+                            <div><small>Ваша роль</small><span>@(string.IsNullOrEmpty(Model.CurrentCompany.UserRole) ? "—" : Model.CurrentCompany.UserRole)</span></div>
+                            <div><small>Должность</small><span>@(string.IsNullOrEmpty(Model.CurrentCompany.Position) ? "—" : Model.CurrentCompany.Position)</span></div>
+                            <div><small>С нами с</small><span>@(Model.CurrentCompany.JoinedDate?.ToString("dd.MM.yyyy") ?? "—")</span></div>
                         </div>
                     </div>
                 }
                 else
                 {
-                    <div class="alert-warning-card">
+                    <div class="pf-alert">
                         <i class="fas fa-info-circle"></i>
                         <div>
-                            <strong>Внимание!</strong> У вас не выбрана текущая компания.<br />
+                            <strong>Не выбрана текущая компания.</strong>
                             <small>Выберите компанию из списка ниже или создайте новую.</small>
                         </div>
                     </div>
                 }
 
-                <!-- Мои компании -->
-                <div class="companies-card">
-                    <div class="companies-header">
-                        <h4>
-                            <i class="fas fa-building"></i> Мои компании
-                        </h4>
-                        <span class="companies-count">@Model.Companies.Count</span>
-                    </div>
+                <div class="pf-list-head">
+                    <span class="pf-list-title">
+                        @(Model.CurrentCompany != null ? "Другие компании" : "Мои компании")
+                        <span class="pf-muted">· @otherCompanies.Count</span>
+                    </span>
+                    <a href="#" class="pf-btn pf-btn-outline pf-btn-sm" id="joinCompanyBtn">
+                        <i class="fas fa-user-plus"></i> Присоединиться
+                    </a>
+                </div>
 
-                    @if (Model.Companies.Any())
-                    {
-                        <div class="companies-list">
-                            @foreach (var company in Model.Companies)
-                            {
-                                <div class="company-item @(company.CompanyId == Model.CurrentCompanyId ? "company-item-active" : "")">
-                                    <div class="company-item-main">
-                                        <div class="company-icon">
-                                            <i class="fas @(company.IsOwner ? "fa-trophy" : "fa-building")"></i>
-                                        </div>
-                                        <div class="company-details">
-                                            <h5 class="company-name">@company.CompanyName</h5>
-                                            @if (!string.IsNullOrEmpty(company.CompanyDescription))
-                                            {
-                                                <p class="company-description">@company.CompanyDescription</p>
-                                            }
-                                            <div class="company-meta">
-                                                <span class="meta-badge meta-badge-info">
-                                                    <i class="fas fa-user-tag"></i> @company.UserRole
-                                                </span>
-                                                @if (company.IsOwner)
-                                                {
-                                                    <span class="meta-badge meta-badge-warning">
-                                                        <i class="fas fa-crown"></i> Владелец
-                                                    </span>
-                                                }
-                                                <span class="meta-badge meta-badge-secondary">
-                                                    <i class="fas fa-calendar-plus"></i> @(company.JoinedDate?.ToString("dd.MM.yyyy") ?? "—")
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="company-actions">
-                                        @if (company.CompanyId != Model.CurrentCompanyId)
+                @if (otherCompanies.Any())
+                {
+                    <div class="pf-companies">
+                        @foreach (var company in otherCompanies)
+                        {
+                            <div class="pf-company">
+                                <div class="pf-company-icon">@(string.IsNullOrEmpty(company.CompanyName) ? "?" : company.CompanyName.Trim()[0].ToString().ToUpper())</div>
+                                <div class="pf-company-text">
+                                    <span class="pf-company-name">
+                                        @company.CompanyName
+                                        @if (company.IsOwner)
                                         {
-                                            <form method="post" action="@Url.Action("SwitchCompany", "Profile")">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="companyId" value="@company.CompanyId" />
-                                                <button type="submit" class="btn-switch">
-                                                    <i class="fas fa-arrow-right"></i> Сделать текущей
-                                                </button>
-                                            </form>
+                                            <i class="fas fa-crown pf-owner-icon" title="Владелец"></i>
                                         }
-                                        else
-                                        {
-                                            <span class="current-badge">
-                                                <i class="fas fa-check-circle"></i> Текущая
-                                            </span>
-                                        }
-                                    </div>
+                                    </span>
+                                    <span class="pf-muted">
+                                        @(string.IsNullOrEmpty(company.UserRole) ? "Участник" : company.UserRole) · с @(company.JoinedDate?.ToString("dd.MM.yyyy") ?? "—")
+                                    </span>
                                 </div>
-                            }
-                        </div>
-                    }
-                    else
+                                <form method="post" action="@Url.Action("SwitchCompany", "Profile")">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="companyId" value="@company.CompanyId" />
+                                    <button type="submit" class="pf-btn pf-btn-outline pf-btn-sm">Сделать текущей</button>
+                                </form>
+                            </div>
+                        }
+                    </div>
+                }
+                else if (!Model.Companies.Any())
+                {
+                    <div class="pf-empty">
+                        <i class="fas fa-building"></i>
+                        <h3>Нет компаний</h3>
+                        <p>Создайте свою компанию или присоединитесь по коду приглашения.</p>
+                    </div>
+                }
+            </div>
+
+            <div class="pf-tab-panel" data-panel="personal" hidden>
+                <div class="pf-fields">
+                    @foreach (var f in personal)
                     {
-                        <div class="empty-companies">
-                            <i class="fas fa-building-slash"></i>
-                            <h5>Нет компаний</h5>
-                            <p>Вы пока не состоите ни в одной компании</p>
-                            <a href="@Url.Action("Create", "Company")" class="profile-btn profile-btn-primary">
-                                <i class="fas fa-plus-circle"></i> Создать первую компанию
-                            </a>
+                        <div class="pf-field">
+                            <small>@f.Label</small>
+                            <div>@(string.IsNullOrWhiteSpace(f.Value) ? "—" : f.Value)</div>
                         </div>
                     }
                 </div>
+                <div class="pf-fields-foot">
+                    <button type="button" class="pf-btn pf-btn-outline" onclick="document.getElementById('editProfileBtn').click()">
+                        <i class="fas fa-pen"></i> Изменить данные
+                    </button>
+                </div>
             </div>
+        </section>
+    </div>
+</div>
+
+<!-- Диалог загрузки фото профиля -->
+<div class="pf-modal" id="pfAvatarModal" hidden>
+    <div class="pf-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="pfAvatarTitle">
+        <div class="pf-modal-head">
+            <h2 id="pfAvatarTitle">Фото профиля</h2>
+            <button type="button" class="pf-icon-btn" data-avatar-close aria-label="Закрыть"><i class="fas fa-times"></i></button>
+        </div>
+
+        <div class="pf-modal-body">
+            <label class="pf-drop" id="pfDrop" for="pfAvatarFile">
+                <span class="pf-drop-icon"><i class="fas fa-cloud-upload-alt"></i></span>
+                <strong>Перетащите фото сюда</strong>
+                <span class="pf-muted">или <b class="pf-link">выберите файл</b> · JPG, PNG, WebP до 5 МБ</span>
+            </label>
+            <input type="file" id="pfAvatarFile" accept="image/jpeg,image/png,image/webp" hidden />
+
+            <div class="pf-crop" id="pfCrop" hidden>
+                <div class="pf-crop-frame" id="pfCropFrame" title="Перетащите, чтобы выбрать область">
+                    <img id="pfCropImg" alt="Предпросмотр" draggable="false" />
+                </div>
+                <div class="pf-zoom">
+                    <label for="pfZoom">Масштаб</label>
+                    <input type="range" id="pfZoom" min="1" max="3" step="0.01" value="1" />
+                </div>
+                <label for="pfAvatarFile" class="pf-link">Выбрать другое фото</label>
+            </div>
+
+            <div class="pf-error" id="pfAvatarError" hidden></div>
+        </div>
+
+        <div class="pf-modal-foot">
+            <button type="button" class="pf-btn pf-btn-danger-text" id="pfAvatarRemove" hidden="@(string.IsNullOrEmpty(Model.AvatarUrl))">Удалить фото</button>
+            <div class="pf-spacer"></div>
+            <button type="button" class="pf-btn pf-btn-outline" data-avatar-close>Отмена</button>
+            <button type="button" class="pf-btn pf-btn-primary" id="pfAvatarSave" disabled>Сохранить</button>
         </div>
     </div>
 </div>
-<!-- Подключаем общее модальное окно -->
+
+<!-- Подключаем общие модальные окна -->
 @await Html.PartialAsync("/Views/Shared/Company/_InviteModal.cshtml")
 @await Html.PartialAsync("/Views/Shared/Company/_CreateCompanyModal.cshtml")
 @await Html.PartialAsync("/Views/Shared/Company/_EditProfileModal.cshtml")
-<!-- Стили для профиля -->
+
 <style>
-    .profile-layout {
-        display: grid;
-        grid-template-columns: 360px 1fr;
-        gap: 24px;
+    /* Окно фото лежит вне .pf-page, поэтому переменные объявлены на обоих */
+    .pf-page, .pf-modal {
+        --pf-accent: #4f46e5;
+        --pf-accent-hover: #4338ca;
+        --pf-accent-soft: #eef0ff;
+        --pf-ink: #0f172a;
+        --pf-muted: #5b6475;
+        --pf-line: #e4e7ee;
+        --pf-surface: #ffffff;
     }
 
-    /* Левая колонка */
-    .profile-left {
+    .pf-page {
         display: flex;
         flex-direction: column;
         gap: 24px;
+        color: var(--pf-ink);
     }
 
-    .profile-card {
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+    .pf-card {
+        background: var(--pf-surface);
+        border: 1px solid var(--pf-line);
+        border-radius: 20px;
         overflow: hidden;
     }
 
-    .profile-card-body {
-        padding: 32px 24px;
+    .pf-pad { padding: 24px; }
+    .pf-muted { color: var(--pf-muted); font-size: 13px; margin: 0; }
+    .pf-link { color: var(--pf-accent); font-weight: 700; cursor: pointer; }
+
+    /* Шапка */
+    .pf-hero-cover {
+        height: 112px;
+        background-color: var(--pf-accent-soft);
+        background-image: radial-gradient(#d9dcf7 1.2px, transparent 1.2px);
+        background-size: 18px 18px;
     }
 
-    .profile-avatar-wrapper {
-        margin-bottom: 20px;
-    }
-
-    .profile-avatar-circle {
-        width: 120px;
-        height: 120px;
-        margin: 0 auto;
-        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-        border-radius: 50%;
+    .pf-hero-body {
         display: flex;
+        align-items: flex-end;
+        gap: 24px;
+        padding: 0 32px 28px;
+        margin-top: -56px;
+    }
+
+    .pf-avatar {
+        position: relative;
+        width: 128px;
+        height: 128px;
+        flex-shrink: 0;
+        border-radius: 50%;
+        border: 4px solid #fff;
+        padding: 0;
+        cursor: pointer;
+        background: var(--pf-accent);
+        box-shadow: 0 6px 20px rgba(15, 23, 42, 0.12);
+        overflow: hidden;
+    }
+
+    .pf-avatar-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .pf-avatar-img[hidden], .pf-avatar-initials[hidden] { display: none; }
+
+    .pf-avatar-initials {
+        display: flex;
+        width: 100%;
+        height: 100%;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
-        transition: transform 0.3s;
-    }
-
-        .profile-avatar-circle:hover {
-            transform: scale(1.05);
-        }
-
-    .profile-avatar-initial {
-        font-size: 48px;
-        font-weight: 600;
-        color: white;
-    }
-
-    .profile-name {
-        font-size: 24px;
+        color: #fff;
+        font-size: 44px;
         font-weight: 700;
-        color: #1e293b;
-        margin-bottom: 8px;
     }
 
-    .profile-realname {
-        color: #64748b;
-        font-size: 14px;
-        margin-bottom: 16px;
-    }
-
-    .profile-badges {
+    .pf-avatar-overlay {
+        position: absolute;
+        inset: 0;
         display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        background: rgba(15, 23, 42, 0.55);
+        color: #fff;
+        font-size: 12px;
+        font-weight: 600;
+        opacity: 0;
+        transition: opacity .15s;
+    }
+
+        .pf-avatar-overlay i { font-size: 20px; }
+
+    .pf-avatar:hover .pf-avatar-overlay,
+    .pf-avatar:focus-visible .pf-avatar-overlay { opacity: 1; }
+
+    .pf-hero-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; padding-bottom: 4px; }
+    .pf-hero-title { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .pf-name { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.01em; color: var(--pf-ink); }
+    .pf-subtitle { font-size: 15px; color: var(--pf-muted); }
+
+    .pf-progress { display: flex; align-items: center; gap: 12px; margin-top: 4px; font-size: 13px; color: var(--pf-muted); }
+    .pf-progress-bar { width: 180px; height: 6px; border-radius: 999px; background: #e9ebf2; overflow: hidden; }
+        .pf-progress-bar > div { height: 100%; background: var(--pf-accent); border-radius: 999px; }
+
+    .pf-hero-actions { display: flex; gap: 12px; flex-wrap: wrap; padding-bottom: 4px; }
+
+    /* Кнопки и чипы */
+    .pf-btn {
+        display: inline-flex;
+        align-items: center;
         justify-content: center;
         gap: 8px;
-        margin-bottom: 24px;
-        flex-wrap: wrap;
+        height: 44px;
+        padding: 0 18px;
+        border-radius: 12px;
+        border: 1px solid transparent;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: background .15s, border-color .15s, color .15s;
     }
 
-    .profile-badge {
-        padding: 6px 12px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 500;
+    .pf-btn-sm { height: 40px; padding: 0 14px; font-size: 13px; border-radius: 10px; }
+    .pf-btn-primary { background: var(--pf-accent); color: #fff; }
+        .pf-btn-primary:hover { background: var(--pf-accent-hover); color: #fff; }
+        .pf-btn-primary:disabled { background: #a5abc0; cursor: default; }
+    .pf-btn-outline { background: #fff; border-color: #dadfe8; color: var(--pf-ink); }
+        .pf-btn-outline:hover { background: #f1f2f6; color: var(--pf-ink); }
+    .pf-btn-danger-text { background: transparent; color: #b91c1c; padding: 0 12px; }
+        .pf-btn-danger-text:hover { background: #fef2f2; }
+    .pf-btn[hidden] { display: none; }
+
+    .pf-chip {
         display: inline-flex;
         align-items: center;
         gap: 6px;
+        padding: 5px 12px;
+        border-radius: 999px;
+        background: #f1f2f6;
+        font-size: 12px;
+        font-weight: 600;
+        color: #334155;
     }
 
-    .profile-badge-primary {
-        background: rgba(99, 102, 241, 0.1);
-        color: #6366f1;
-    }
+    .pf-chip-accent { background: var(--pf-accent-soft); color: #3730a3; }
+    .pf-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
 
-    .profile-badge-success {
-        background: rgba(16, 185, 129, 0.1);
-        color: #10b981;
-    }
+    /* Сетка */
+    .pf-grid { display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: 24px; align-items: start; }
+    .pf-col { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+    .pf-card-title { margin: 0 0 18px; font-size: 16px; font-weight: 700; color: var(--pf-ink); }
 
-    .profile-info-list {
-        border-top: 1px solid #f1f5f9;
-        padding-top: 20px;
-    }
-
-    .profile-info-item {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        padding: 12px 0;
-        border-bottom: 1px solid #f1f5f9;
-    }
-
-    .profile-info-icon {
+    .pf-contacts { display: flex; flex-direction: column; gap: 16px; }
+    .pf-contact { display: flex; align-items: center; gap: 14px; min-width: 0; }
+    .pf-contact-icon {
         width: 40px;
         height: 40px;
-        background: #f8fafc;
+        flex-shrink: 0;
         border-radius: 12px;
+        background: #f1f2f8;
+        color: #4338ca;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #6366f1;
     }
+    .pf-contact-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+        .pf-contact-text small { font-size: 12px; color: var(--pf-muted); }
+        .pf-contact-text span { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-    .profile-info-content {
-        flex: 1;
-    }
+    .pf-bio { margin: 0; font-size: 14px; line-height: 1.6; color: #334155; white-space: pre-line; }
 
-        .profile-info-content small {
-            display: block;
-            font-size: 11px;
-            color: #94a3b8;
-            margin-bottom: 2px;
-        }
-
-        .profile-info-content span {
-            font-size: 14px;
-            color: #334155;
-            font-weight: 500;
-        }
-
-    /* Кнопки действий */
-    .profile-actions {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-
-    .profile-btn {
-        padding: 12px 20px;
-        border-radius: 12px;
-        text-decoration: none;
+    /* Вкладки */
+    .pf-tabs { display: flex; gap: 8px; padding: 0 24px; border-bottom: 1px solid var(--pf-line); }
+    .pf-tab {
+        height: 56px;
+        padding: 0 12px;
+        border: 0;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -1px;
+        background: transparent;
         font-size: 14px;
-        font-weight: 500;
-        text-align: center;
-        transition: all 0.3s;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-    }
-
-    .profile-btn-primary {
-        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-        color: white;
-        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
-    }
-
-        .profile-btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.35);
-        }
-
-    .profile-btn-outline {
-        background: white;
-        color: #6366f1;
-        border: 1px solid #e2e8f0;
-    }
-
-        .profile-btn-outline:hover {
-            background: #f8fafc;
-            transform: translateY(-2px);
-        }
-
-    .profile-btn-success {
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        color: white;
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
-    }
-
-        .profile-btn-success:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.35);
-        }
-
-    /* Правая колонка */
-    .profile-right {
-        display: flex;
-        flex-direction: column;
-        gap: 24px;
-    }
-
-    /* Текущая компания */
-    .current-company-card {
-        background: linear-gradient(135deg, #f8f9ff 0%, #f0f2ff 100%);
-        border-radius: 16px;
-        padding: 24px;
-        border: 1px solid rgba(99, 102, 241, 0.1);
-    }
-
-    .current-company-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 20px;
-        flex-wrap: wrap;
-        gap: 12px;
-    }
-
-    .current-company-label {
-        color: #64748b;
-        font-size: 12px;
-        margin-bottom: 8px;
-    }
-
-    .current-company-name {
-        font-size: 22px;
         font-weight: 700;
-        color: #1e293b;
-        margin-bottom: 8px;
+        color: var(--pf-muted);
+        cursor: pointer;
     }
+        .pf-tab.active { color: var(--pf-ink); border-bottom-color: var(--pf-accent); }
 
-    .current-company-desc {
-        color: #64748b;
-        font-size: 14px;
-    }
+    .pf-tab-panel { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+        .pf-tab-panel[hidden] { display: none; }
 
-    .owner-badge {
-        background: #fef3c7;
-        color: #d97706;
-        padding: 6px 12px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 500;
-    }
+    .pf-current { border-radius: 16px; padding: 22px; background: var(--pf-ink); color: #fff; display: flex; flex-direction: column; gap: 18px; }
+    .pf-current-head { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
+    .pf-current-label { font-size: 11px; font-weight: 700; letter-spacing: .08em; color: #a5b4fc; margin-bottom: 6px; }
+    .pf-current-name { font-size: 22px; font-weight: 800; }
+    .pf-current-desc { font-size: 13px; color: #cbd5e1; margin-top: 4px; }
+    .pf-current-badge { padding: 6px 12px; border-radius: 999px; background: rgba(255, 255, 255, .12); font-size: 12px; font-weight: 700; white-space: nowrap; }
+    .pf-current-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+        .pf-current-stats > div { background: rgba(255, 255, 255, .07); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+        .pf-current-stats small { font-size: 12px; color: #cbd5e1; }
+        .pf-current-stats span { font-size: 14px; font-weight: 700; }
 
-    .current-company-stats {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 16px;
-    }
+    .pf-alert { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border-radius: 14px; background: #fffbeb; color: #92400e; }
+        .pf-alert div { display: flex; flex-direction: column; gap: 2px; }
 
-    .stat-card {
-        background: white;
-        border-radius: 12px;
-        padding: 16px;
-        text-align: center;
-        transition: all 0.3s;
-    }
+    .pf-list-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 8px; }
+    .pf-list-title { font-size: 15px; font-weight: 700; }
+        .pf-list-title .pf-muted { font-size: 15px; font-weight: 600; }
 
-        .stat-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        }
+    .pf-companies { display: flex; flex-direction: column; gap: 12px; }
+    .pf-company { display: flex; align-items: center; gap: 16px; padding: 16px; border: 1px solid var(--pf-line); border-radius: 14px; transition: border-color .15s; }
+        .pf-company:hover { border-color: #c7cbf5; }
+        .pf-company form { margin: 0; }
+    .pf-company-icon { width: 44px; height: 44px; flex-shrink: 0; border-radius: 12px; background: #f1f2f8; color: #4338ca; display: flex; align-items: center; justify-content: center; font-weight: 800; }
+    .pf-company-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+    .pf-company-name { font-size: 15px; font-weight: 700; }
+    .pf-owner-icon { color: #d97706; font-size: 12px; margin-left: 4px; }
 
-        .stat-card small {
-            display: block;
-            font-size: 11px;
-            color: #94a3b8;
-            margin-bottom: 8px;
-        }
+    .pf-empty { text-align: center; padding: 40px 16px; color: var(--pf-muted); }
+        .pf-empty i { font-size: 40px; color: #cbd5e1; margin-bottom: 12px; }
+        .pf-empty h3 { font-size: 17px; color: #334155; margin: 0 0 6px; }
+        .pf-empty p { margin: 0; font-size: 14px; }
 
-        .stat-card span {
-            font-size: 18px;
-            font-weight: 600;
-            color: #1e293b;
-        }
+    .pf-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 24px; }
+    .pf-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+        .pf-field small { font-size: 12px; font-weight: 600; color: var(--pf-muted); }
+        .pf-field div { min-height: 44px; box-sizing: border-box; padding: 11px 14px; border-radius: 12px; background: #f7f8fa; border: 1px solid var(--pf-line); font-size: 14px; overflow-wrap: anywhere; }
+    .pf-fields-foot { display: flex; justify-content: flex-end; }
 
-    /* Предупреждение */
-    .alert-warning-card {
-        background: #fef3c7;
-        border-left: 4px solid #f59e0b;
-        border-radius: 12px;
-        padding: 16px 20px;
+    /* Диалог загрузки фото */
+    .pf-modal { position: fixed; inset: 0; z-index: 2000; background: rgba(15, 23, 42, .5); display: flex; align-items: center; justify-content: center; padding: 16px; }
+        .pf-modal[hidden] { display: none; }
+    .pf-modal-dialog { width: 100%; max-width: 460px; max-height: calc(100vh - 32px); overflow-y: auto; background: #fff; border-radius: 20px; box-shadow: 0 24px 60px rgba(15, 23, 42, .25); color: #0f172a; }
+    .pf-modal-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; border-bottom: 1px solid #e4e7ee; }
+        .pf-modal-head h2 { margin: 0; font-size: 17px; font-weight: 800; }
+    .pf-icon-btn { width: 40px; height: 40px; border-radius: 10px; border: 0; background: #f1f2f6; color: #0f172a; cursor: pointer; }
+    .pf-modal-body { padding: 24px; display: flex; flex-direction: column; gap: 18px; }
+    .pf-modal-foot { display: flex; align-items: center; gap: 12px; padding: 0 24px 24px; }
+    .pf-spacer { flex: 1; }
+
+    .pf-drop {
         display: flex;
-        align-items: center;
-        gap: 16px;
-    }
-
-        .alert-warning-card i {
-            font-size: 24px;
-            color: #f59e0b;
-        }
-
-    /* Компании */
-    .companies-card {
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-        overflow: hidden;
-    }
-
-    .companies-header {
-        padding: 20px 24px;
-        border-bottom: 1px solid #f1f5f9;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-        .companies-header h4 {
-            font-size: 18px;
-            font-weight: 600;
-            color: #1e293b;
-        }
-
-    .companies-count {
-        background: #f1f5f9;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 14px;
-        font-weight: 600;
-        color: #64748b;
-    }
-
-    .companies-list {
-        max-height: 500px;
-        overflow-y: auto;
-    }
-
-    .company-item {
-        padding: 20px 24px;
-        border-bottom: 1px solid #f1f5f9;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        transition: all 0.3s;
-    }
-
-        .company-item:hover {
-            background: #f8fafc;
-        }
-
-    .company-item-active {
-        background: rgba(99, 102, 241, 0.05);
-    }
-
-    .company-item-main {
-        display: flex;
-        gap: 16px;
-        flex: 1;
-    }
-
-    .company-icon {
-        width: 48px;
-        height: 48px;
-        background: #f1f5f9;
-        border-radius: 12px;
-        display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
-        color: #6366f1;
-        font-size: 20px;
-    }
-
-    .company-details {
-        flex: 1;
-    }
-
-    .company-name {
-        font-size: 16px;
-        font-weight: 600;
-        color: #1e293b;
-        margin-bottom: 4px;
-    }
-
-    .company-description {
-        font-size: 13px;
-        color: #64748b;
-        margin-bottom: 8px;
-    }
-
-    .company-meta {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-
-    .meta-badge {
-        padding: 4px 8px;
-        border-radius: 6px;
-        font-size: 11px;
-        font-weight: 500;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-    }
-
-    .meta-badge-info {
-        background: rgba(99, 102, 241, 0.1);
-        color: #6366f1;
-    }
-
-    .meta-badge-warning {
-        background: rgba(245, 158, 11, 0.1);
-        color: #d97706;
-    }
-
-    .meta-badge-secondary {
-        background: #f1f5f9;
-        color: #64748b;
-    }
-
-    .btn-switch {
-        background: none;
-        border: 1px solid #e2e8f0;
-        padding: 8px 16px;
-        border-radius: 8px;
-        color: #6366f1;
+        gap: 10px;
+        min-height: 220px;
+        margin: 0;
+        border: 2px dashed #cdd2de;
+        background: #fafbfc;
+        border-radius: 16px;
         cursor: pointer;
-        font-size: 13px;
-        transition: all 0.3s;
-    }
-
-        .btn-switch:hover {
-            background: #6366f1;
-            color: white;
-            border-color: #6366f1;
-        }
-
-    .current-badge {
-        background: #10b981;
-        color: white;
-        padding: 8px 16px;
-        border-radius: 8px;
-        font-size: 13px;
-        font-weight: 500;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .empty-companies {
         text-align: center;
-        padding: 60px 24px;
+        padding: 24px;
+        transition: border-color .15s, background .15s;
     }
+        .pf-drop:hover, .pf-drop.dragover { border-color: #4f46e5; background: #eef0ff; }
+        .pf-drop[hidden] { display: none; }
+    .pf-drop-icon { width: 52px; height: 52px; border-radius: 16px; background: #eef0ff; color: #4338ca; display: flex; align-items: center; justify-content: center; font-size: 22px; }
 
-        .empty-companies i {
-            font-size: 48px;
-            color: #cbd5e1;
-            margin-bottom: 16px;
-        }
-
-        .empty-companies h5 {
-            font-size: 18px;
-            color: #475569;
-            margin-bottom: 8px;
-        }
-
-        .empty-companies p {
-            color: #94a3b8;
-            margin-bottom: 24px;
-        }
+    .pf-crop { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+        .pf-crop[hidden] { display: none; }
+    .pf-crop-frame { position: relative; width: 240px; height: 240px; border-radius: 50%; overflow: hidden; background: #f1f2f6; box-shadow: 0 0 0 6px #eef0ff; cursor: grab; touch-action: none; user-select: none; }
+        .pf-crop-frame.dragging { cursor: grabbing; }
+        .pf-crop-frame img { position: absolute; max-width: none; pointer-events: none; }
+    .pf-zoom { width: 100%; display: flex; align-items: center; gap: 12px; }
+        .pf-zoom label { margin: 0; font-size: 13px; font-weight: 600; color: #5b6475; }
+        .pf-zoom input { flex: 1; accent-color: #4f46e5; }
+    .pf-error { padding: 10px 14px; border-radius: 10px; background: #fef2f2; color: #b91c1c; font-size: 13px; font-weight: 600; }
+        .pf-error[hidden] { display: none; }
 
     /* Адаптивность */
     @@media (max-width: 1000px) {
-        .profile-layout {
-            grid-template-columns: 1fr;
-        }
+        .pf-grid { grid-template-columns: minmax(0, 1fr); }
+    }
 
-        .current-company-stats {
-            grid-template-columns: 1fr;
-        }
-
-        .company-item {
-            flex-direction: column;
-            gap: 16px;
-            align-items: flex-start;
-        }
+    @@media (max-width: 720px) {
+        .pf-hero-body { flex-direction: column; align-items: center; text-align: center; padding: 0 20px 24px; margin-top: -52px; gap: 14px; }
+        .pf-avatar { width: 104px; height: 104px; }
+        .pf-avatar-initials { font-size: 36px; }
+        .pf-hero-title { justify-content: center; }
+        .pf-progress { flex-direction: column; gap: 6px; }
+        .pf-progress-bar { width: 100%; }
+        .pf-hero-info { width: 100%; }
+        .pf-hero-actions { width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .pf-current-stats { grid-template-columns: minmax(0, 1fr); }
+        .pf-fields { grid-template-columns: minmax(0, 1fr); }
+        .pf-company { flex-wrap: wrap; }
+        .pf-company form { width: 100%; }
+            .pf-company form .pf-btn { width: 100%; }
+        .pf-tabs { padding: 0 12px; }
+        .pf-tab-panel { padding: 16px; }
     }
 </style>
 
-
-
 @section Scripts {
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Автоматическое скрытие сообщений через 5 секунд
-            setTimeout(function () {
-                const alerts = document.querySelectorAll('.alert-warning-card');
-                alerts.forEach(function (alert) {
-                    if (!alert.closest('.alert-permanent')) {
-                        alert.style.transition = 'opacity 0.5s';
-                        alert.style.opacity = '0';
-                        setTimeout(function () {
-                            if (alert.parentNode) alert.remove();
-                        }, 500);
-                    }
+        // ===== Вкладки =====
+        document.querySelectorAll('.pf-tab').forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                document.querySelectorAll('.pf-tab').forEach(function (t) {
+                    var active = t === tab;
+                    t.classList.toggle('active', active);
+                    t.setAttribute('aria-selected', active ? 'true' : 'false');
                 });
-            }, 5000);
+                document.querySelectorAll('.pf-tab-panel').forEach(function (p) {
+                    p.hidden = p.getAttribute('data-panel') !== tab.getAttribute('data-tab');
+                });
+            });
         });
+
+        // ===== Фото профиля =====
+        // Картинка обрезается в браузере: пользователь двигает и масштабирует её в круглой
+        // рамке, а на сервер уходит готовый квадрат 512×512 (JPEG) — ровно то, что он видел.
+        (function () {
+            var MAX_SIZE = 5 * 1024 * 1024;
+            var OUTPUT = 512;
+            var TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+            var modal = document.getElementById('pfAvatarModal');
+            var drop = document.getElementById('pfDrop');
+            var fileInput = document.getElementById('pfAvatarFile');
+            var crop = document.getElementById('pfCrop');
+            var frame = document.getElementById('pfCropFrame');
+            var img = document.getElementById('pfCropImg');
+            var zoomInput = document.getElementById('pfZoom');
+            var errorBox = document.getElementById('pfAvatarError');
+            var saveBtn = document.getElementById('pfAvatarSave');
+            var removeBtn = document.getElementById('pfAvatarRemove');
+
+            var state = null; // { w, h, zoom, ox, oy }
+            var objectUrl = null;
+
+            function frameSize() { return frame.clientWidth || 240; }
+
+            function showError(text) {
+                errorBox.textContent = text;
+                errorBox.hidden = !text;
+            }
+
+            function reset() {
+                state = null;
+                if (objectUrl) { URL.revokeObjectURL(objectUrl); objectUrl = null; }
+                img.removeAttribute('src');
+                drop.hidden = false;
+                crop.hidden = true;
+                saveBtn.disabled = true;
+                zoomInput.value = 1;
+                showError('');
+            }
+
+            function open() {
+                reset();
+                modal.hidden = false;
+                document.addEventListener('keydown', onKeyDown);
+            }
+
+            function close() {
+                modal.hidden = true;
+                document.removeEventListener('keydown', onKeyDown);
+                reset();
+            }
+
+            function onKeyDown(e) {
+                if (e.key === 'Escape') close();
+            }
+
+            // Геометрия: картинка покрывает круг (cover), zoom увеличивает её,
+            // смещение ограничено так, чтобы внутри круга не было пустых краёв.
+            function layout() {
+                if (!state) return;
+                var p = frameSize();
+                var s = Math.max(p / state.w, p / state.h) * state.zoom;
+                var dw = state.w * s, dh = state.h * s;
+                var maxX = (dw - p) / 2, maxY = (dh - p) / 2;
+                state.ox = Math.max(-maxX, Math.min(maxX, state.ox));
+                state.oy = Math.max(-maxY, Math.min(maxY, state.oy));
+                state.rect = { left: (p - dw) / 2 + state.ox, top: (p - dh) / 2 + state.oy, width: dw, height: dh, frame: p };
+                img.style.width = dw + 'px';
+                img.style.height = dh + 'px';
+                img.style.left = state.rect.left + 'px';
+                img.style.top = state.rect.top + 'px';
+            }
+
+            function loadFile(file) {
+                if (!file) return;
+                if (TYPES.indexOf(file.type) === -1) { showError('Поддерживаются только JPG, PNG и WebP'); return; }
+                if (file.size > MAX_SIZE) { showError('Файл больше 5 МБ'); return; }
+                showError('');
+
+                if (objectUrl) URL.revokeObjectURL(objectUrl);
+                objectUrl = URL.createObjectURL(file);
+                img.onload = function () {
+                    state = { w: img.naturalWidth, h: img.naturalHeight, zoom: 1, ox: 0, oy: 0 };
+                    zoomInput.value = 1;
+                    drop.hidden = true;
+                    crop.hidden = false;
+                    saveBtn.disabled = false;
+                    layout();
+                };
+                img.onerror = function () { showError('Не удалось открыть изображение'); };
+                img.src = objectUrl;
+            }
+
+            function setAvatarOnPage(url) {
+                document.querySelectorAll('.pf-avatar-img').forEach(function (el) {
+                    if (url) { el.src = url; el.hidden = false; } else { el.removeAttribute('src'); el.hidden = true; }
+                });
+                document.querySelectorAll('.pf-avatar-initials').forEach(function (el) { el.hidden = !!url; });
+                // Аватар в шапке сайта: обновляем, если он уже картинка; иначе новый вид появится после перезагрузки
+                document.querySelectorAll('.avatar [data-user-avatar], .profile-avatar [data-user-avatar]').forEach(function (el) {
+                    if (url) el.src = url;
+                });
+                removeBtn.hidden = !url;
+            }
+
+            function notify(text, type) {
+                if (window.DevExpress && DevExpress.ui && DevExpress.ui.notify) {
+                    DevExpress.ui.notify(text, type || 'success', 2000);
+                }
+            }
+
+            function readError(resp) {
+                return resp.json().then(function (d) { return (d && d.message) || 'Не удалось сохранить фото'; },
+                    function () { return 'Не удалось сохранить фото'; });
+            }
+
+            function save() {
+                if (!state) return;
+                var r = state.rect;
+                var k = OUTPUT / r.frame;
+                var canvas = document.createElement('canvas');
+                canvas.width = OUTPUT;
+                canvas.height = OUTPUT;
+                var ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#ffffff'; // прозрачный PNG не должен стать чёрным в JPEG
+                ctx.fillRect(0, 0, OUTPUT, OUTPUT);
+                ctx.imageSmoothingQuality = 'high';
+                ctx.drawImage(img, r.left * k, r.top * k, r.width * k, r.height * k);
+
+                saveBtn.disabled = true;
+                canvas.toBlob(function (blob) {
+                    if (!blob) { saveBtn.disabled = false; showError('Не удалось подготовить изображение'); return; }
+                    var form = new FormData();
+                    form.append('file', blob, 'avatar.jpg');
+                    fetch('/api/profile/avatar', { method: 'POST', body: form, credentials: 'same-origin' })
+                        .then(function (resp) {
+                            if (!resp.ok) return readError(resp).then(function (msg) { throw new Error(msg); });
+                            return resp.json();
+                        })
+                        .then(function (data) {
+                            setAvatarOnPage(data.avatarUrl);
+                            close();
+                            notify('Фото профиля обновлено');
+                        })
+                        .catch(function (err) {
+                            saveBtn.disabled = false;
+                            showError(err.message || 'Не удалось сохранить фото');
+                        });
+                }, 'image/jpeg', 0.9);
+            }
+
+            function remove() {
+                if (!confirm('Удалить фото профиля?')) return;
+                fetch('/api/profile/avatar', { method: 'DELETE', credentials: 'same-origin' })
+                    .then(function (resp) {
+                        if (!resp.ok) throw new Error();
+                        setAvatarOnPage(null);
+                        close();
+                        notify('Фото удалено');
+                    })
+                    .catch(function () { showError('Не удалось удалить фото'); });
+            }
+
+            document.getElementById('pfAvatarBtn').addEventListener('click', open);
+            modal.querySelectorAll('[data-avatar-close]').forEach(function (b) { b.addEventListener('click', close); });
+            modal.addEventListener('mousedown', function (e) { if (e.target === modal) close(); });
+            saveBtn.addEventListener('click', save);
+            removeBtn.addEventListener('click', remove);
+
+            fileInput.addEventListener('change', function () {
+                loadFile(fileInput.files && fileInput.files[0]);
+                fileInput.value = '';
+            });
+
+            ['dragenter', 'dragover'].forEach(function (name) {
+                drop.addEventListener(name, function (e) { e.preventDefault(); drop.classList.add('dragover'); });
+            });
+            ['dragleave', 'drop'].forEach(function (name) {
+                drop.addEventListener(name, function (e) { e.preventDefault(); drop.classList.remove('dragover'); });
+            });
+            drop.addEventListener('drop', function (e) {
+                loadFile(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]);
+            });
+
+            zoomInput.addEventListener('input', function () {
+                if (!state) return;
+                state.zoom = parseFloat(zoomInput.value) || 1;
+                layout();
+            });
+
+            // Перетаскивание картинки внутри круга (мышь и палец)
+            var drag = null;
+            frame.addEventListener('pointerdown', function (e) {
+                if (!state) return;
+                drag = { x: e.clientX, y: e.clientY, ox: state.ox, oy: state.oy };
+                frame.setPointerCapture(e.pointerId);
+                frame.classList.add('dragging');
+            });
+            frame.addEventListener('pointermove', function (e) {
+                if (!drag) return;
+                state.ox = drag.ox + (e.clientX - drag.x);
+                state.oy = drag.oy + (e.clientY - drag.y);
+                layout();
+            });
+            function endDrag() { drag = null; frame.classList.remove('dragging'); }
+            frame.addEventListener('pointerup', endDrag);
+            frame.addEventListener('pointercancel', endDrag);
+            frame.addEventListener('wheel', function (e) {
+                if (!state) return;
+                e.preventDefault();
+                var z = Math.max(1, Math.min(3, state.zoom - e.deltaY * 0.002));
+                state.zoom = z;
+                zoomInput.value = z;
+                layout();
+            }, { passive: false });
+        })();
     </script>
 }
 <script>

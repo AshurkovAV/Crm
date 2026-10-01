@@ -2,6 +2,7 @@
 using Crm.Core.ViewModels;
 using Crm.Entity.Services;
 using Crm.Extensions;
+using Crm.Services;
 using System.Security.Claims;
 
 
@@ -44,16 +45,18 @@ namespace Crm.Core.Implementations
                 return GetProfileFromClaims(user); // Пытаемся получить из claims
             }
             // Если есть ID - получаем полные данные из БД
-            if (Guid.TryParse(userIdClaim, out var userId))
+            // Id пользователя в claims — число (User.Id), а не Guid
+            if (int.TryParse(userIdClaim, out var userId))
             {
-                var dbUser = _userRepository.GetUser("");
-                if (dbUser.Success)
+                var dbUser = _userRepository.GetUserById(userId);
+                if (dbUser.Success && dbUser.Data != null)
                 {
                     return new ProfileViewModel
                     {
                         FirstName = dbUser.Data.FirstName ?? GetEmailFromUser(user),
                         LastName = dbUser.Data.LastName ?? "",
-                        Position = dbUser.Data.Role ?? "Пользователь",                    
+                        Position = dbUser.Data.Position ?? dbUser.Data.Role ?? "Пользователь",
+                        AvatarUrl = AvatarStorage.GetUrl(dbUser.Data)
                     };
                 }
             }

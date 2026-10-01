@@ -18,8 +18,8 @@
     </div>
 </div>
 
-<div class="content-section">
-    <div class="grid-wrapper">
+<div class="content-section vault-section">
+    <div class="grid-wrapper" id="vaultGridWrapper">
         @(Html.DevExtreme().DataGrid<VaultRow>()
             .ID("vaultGrid")
             .DataSource(ds => ds.Mvc()
@@ -96,12 +96,12 @@
                 columns.Add().DataField("CreatedByUserId").Visible(false);
                 columns.Add().DataField("IsOwner").Visible(false);
 
-                columns.Add().DataField("Title").Caption("Название").Width(200).MinWidth(150);
-                columns.Add().DataField("Login").Caption("Логин").Width(180).MinWidth(120);
+                columns.Add().DataField("Title").Caption("Название").MinWidth(150);
+                columns.Add().DataField("Login").Caption("Логин").MinWidth(120);
 
                 columns.Add().DataField("Password")
                     .Caption("Пароль")
-                    .Width(140)
+                    .MinWidth(140)
                     .AllowFiltering(false)
                     .AllowSorting(false)
                     .CellTemplate(@<text>
@@ -112,7 +112,7 @@
                         </span>
                     </text>);
 
-                columns.Add().DataField("Url").Caption("Ссылка").Width(200).MinWidth(140)
+                columns.Add().DataField("Url").Caption("Ссылка").MinWidth(140)
                     .CellTemplate(@<text>
                         <% if (value) { %>
                             <a href="<%- value %>" target="_blank" rel="noopener" class="vault-url-link"><%- value %></a>
@@ -126,7 +126,7 @@
                     .Caption("Изменено")
                     .DataType(GridColumnDataType.DateTime)
                     .Format("dd.MM.yyyy HH:mm")
-                    .Width(140)
+                    .MinWidth(130)
                     .AllowEditing(false);
 
                 columns.Add()
@@ -186,6 +186,17 @@
             padding: 20px;
         }
 
+        /* Грид на всю доступную область окна: высоту wrapper'а выставляет fitVaultGrid() */
+        .vault-section {
+            margin-bottom: 0;
+        }
+
+        .vault-section .grid-wrapper {
+            width: 100%;
+            height: 600px;
+            min-height: 360px;
+        }
+
         .vault-password-cell {
             display: inline-flex;
             align-items: center;
@@ -238,6 +249,36 @@
 
 @section Scripts {
     <script>
+        // Растягиваем грид по высоте до низа окна (ширину он и так берёт по контейнеру)
+        function fitVaultGrid() {
+            var wrapper = document.getElementById('vaultGridWrapper');
+            if (!wrapper) return;
+            var section = wrapper.closest('.content-section');
+            var sectionPadding = section ? parseFloat(getComputedStyle(section).paddingBottom) || 0 : 0;
+            var mainContent = wrapper.closest('.main-content');
+            var mainPadding = mainContent ? parseFloat(getComputedStyle(mainContent).paddingBottom) || 0 : 0;
+            var top = wrapper.getBoundingClientRect().top + window.scrollY;
+            var height = window.innerHeight - top - sectionPadding - mainPadding;
+            wrapper.style.height = Math.max(360, Math.floor(height)) + 'px';
+
+            var grid = $('#vaultGrid').dxDataGrid('instance');
+            if (grid) grid.updateDimensions();
+        }
+
+        $(function () {
+            fitVaultGrid();
+            var resizeTimer;
+            $(window).on('resize', function () {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(fitVaultGrid, 100);
+            });
+            // Сворачивание бокового меню меняет ширину области контента
+            $(document).on('transitionend', '.main-content', function () {
+                var grid = $('#vaultGrid').dxDataGrid('instance');
+                if (grid) grid.updateDimensions();
+            });
+        });
+
         function showCreateVaultEntryModal() {
             const grid = $('#vaultGrid').dxDataGrid('instance');
             if (grid) grid.addRow();
