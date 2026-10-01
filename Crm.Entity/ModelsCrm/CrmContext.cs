@@ -103,6 +103,7 @@ public partial class CrmContext : DbContext
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.MaxProjects).HasDefaultValue(10);
             entity.Property(e => e.Name).HasMaxLength(255);
+            entity.Property(e => e.WorkspaceMode).HasMaxLength(20).HasDefaultValue("Full");
 
             entity.HasOne(d => d.Owner).WithMany(p => p.Companies)
                 .HasForeignKey(d => d.OwnerId)

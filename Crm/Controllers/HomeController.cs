@@ -1,5 +1,10 @@
+using Crm.Entity.ModelsCrm;
 using Crm.Entity.Services;
 using Crm.Models;
+using Crm.Models.Home;
+using Crm.Navigation;
+using Crm.Services;
+using Crm.Services.Workspace;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
@@ -11,26 +16,90 @@ namespace Crm.Controllers
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
-        private ICompanyRepository _companyRepository;
+        private readonly ICompanyRepository _companyRepository;
+        private readonly IDashboardQueries _dashboardQueries;
+        private readonly IWorkspaceService _workspaceService;
+
         public HomeController(
             ICompanyRepository companyRepository,
+            IDashboardQueries dashboardQueries,
+            IWorkspaceService workspaceService,
             ILogger<HomeController> logger)
         {
             _companyRepository = companyRepository;
+            _dashboardQueries = dashboardQueries;
+            _workspaceService = workspaceService;
             _logger = logger;
         }
 
         public async Task<IActionResult> Index()
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            // Ïðîâåðÿåì, ñîçäàâàë ëè ïîëüçîâàòåëü êîìïàíèþ (ÿâëÿåòñÿ âëàäåëüöåì õîòÿ áû îäíîé êîìïàíèè)
-            bool hasOwnCompany = await _companyRepository.UserHasOwnCompanyAsync(int.Parse(userId));
-            // Ïðîâåðÿåì, ñîñòîèò ëè ïîëüçîâàòåëü â ëþáîé êîìïàíèè (âêëþ÷àÿ òó, ãäå îí íå âëàäåëåö)
-            bool hasAnyCompany = await _companyRepository.UserHasAnyCompanyAsync(int.Parse(userId));
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            // Ð¯Ð²Ð»ÑÐµÑ‚ÑÑ Ð»Ð¸ Ð¿Ð¾Ð»ÑŒÐ·Ð¾Ð²Ð°Ñ‚ÐµÐ»ÑŒ Ð²Ð»Ð°Ð´ÐµÐ»ÑŒÑ†ÐµÐ¼ (ÑÐ¾Ð·Ð´Ð°Ñ‚ÐµÐ»ÐµÐ¼) Ñ…Ð¾Ñ‚Ñ Ð±Ñ‹ Ð¾Ð´Ð½Ð¾Ð¹ ÐºÐ¾Ð¼Ð¿Ð°Ð½Ð¸Ð¸
+            bool hasOwnCompany = await _companyRepository.UserHasOwnCompanyAsync(userId);
+            // Ð¡Ð¾ÑÑ‚Ð¾Ð¸Ñ‚ Ð»Ð¸ Ð¿Ð¾Ð»ÑŒÐ·Ð¾Ð²Ð°Ñ‚ÐµÐ»ÑŒ Ð² ÐºÐ°ÐºÐ¾Ð¹-Ð»Ð¸Ð±Ð¾ ÐºÐ¾Ð¼Ð¿Ð°Ð½Ð¸Ð¸ (Ð² Ñ‚.Ñ‡. Ð½Ðµ ÑÐ²Ð¾ÐµÐ¹)
+            bool hasAnyCompany = await _companyRepository.UserHasAnyCompanyAsync(userId);
 
             ViewBag.HasOwnCompany = hasOwnCompany;
             ViewBag.HasAnyCompany = hasAnyCompany;
-            return View();
+
+            var model = new HomeIndexViewModel
+            {
+                HasOwnCompany = hasOwnCompany,
+                HasAnyCompany = hasAnyCompany,
+                Now = DateTime.Now
+            };
+
+            if (!hasAnyCompany)
+                return View(model);
+
+            model.Mode = WorkspaceMode.Normalize(await _workspaceService.GetCurrentModeAsync());
+            try
+            {
+                model.Data = await _dashboardQueries.GetHomeAsync(userId, model.IsFull);
+            }
+            catch (Exception ex)
+            {
+                // Ð”Ð°ÑˆÐ±Ð¾Ñ€Ð´ Ð½Ðµ Ð´Ð¾Ð»Ð¶ÐµÐ½ Ñ€Ð¾Ð½ÑÑ‚ÑŒ Ð³Ð»Ð°Ð²Ð½ÑƒÑŽ: Ð¿Ð¾ÐºÐ°Ð·Ñ‹Ð²Ð°ÐµÐ¼ Ð¿ÑƒÑÑ‚Ñ‹Ðµ Ð²Ð¸Ð´Ð¶ÐµÑ‚Ñ‹.
+                _logger.LogError(ex, "ÐÐµ ÑƒÐ´Ð°Ð»Ð¾ÑÑŒ Ð·Ð°Ð³Ñ€ÑƒÐ·Ð¸Ñ‚ÑŒ Ð´Ð°Ð½Ð½Ñ‹Ðµ Ð³Ð»Ð°Ð²Ð½Ð¾Ð¹ Ð´Ð»Ñ Ð¿Ð¾Ð»ÑŒÐ·Ð¾Ð²Ð°Ñ‚ÐµÐ»Ñ {UserId}", userId);
+            }
+
+            var tone = 0;
+            model.Team = model.Data.Team.Select(m =>
+            {
+                var name = BuildName(m);
+                return new HomeTeamMemberView
+                {
+                    UserId = m.UserId,
+                    Name = name,
+                    Initials = BuildInitials(m, name),
+                    Position = m.Position,
+                    AvatarUrl = AvatarStorage.GetUrl(new User { DefaultAvatarId = m.DefaultAvatarId, IsAvatarEmpty = m.IsAvatarEmpty }),
+                    IsMe = m.UserId == userId,
+                    Tone = tone++ % 5
+                };
+            }).ToList();
+
+            return View(model);
+        }
+
+        private static string BuildName(HomeTeamMember m)
+        {
+            var full = string.Join(" ", new[] { m.FirstName, m.LastName }
+                .Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x!.Trim()));
+            if (!string.IsNullOrWhiteSpace(full)) return full;
+            if (!string.IsNullOrWhiteSpace(m.DisplayName)) return m.DisplayName!.Trim();
+            if (!string.IsNullOrWhiteSpace(m.Email)) return m.Email!.Trim();
+            return "Ð¡Ð¾Ñ‚Ñ€ÑƒÐ´Ð½Ð¸Ðº";
+        }
+
+        private static string BuildInitials(HomeTeamMember m, string name)
+        {
+            static string First(string? s) => string.IsNullOrWhiteSpace(s) ? "" : char.ToUpperInvariant(s.Trim()[0]).ToString();
+            var initials = First(m.FirstName) + First(m.LastName);
+            if (initials.Length == 0)
+                initials = string.Concat(name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(w => First(w)));
+            return initials.Length == 0 ? "?" : initials;
         }
 
         public IActionResult Privacy()
@@ -42,6 +111,7 @@ namespace Crm.Controllers
         {
             return View();
         }
+
         public IActionResult Create()
         {
             return View();

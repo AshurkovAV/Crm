@@ -1,13 +1,24 @@
-﻿@model Crm.Core.ViewModels.ProfileViewModel
+@model Crm.Core.ViewModels.ProfileViewModel
 
 @{
     var initial = !string.IsNullOrEmpty(Model.FirstName) ? Model.FirstName[0].ToString() : "А";
     var hasAvatar = !string.IsNullOrEmpty(Model.AvatarUrl);
+    var fullName = $"{Model.FirstName} {Model.LastName}".Trim();
 }
 
-<div class="avatar" id="profileToggle">
-    @* Картинка и буква есть всегда: после загрузки/удаления фото страница профиля
-       переключает их без перезагрузки (см. data-user-avatar / data-user-initial) *@
-    <img src="@Model.AvatarUrl" alt="" class="avatar-img" data-user-avatar hidden="@(!hasAvatar)" />
-    <span class="avatar-initial" data-user-initial hidden="@hasAvatar">@initial</span>
-</div>
+<button type="button" class="tb-me" id="profileToggle" aria-haspopup="true" aria-expanded="false" aria-controls="profileDropdown"
+        aria-label="Меню профиля@(string.IsNullOrEmpty(fullName) ? "" : ": " + fullName)">
+    <span class="avatar">
+        @* Картинка и буква есть всегда: после загрузки/удаления фото страница профиля
+           переключает их без перезагрузки (см. data-user-avatar / data-user-initial) *@
+        <img src="@Model.AvatarUrl" alt="" class="avatar-img" data-user-avatar hidden="@(!hasAvatar)" />
+        <span class="avatar-initial" data-user-initial hidden="@hasAvatar">@initial</span>
+    </span>
+    @if (!string.IsNullOrEmpty(fullName))
+    {
+        <span class="tb-me-text" aria-hidden="true">
+            <b>@fullName</b>
+            @if (!string.IsNullOrEmpty(Model.Position)) { <span>@Model.Position</span> }
+        </span>
+    }
+</button>

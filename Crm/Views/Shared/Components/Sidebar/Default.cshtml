@@ -1,0 +1,103 @@
+﻿@model Crm.ViewComponents.SidebarViewModel
+@using Crm.ViewComponents
+@using Crm.Navigation
+
+@{
+    var companyName = string.IsNullOrWhiteSpace(Model.CompanyName) ? "Моя компания" : Model.CompanyName;
+    var companyInitial = SidebarViewModel.Initial(companyName);
+    var canSwitch = Model.Companies.Count > 1;
+    var metaParts = new List<string>();
+    if (Model.MemberCount is int n && n > 0) { metaParts.Add(SidebarViewModel.People(n)); }
+    var activeCtrl = Model.ActiveController;
+}
+
+<div class="sb-head">
+    <a class="sb-brand" href="/" aria-label="CRM — на главную">
+        <span class="sb-brand-mark" aria-hidden="true"></span>
+        <span class="sb-brand-word">CRM</span>
+    </a>
+    <button type="button" class="sb-close" data-shell-close aria-label="Закрыть меню">
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+    </button>
+</div>
+
+<div class="sb-org @(canSwitch ? "sb-org--switch" : "")">
+    @if (canSwitch)
+    {
+        <button type="button" class="sb-org-btn" id="sbOrgToggle" aria-haspopup="true" aria-expanded="false" aria-controls="sbOrgMenu">
+            <span class="sb-org-logo" aria-hidden="true">@companyInitial</span>
+            <span class="sb-org-text">
+                <b title="@companyName">@companyName</b>
+                @if (metaParts.Count > 0) { <span>@string.Join(" · ", metaParts)</span> }
+            </span>
+            <i class="fa-solid fa-chevron-down sb-org-chev" aria-hidden="true"></i>
+        </button>
+        <form class="sb-org-menu" id="sbOrgMenu" method="post" action="/Profile/SwitchCompany" hidden>
+            <input type="hidden" name="returnUrl" value="@(Context.Request.Path + Context.Request.QueryString)" />
+            @Html.AntiForgeryToken()
+            <div class="sb-org-menu-title">Переключить компанию</div>
+            @foreach (var c in Model.Companies)
+            {
+                var isCurrent = c.Id == Model.CurrentCompanyId;
+                <button type="submit" name="companyId" value="@c.Id" class="sb-org-option @(isCurrent ? "is-current" : "")" @(isCurrent ? "disabled" : null) aria-current="@(isCurrent ? "true" : null)">
+                    <span class="sb-org-option-logo" aria-hidden="true">@SidebarViewModel.Initial(c.Name)</span>
+                    <span class="sb-org-option-name">@c.Name</span>
+                    @if (isCurrent) { <i class="fa-solid fa-check" aria-hidden="true"></i> }
+                </button>
+            }
+        </form>
+    }
+    else
+    {
+        <div class="sb-org-btn sb-org-btn--static">
+            <span class="sb-org-logo" aria-hidden="true">@companyInitial</span>
+            <span class="sb-org-text">
+                <b title="@companyName">@companyName</b>
+                @if (metaParts.Count > 0) { <span>@string.Join(" · ", metaParts)</span> }
+            </span>
+        </div>
+    }
+    @if (Model.IsTasksMode)
+    {
+        <span class="sb-mode-badge"><i class="fa-solid fa-list-check" aria-hidden="true"></i>Режим: Задачи</span>
+    }
+</div>
+
+<nav class="sb-nav" aria-label="Основное меню">
+    @foreach (var group in Model.Groups)
+    {
+        <div class="sb-group">
+            @if (group.Title != "Работа")
+            {
+                <div class="sb-group-title">@group.Title</div>
+            }
+            @foreach (var item in group.Items)
+            {
+                var active = Model.IsActive(item);
+                <a href="@item.Url" class="sb-link @(active ? "is-active" : "")" aria-current="@(active ? "page" : null)">
+                    <i class="@item.Icon" aria-hidden="true"></i>
+                    <span>@item.Title</span>
+                </a>
+            }
+        </div>
+    }
+</nav>
+
+<div class="sb-foot">
+    @if (Model.CanChangeMode)
+    {
+        <div class="sb-mode" role="group" aria-labelledby="sbModeLabel">
+            <div class="sb-mode-label" id="sbModeLabel">Режим работы</div>
+            <div class="sb-seg">
+                <button type="button" class="sb-seg-btn @(Model.IsTasksMode ? "" : "is-on")" data-workspace-mode="@WorkspaceMode.Full" aria-pressed="@(Model.IsTasksMode ? "false" : "true")">Полная CRM</button>
+                <button type="button" class="sb-seg-btn @(Model.IsTasksMode ? "is-on" : "")" data-workspace-mode="@WorkspaceMode.Tasks" aria-pressed="@(Model.IsTasksMode ? "true" : "false")">Только задачи</button>
+            </div>
+        </div>
+    }
+    <a href="/Trash" class="sb-link @(string.Equals(activeCtrl, "Trash", StringComparison.OrdinalIgnoreCase) ? "is-active" : "")">
+        <i class="fa-solid fa-trash-can" aria-hidden="true"></i><span>Корзина</span>
+    </a>
+    <a href="/Profile" class="sb-link @(string.Equals(activeCtrl, "Profile", StringComparison.OrdinalIgnoreCase) ? "is-active" : "")">
+        <i class="fa-solid fa-circle-user" aria-hidden="true"></i><span>Профиль</span>
+    </a>
+</div>

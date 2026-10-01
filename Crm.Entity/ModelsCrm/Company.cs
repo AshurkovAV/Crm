@@ -23,6 +23,9 @@ public partial class Company
 
     public bool? IsActive { get; set; }
 
+    /// <summary>Режим работы учреждения: "Full" — полная CRM, "Tasks" — только задачи.</summary>
+    public string WorkspaceMode { get; set; } = "Full";
+
     public virtual ICollection<CompanyUser> CompanyUsers { get; set; } = new List<CompanyUser>();
 
     public virtual User Owner { get; set; } = null!;

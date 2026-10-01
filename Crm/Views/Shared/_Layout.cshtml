@@ -1,41 +1,41 @@
-﻿@{
-    var controller = ViewContext.RouteData.Values["Controller"]?.ToString();
-    var action = ViewContext.RouteData.Values["Action"]?.ToString();
+@inject Crm.Services.Workspace.IWorkspaceService Workspace
+@{
+    var controller = ViewContext.RouteData.Values["Controller"]?.ToString() ?? string.Empty;
+    var workspaceMode = Crm.Navigation.WorkspaceMode.Normalize(await Workspace.GetCurrentModeAsync());
+    var isTasksMode = workspaceMode == Crm.Navigation.WorkspaceMode.Tasks;
 
-    var topMenu = controller switch
+    bool Is(params string[] names) => names.Any(n => string.Equals(n, controller, StringComparison.OrdinalIgnoreCase));
+
+    // Пункты «+ Создать» (верхняя кнопка и центральная кнопка нижней панели на телефоне)
+    var createItems = new List<(string Title, string Icon, string Url)>
     {
-        "Projects" => "projects",    // Для контроллера Projects
-        "Project" => "projects",
-        "Tasks" => "projects",       // Для контроллера Tasks ✅
-        "Workflows" => "projects",   // Для контроллера Workflows ✅
-        "Trash" => "projects",       // Для контроллера Trash ✅
-        "More" => "projects",        // Для контроллера More ✅
-        "Crm" => "crm",              // Для контроллера Crm
-        "Deals" => "crm",
-        "Warehouse" => "crm",
-        "Sales" => "crm",
-        "Contractors" => "crm",
-        "Marketing" => "marketing",  // Для контроллера Marketing
-        "Campaigns" => "marketing",  
-        "Mailings" => "marketing",   
-        "Communications" => "communications",
-        _ => "dashboard"             // Для всех остальных
+        ("Задача", "fa-solid fa-list-check", "/Tasks"),
+        ("Проект", "fa-solid fa-folder", "/Project"),
     };
+    if (!isTasksMode)
+    {
+        createItems.Add(("Сделка", "fa-solid fa-handshake", "/Deals"));
+    }
 }
-
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@ViewData["Title"] - Crm</title>
-    <script src="~/js/user/changeBackground.js"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@@400;500;600;700;800&subset=cyrillic,latin&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    @* Оболочка подключается ДО стилей страниц: стили из секции Styles перекрывают её при равной специфичности *@
+    <link rel="stylesheet" href="~/css/app-shell.css" asp-append-version="true" />
+
     <script src="~/js/chat/site.js?v=2"></script>
 
     @await RenderSectionAsync("Styles", required: false)
     <link href="~/css/devextreme/dx.material.blue.light.css" rel="stylesheet" />
-    
+
     <script src="~/js/devextreme/jquery.js"></script>
 
     <!-- Quill должен быть подключён ДО dx.all.js, иначе HtmlEditor падает с E1041 -->
@@ -53,1196 +53,269 @@
     <script>
         DevExpress.localization.locale('ru');
     </script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
- 
-    <style>
-        .submenu {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-            padding: 8px 0;
-            min-width: 180px;
-            z-index: 1001;
-            backdrop-filter: blur(10px);
-            background: rgba(255, 255, 255, 0.95);
-        }
-
-        .submenu-item {
-            padding: 12px 20px;
-            cursor: pointer;
-            color: #475569;
-            transition: all 0.3s ease;
-            font-size: 14px;
-        }
-
-            .submenu-item:hover {
-                background: #f1f5f9;
-                color: #6366f1;
-            }
-    </style>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background-color: #f8fafc;
-            color: #334155;
-            transition: all 0.3s ease;
-            background-image: url('/image/clouds.jpg');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-            position: relative;
-        }
-
-            body::before {
-                content: '';
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: rgba(255, 255, 255, 0.25);
-                z-index: -1;
-            }
-
-        /* Верхняя панель */
-        .top-bar {
-            background: rgba(99, 102, 241, 0.1); /* Очень прозрачный фиолетовый */
-            color: white;
-            padding: 0 24px;
-            display: flex;
-            align-items: center;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-            height: 60px;
-            backdrop-filter: blur(15px); /* Такое же размытие как в sidebar */
-            -webkit-backdrop-filter: blur(15px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* Легкая граница */
-        }
-
-        /* Блок с меню-гамбургером и логотипом */
-        .left-controls {
-            display: flex;
-            align-items: center;
-            width: 260px;
-        }
-
-        .menu-toggle {
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
-            color: white;
-            cursor: pointer;
-            margin-right: 16px;
-            font-size: 18px;
-            width: 36px;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 10px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-            .menu-toggle:hover {
-                background: rgba(255, 255, 255, 0.2);
-            }
-
-        .logo {
-            font-weight: 700;
-            font-size: 20px;
-            letter-spacing: 0.5px;
-        }
-
-        /* Верхнее меню */
-        .top-menu {
-            display: flex;
-            height: 100%;
-            flex: 1;
-        }
-
-        .top-tabs {
-            display: flex;
-            height: 100%;
-        }
-
-        .tab {
-            padding: 0 20px;
-            display: flex;
-            align-items: center;
-            height: 100%;
-            font-size: 14px;
-            cursor: pointer;
-            position: relative;
-            transition: all 0.3s ease;
-            opacity: 0.9;
-            font-weight: 400; /* Менее жирный текст */
-        }
-
-            .tab:hover {
-                opacity: 1;
-                background: rgba(255, 255, 255, 0.1); /* Легкий ховер */
-            }
-
-            .tab.active {
-                opacity: 1;
-                background: rgba(255, 255, 255, 0.15);
-            }
-
-            .tab::after {
-                content: '';
-                position: absolute;
-                bottom: 0;
-                left: 20%;
-                width: 60%;
-                height: 2px;
-                background: white;
-                border-radius: 2px 2px 0 0;
-                transform: scaleX(0);
-                transition: transform 0.3s ease;
-            }
-
-            .tab.active::after {
-                transform: scaleX(1);
-            }
-
-            .tab i {
-                margin-right: 8px;
-                font-size: 16px;
-            }
-
-        .top-right {
-            display: flex;
-            align-items: center;
-            position: relative;
-            gap: 8px;
-        }
-
-        .search-box {
-            display: flex;
-            align-items: center;
-            background: rgba(255, 255, 255, 0.1); /* Прозрачный фон */
-            border-radius: 12px;
-            padding: 8px 16px;
-            transition: all 0.3s ease;
-        }
-
-            .search-box:hover {
-                background: rgba(255, 255, 255, 0.15);
-            }
-
-            .search-box input {
-                background: transparent;
-                border: none;
-                color: white;
-                padding: 6px;
-                width: 200px;
-                outline: none;
-                font-size: 14px;
-            }
-
-                .search-box input::placeholder {
-                    color: rgba(255, 255, 255, 0.7);
-                }
-
-            .search-box i {
-                margin-right: 8px;
-                color: rgba(255, 255, 255, 0.8);
-            }
-
-        .top-icon {
-            width: 38px;
-            height: 38px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-            background: rgba(255, 255, 255, 0.05); /* Легкий фон */
-        }
-
-            .top-icon a {
-                color: inherit; /* Наследует цвет от родительского элемента */
-                text-decoration: none; /* Убирает подчеркивание */
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                width: 100%;
-                height: 100%;
-            }
-
-            .top-icon:hover {
-                background: rgba(255, 255, 255, 0.1);
-            }
-
-            .top-icon::after {
-                content: '';
-                position: absolute;
-                top: 8px;
-                right: 8px;
-                width: 8px;
-                height: 8px;
-                background: #ef4444;
-                border-radius: 50%;
-                opacity: 0;
-                transform: scale(0);
-                transition: all 0.3s ease;
-            }
-
-            .top-icon.has-notification::after {
-                opacity: 1;
-                transform: scale(1);
-            }
-
-        .avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 12px;
-            background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-weight: 600;
-            position: relative;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
-        }
-
-            .avatar:hover {
-                transform: scale(1.05);
-                box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4);
-            }
-
-        /* Фото профиля в шапке и выпадающем меню */
-        .avatar, .profile-avatar {
-            overflow: hidden;
-        }
-
-            .avatar .avatar-img, .profile-avatar .avatar-img {
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-                display: block;
-            }
-
-            .avatar [hidden], .profile-avatar [hidden] {
-                display: none !important;
-            }
-
-        /* Выпадающее меню профиля */
-        .profile-dropdown {
-            position: absolute;
-            top: calc(100% + 12px);
-            right: 0;
-            width: 340px;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
-            margin-top: 8px;
-            z-index: 1001;
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(-10px);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            overflow: hidden;
-        }
-
-            .profile-dropdown.active {
-                opacity: 1;
-                visibility: visible;
-                transform: translateY(0);
-            }
-
-        .profile-header {
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-            padding: 24px;
-            color: white;
-            display: flex;
-            align-items: center;
-        }
-
-        .profile-avatar {
-            width: 64px;
-            height: 64px;
-            border-radius: 16px;
-            background: linear-gradient(135deg, #ec4899 0%, #f59e0b 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            color: white;
-            font-weight: 600;
-            margin-right: 16px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-        }
-
-        .profile-info h3 {
-            margin-bottom: 6px;
-            font-size: 18px;
-            font-weight: 600;
-        }
-
-        .profile-info p {
-            opacity: 0.9;
-            font-size: 14px;
-            font-weight: 400;
-        }
-
-        .profile-menu {
-            padding: 12px 0;
-        }
-
-        .profile-item {
-            display: flex;
-            align-items: center;
-            padding: 14px 24px;
-            color: #475569;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-            .profile-item:hover {
-                background: #f1f5f9;
-                padding-left: 28px;
-            }
-
-            .profile-item i {
-                margin-right: 16px;
-                width: 20px;
-                text-align: center;
-                color: #64748b;
-                transition: all 0.3s ease;
-            }
-
-            .profile-item:hover i {
-                color: #6366f1;
-            }
-
-        .profile-divider {
-            height: 1px;
-            background: linear-gradient(to right, transparent, #e2e8f0, transparent);
-            margin: 8px 24px;
-        }
-
-        .profile-footer {
-            padding: 16px 24px;
-            background-color: #f8fafc;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-top: 1px solid #f1f5f9;
-        }
-
-            .profile-footer a {
-                color: #6366f1;
-                text-decoration: none;
-                font-size: 14px;
-                font-weight: 500;
-                transition: all 0.3s ease;
-            }
-
-                .profile-footer a:hover {
-                    color: #4f46e5;
-                }
-
-        .logout-btn {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
-        }
-
-            .logout-btn:hover {
-                box-shadow: 0 8px 20px rgba(239, 68, 68, 0.35);
-            }
-
-        /* Основной контейнер */
-        .container {
-            display: flex;
-            margin-top: 60px;
-            min-height: calc(100vh - 60px);
-        }
-
-        /* Левое меню - ОБНОВЛЕННЫЙ СТИЛЬ */
-        .sidebar {
-            width: 260px;
-            background: transparent; /* Полностью прозрачный фон */
-            padding: 20px 0;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            overflow-y: auto;
-            height: calc(100vh - 60px);
-            position: fixed;
-            left: 0;
-            top: 60px;
-            z-index: 999;
-            backdrop-filter: blur(15px); /* Чистое размытие */
-            -webkit-backdrop-filter: blur(15px);
-            border-right: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-            .sidebar.collapsed {
-                transform: translateX(-260px);
-                width: 0;
-            }
-
-        .menu-section {
-            margin-bottom: 16px;
-        }
-
-            .menu-section h2 {
-                font-size: 12px;
-                color: #ffffff; /* Чистый белый */
-                padding: 16px 24px 8px;
-                text-transform: uppercase;
-                letter-spacing: 1px;
-                font-weight: 500; /* Менее жирный (было 600) */
-            }
-
-        .menu-item {
-            padding: 14px 24px;
-            display: flex;
-            align-items: center;
-            color: #ffffff; /* Чистый белый */
-            text-decoration: none;
-            transition: all 0.3s ease;
-            font-size: 14px;
-            cursor: pointer;
-            position: relative;
-            margin: 4px 0;
-            border-radius: 0 12px 12px 0;
-            font-weight: 400; /* Менее жирный (было 500) */
-            /* Без text-shadow */
-        }
-
-            .menu-item:hover {
-                background: rgba(255, 255, 255, 0.15);
-                color: #ffffff;
-                padding-left: 28px;
-            }
-
-            .menu-item i {
-                margin-right: 16px;
-                width: 18px;
-                text-align: center;
-                font-size: 18px;
-                color: #ffffff; /* Чистый белый */
-                /* Без filter и drop-shadow */
-            }
-
-        .divider {
-            height: 1px;
-            background: rgba(255, 255, 255, 0.2); /* Простая белая линия */
-            margin: 16px 24px;
-            /* Без box-shadow */
-        }
-
-        .menu-item::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            height: 100%;
-            width: 4px;
-            background: white;
-            border-radius: 0 4px 4px 0;
-            opacity: 0;
-            transform: scaleY(0);
-            transition: all 0.3s ease;
-        }
-
-        .menu-item:hover::before {
-            opacity: 1;
-            transform: scaleY(1);
-        }
-
-
-
-        /* Основное содержимое */
-        .main-content {
-            flex: 1;
-            min-width: 0;
-            padding: 28px;
-            margin-left: 260px;
-            transition: margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-            .main-content.expanded {
-                margin-left: 0;
-            }
-
-        /* Верхняя панель контента */
-        .content-top-bar {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-            padding: 20px 28px;
-            margin-bottom: 28px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: all 0.3s ease;
-        }
-
-        .content-title {
-            font-size: 24px;
-            color: #1e293b;
-            font-weight: 700;
-            transition: all 0.3s ease;
-        }
-
-        .content-actions {
-            display: flex;
-            gap: 12px;
-        }
-
-        .content-btn {
-            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
-        }
-
-            .content-btn:hover {
-                box-shadow: 0 8px 20px rgba(99, 102, 241, 0.35);
-            }
-
-            .content-btn.secondary {
-                background: white;
-                color: #64748b;
-                border: 1px solid #e2e8f0;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-            }
-
-                .content-btn.secondary:hover {
-                    background: #f8fafc;
-                    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-                }
-
-        /* Секции контента */
-        .content-section {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-            padding: 24px;
-            margin-bottom: 24px;
-            transition: all 0.3s ease;
-        }
-
-            .content-section:hover {
-                box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
-            }
-
-            .content-section h2 {
-                margin-bottom: 16px;
-                color: #1e293b;
-                font-weight: 600;
-                font-size: 18px;
-            }
-
-        /* Оверлей для закрытия меню при клике вне его */
-        .overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(4px);
-            z-index: 998;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s ease;
-        }
-
-            .overlay.active {
-                opacity: 1;
-                visibility: visible;
-            }
-
-        /* Стили для таблицы */
-        table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            margin-top: 16px;
-        }
-
-            table th, table td {
-                padding: 16px;
-                text-align: left;
-                border-bottom: 1px solid #f1f5f9;
-            }
-
-            table th {
-                background-color: #f8fafc;
-                font-weight: 600;
-                color: #475569;
-                border-top: 1px solid #f1f5f9;
-                border-bottom: 2px solid #e2e8f0;
-            }
-
-            table tr {
-                transition: all 0.3s ease;
-            }
-
-                table tr:hover {
-                    background-color: #f8fafc;
-                }
-
-            table td {
-                color: #64748b;
-            }
-
-        /* Специфические стили для разных модулей */
-        .tasks-view .content-title {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .crm-view .content-title {
-            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .marketing-view .content-title {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .communications-view .content-title {
-            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .analytics-view .content-title {
-            background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        /* Анимации */
-        @@keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @@keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(-20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
-        .content-section {
-            animation: fadeIn 0.5s ease forwards;
-        }
-
-        .menu-item {
-            animation: slideIn 0.4s ease forwards;
-        }
-
-        /* Адаптивность */
-        @@media (max-width: 1100px) {
-            .tab span {
-                display: none;
-            }
-
-            .tab {
-                padding: 0 16px;
-            }
-
-                .tab i {
-                    margin-right: 0;
-                    font-size: 18px;
-                }
-
-            .search-box {
-                width: 42px;
-                overflow: hidden;
-                transition: all 0.3s ease;
-            }
-
-                .search-box:hover {
-                    width: 200px;
-                }
-        }
-
-        @@media (max-width: 768px) {
-            .sidebar {
-                width: 280px;
-                transform: translateX(-280px);
-            }
-
-                .sidebar.active {
-                    transform: translateX(0);
-                }
-
-            .main-content {
-                margin-left: 0;
-                padding: 20px;
-            }
-
-            .top-tabs {
-                display: none;
-            }
-
-            .search-box {
-                width: 38px;
-                padding: 8px;
-            }
-
-                .search-box input {
-                    display: none;
-                }
-
-                .search-box:hover {
-                    width: 200px;
-                    padding: 8px 16px;
-                }
-
-                    .search-box:hover input {
-                        display: block;
-                    }
-
-            .profile-dropdown {
-                width: 300px;
-                right: -10px;
-            }
-
-            .left-controls {
-                width: auto;
-            }
-
-            .content-top-bar {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 16px;
-            }
-
-            .content-actions {
-                width: 100%;
-                flex-wrap: wrap;
-            }
-
-            .top-bar {
-                padding: 0 16px;
-            }
-        }
-
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(5px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 16px;
-            padding: 24px;
-            width: 90%;
-            max-width: 600px;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-            .modal-header h3 {
-                color: #1e293b;
-                font-weight: 600;
-            }
-
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: #64748b;
-        }
-
-        .background-options {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
-        }
-
-        .background-option {
-            cursor: pointer;
-            border-radius: 12px;
-            overflow: hidden;
-            transition: all 0.3s ease;
-            border: 2px solid transparent;
-        }
-
-            .background-option:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-            }
-
-            .background-option.active {
-                border-color: #6366f1;
-            }
-
-            .background-option img {
-                width: 100%;
-                height: 120px;
-                object-fit: cover;
-            }
-
-            .background-option span {
-                display: block;
-                text-align: center;
-                padding: 12px;
-                background: #f8fafc;
-                color: #475569;
-                font-weight: 500;
-            }
-
-        }
-    </style>
 </head>
-<body>
+<body class="app-body @(isTasksMode ? "mode-tasks" : "mode-full")" data-workspace-mode="@workspaceMode">
 
-    <!-- Оверлей для закрытия меню -->
-    <div class="overlay" id="overlay"></div>
+    <a class="skip-link" href="#contentArea">Перейти к содержимому</a>
+
+    <!-- Затемнение под выдвижным меню (планшет/телефон) -->
+    <div class="app-overlay" id="overlay" data-shell-close hidden></div>
+
+    <!-- Левое меню -->
+    <aside class="app-sidebar" id="appSidebar" aria-label="Боковое меню">
+        @await Component.InvokeAsync("Sidebar", new { mode = workspaceMode })
+    </aside>
 
     <!-- Верхняя панель -->
-    <div class="top-bar">
-        <!-- Блок с меню-гамбургером и логотипом -->
-        <div class="left-controls">
-            <button class="menu-toggle">☰</button>
-            <div class="logo">CRM SYSTEM</div>
+    <header class="app-topbar">
+        <button type="button" class="tb-icon tb-burger" data-shell-open aria-label="Открыть меню" aria-controls="appSidebar" aria-expanded="false">
+            <i class="fa-solid fa-bars" aria-hidden="true"></i>
+        </button>
+        <a class="tb-brand" href="/" aria-label="CRM — на главную">
+            <span class="sb-brand-mark" aria-hidden="true"></span>
+            <span class="sb-brand-word">CRM</span>
+        </a>
+
+        <form class="tb-search" role="search" action="#" onsubmit="return false;">
+            <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+            <input type="search" id="shellSearch" placeholder="@(isTasksMode ? "Поиск по задачам и проектам…" : "Поиск по сделкам, клиентам, задачам…")" aria-label="Поиск" autocomplete="off">
+            <kbd aria-hidden="true">Ctrl K</kbd>
+        </form>
+
+        <div class="tb-spacer"></div>
+
+        <div class="tb-create" data-menu>
+            <button type="button" class="tb-create-btn" id="createToggle" aria-haspopup="true" aria-expanded="false" aria-controls="createMenu">
+                <i class="fa-solid fa-plus" aria-hidden="true"></i><span>Создать</span>
+            </button>
+            <div class="tb-menu" id="createMenu" role="menu" hidden>
+                @foreach (var item in createItems)
+                {
+                    <a role="menuitem" class="tb-menu-item" href="@item.Url"><i class="@item.Icon" aria-hidden="true"></i><span>@item.Title</span></a>
+                }
+            </div>
         </div>
 
-        <!-- Верхнее меню -->
-        <div class="top-menu">
-            @await Html.PartialAsync("_TopMenu", topMenu)
-        </div>
+        <a href="/Online" class="tb-icon tb-chat @(Is("Online") ? "is-active" : "")" id="chatToggle" aria-label="Чат">
+            <i class="fa-regular fa-comment" aria-hidden="true"></i>
+        </a>
 
-        <div class="top-right">
-            <div class="search-box">
-                <i class="fas fa-search"></i>
-                <input type="text" placeholder="Поиск...">
-            </div>
+        <button type="button" class="tb-icon tb-bell" aria-label="Уведомления">
+            <i class="fa-regular fa-bell" aria-hidden="true"></i>
+        </button>
 
-            <div class="top-icon has-notification">
-                <i class="far fa-bell"></i>
-            </div>
-
-            <div class="top-icon" id="chatToggle">
-                <a href="/Online"><i class="far fa-comment"></i></a>
-            </div>
-
-            <div class="top-icon">
-                <i class="fas fa-question-circle"></i>
-            </div>
-
-            <div class="top-icon">
-                <i class="fas fa-th"></i>
-            </div>
-
+        <div class="tb-profile">
             @await Component.InvokeAsync("Icon")
 
             <!-- Выпадающее меню профиля -->
-            <div class="profile-dropdown" id="profileDropdown">
+            <div class="profile-dropdown" id="profileDropdown" hidden>
                 @await Component.InvokeAsync("Profile")
 
                 <div class="profile-menu">
                     <a href="/Profile" class="profile-item">
-                        <i class="fas fa-user-circle"></i>
+                        <i class="fa-regular fa-circle-user" aria-hidden="true"></i>
                         <span>Мой профиль</span>
                     </a>
-                    <a href="#" class="profile-item">
-                        <i class="fas fa-cog"></i>
-                        <span>Настройки</span>
-                    </a>
-                    <a href="#" class="profile-item">
-                        <i class="fas fa-file-alt"></i>
-                        <span>Мои документы</span>
-                    </a>
-
-                    <div class="profile-divider"></div>
-
-                    <a href="#" class="profile-item">
-                        <i class="fas fa-mobile-alt"></i>
-                        <span>Войти с телефона</span>
-                    </a>
-
-                    <div class="profile-divider"></div>
-
-                    <a href="#" class="profile-item" id="changeBackgroundBtn">
-                        <i class="fas fa-image"></i>
-                        <span>Сменить фон</span>
+                    <a href="/company" class="profile-item">
+                        <i class="fa-solid fa-users" aria-hidden="true"></i>
+                        <span>Сотрудники</span>
                     </a>
                 </div>
 
                 <div class="profile-footer">
-                    <a href="#">Настройки профиля</a>
-                    <button class="logout-btn">Выйти</button>
+                    <button type="button" class="logout-btn">
+                        <i class="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i>Выйти
+                    </button>
                 </div>
             </div>
         </div>
-    </div>
+    </header>
 
-    <!-- Добавляем контейнер для чата -->
+    <!-- Контейнер для чата (используется js/chat/site.js) -->
     <div id="chatContainer" style="display: none; position: absolute; left: -9999px;">
         @await Component.InvokeAsync("Chat")
     </div>
 
-    <!-- Модальное окно для выбора фона -->
-    <div class="modal-overlay" id="backgroundModal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Выберите фон</h3>
-                <button class="modal-close">&times;</button>
-            </div>
-            <div class="background-options">
-                <div class="background-option" data-image="/image/slope.jpg">
-                    <img src="/image/slope.jpg" alt="Горы">
-                    <span>Горы</span>
-                </div>
-                <div class="background-option" data-image="/image/clouds.jpg">
-                    <img src="/image/clouds.jpg" alt="Офис">
-                    <span>Ледник</span>
-                </div>
-                <div class="background-option" data-image="/image/lava.jpg">
-                    <img src="/image/lava.jpg" alt="Природа">
-                    <span>Лава</span>
-                </div>
-                <div class="background-option" data-image="/image/slope.jpg">
-                    <img src="/image/slope.jpg" alt="Город">
-                    <span>Природа</span>
-                </div>
-                <div class="background-option" data-image="/image/travel.jpg">
-                    <img src="/image/travel.jpg" alt="Пляж">
-                    <span>Путешествия</span>
-                </div>
-                <div class="background-option" data-image="/image/winter-forest.jpg">
-                    <img src="/image/winter-forest.jpg" alt="Абстракция">
-                    <span>Зимний лес</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-
-    <div class="container">
-        <!-- Левое меню -->
-        <div class="sidebar">
-            <div class="menu-section">
-                <h2>Совместная работа</h2>
-                <a href="/Tasks" class="menu-item">
-                    <i class="fas fa-tasks"></i>
-                    <span>Задачи и Проекты</span>
-                </a>
-                <a href="/Deals" class="menu-item">
-                    <i class="fas fa-user-friends"></i>
-                    <span>CRM</span>
-                </a>
-                <a href="/warehouse" class="menu-item">
-                    <i class="fas fa-pallet"></i>
-                    <span>Складской учет</span>
-                </a>
-                <a href="/company" class="menu-item">
-                    <i class="fas fa-users"></i>
-                    <span>Сотрудники</span>
-                </a>
-                <a href="/Vault" class="menu-item">
-                    <i class="fas fa-key"></i>
-                    <span>Пароли</span>
-                </a>
-                <a href="#" class="menu-item" data-view="automation">
-                    <i class="fas fa-cogs"></i>
-                    <span>Автоматизация</span>
-                </a>
-            </div>
-
-            <div class="divider"></div>
-
-            <div class="menu-section">
-                <a href="#" class="menu-item" data-view="all">
-                    <i class="fas fa-ellipsis-h"></i>
-                    <span>Показать все</span>
-                </a>
-                <a href="#" class="menu-item" data-view="settings">
-                    <i class="fas fa-cog"></i>
-                    <span>Настройки</span>
-                </a>
-            </div>
-        </div>
-
-        <!-- Основное содержимое -->
-        <div class="main-content">
-            <!-- Содержимое (будет меняться) -->
-            <div id="contentArea">
+    <div class="container app-container">
+        <main class="main-content" id="mainContent">
+            <div id="contentArea" tabindex="-1">
                 @RenderBody()
             </div>
-        </div>
+        </main>
     </div>
 
-
+    <!-- Нижняя панель (телефон) -->
+    <nav class="app-tabbar" aria-label="Быстрая навигация">
+        <a href="/" class="tab-item @(Is("Home", "Dashboard") ? "is-active" : "")" aria-current="@(Is("Home", "Dashboard") ? "page" : null)">
+            <i class="fa-solid fa-house" aria-hidden="true"></i><span>Главная</span>
+        </a>
+        <a href="/Tasks" class="tab-item @(Is("Tasks") ? "is-active" : "")" aria-current="@(Is("Tasks") ? "page" : null)">
+            <i class="fa-solid fa-list-check" aria-hidden="true"></i><span>Задачи</span>
+        </a>
+        <div class="tab-fab-wrap" data-menu>
+            <button type="button" class="tab-fab" id="createFab" aria-label="Создать" aria-haspopup="true" aria-expanded="false" aria-controls="createSheet">
+                <i class="fa-solid fa-plus" aria-hidden="true"></i>
+            </button>
+            <div class="tb-menu tab-sheet" id="createSheet" role="menu" hidden>
+                @foreach (var item in createItems)
+                {
+                    <a role="menuitem" class="tb-menu-item" href="@item.Url"><i class="@item.Icon" aria-hidden="true"></i><span>@item.Title</span></a>
+                }
+            </div>
+        </div>
+        @if (isTasksMode)
+        {
+            <a href="/Vault" class="tab-item @(Is("Vault") ? "is-active" : "")" aria-current="@(Is("Vault") ? "page" : null)">
+                <i class="fa-solid fa-key" aria-hidden="true"></i><span>Пароли</span>
+            </a>
+        }
+        else
+        {
+            <a href="/Deals" class="tab-item @(Is("Deals", "Crm") ? "is-active" : "")" aria-current="@(Is("Deals", "Crm") ? "page" : null)">
+                <i class="fa-solid fa-handshake" aria-hidden="true"></i><span>Сделки</span>
+            </a>
+        }
+        <button type="button" class="tab-item" data-shell-open aria-controls="appSidebar" aria-expanded="false">
+            <i class="fa-solid fa-grip" aria-hidden="true"></i><span>Ещё</span>
+        </button>
+    </nav>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const menuToggle = document.querySelector('.menu-toggle');
-            const sidebar = document.querySelector('.sidebar');
-            const mainContent = document.querySelector('.main-content');
-            const profileToggle = document.getElementById('profileToggle');
-            const profileDropdown = document.getElementById('profileDropdown');
-            const overlay = document.getElementById('overlay');
+        (function () {
+            'use strict';
+            var body = document.body;
+            var sidebar = document.getElementById('appSidebar');
+            var overlay = document.getElementById('overlay');
+            var profileToggle = document.getElementById('profileToggle');
+            var profileDropdown = document.getElementById('profileDropdown');
 
-            // Функция для закрытия dropdown
-            function closeProfileDropdown() {
-                profileDropdown.classList.remove('active');
-                overlay.style.display = 'none';
+            /* ---------- Уведомление об ошибке ---------- */
+            function shellNotify(message, type) {
+                if (window.DevExpress && DevExpress.ui && DevExpress.ui.notify) {
+                    DevExpress.ui.notify({ message: message, width: 'auto', position: { my: 'bottom center', at: 'bottom center', offset: '0 -96' } }, type || 'error', 4000);
+                } else {
+                    alert(message);
+                }
             }
+            window.shellNotify = shellNotify;
 
-            // Переключение бокового меню
-            menuToggle.addEventListener('click', function () {
-                sidebar.classList.toggle('collapsed');
-                mainContent.classList.toggle('expanded');
+            /* ---------- Выдвижное меню (< 1100px) ---------- */
+            var openers = document.querySelectorAll('[data-shell-open]');
+            var lastFocus = null;
+
+            function setDrawer(open) {
+                body.classList.toggle('shell-drawer-open', open);
+                overlay.hidden = !open;
+                openers.forEach(function (b) { b.setAttribute('aria-expanded', open ? 'true' : 'false'); });
+                if (open) {
+                    lastFocus = document.activeElement;
+                    var first = sidebar.querySelector('.sb-close') || sidebar.querySelector('a, button');
+                    if (first) setTimeout(function () { first.focus(); }, 50);
+                } else if (lastFocus && document.contains(lastFocus)) {
+                    lastFocus.focus();
+                    lastFocus = null;
+                }
+            }
+            window.shellToggleSidebar = function (open) {
+                setDrawer(typeof open === 'boolean' ? open : !body.classList.contains('shell-drawer-open'));
+            };
+
+            openers.forEach(function (b) {
+                b.addEventListener('click', function () { setDrawer(true); });
+            });
+            document.querySelectorAll('[data-shell-close]').forEach(function (el) {
+                el.addEventListener('click', function () { setDrawer(false); });
+            });
+            window.matchMedia('(min-width: 1100px)').addEventListener('change', function (e) {
+                if (e.matches && body.classList.contains('shell-drawer-open')) setDrawer(false);
             });
 
-            // Переключение меню профиля
-            profileToggle.addEventListener('click', function (e) {
-                e.stopPropagation();
-                const isActive = profileDropdown.classList.contains('active');
-                closeProfileDropdown(); // Сначала закрываем
+            /* ---------- Всплывающие меню ---------- */
+            var popups = [];
+            function registerPopup(toggle, panel) {
+                if (!toggle || !panel) return;
+                var p = { toggle: toggle, panel: panel };
+                popups.push(p);
+                toggle.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    var willOpen = panel.hidden;
+                    closePopups();
+                    if (willOpen) {
+                        panel.hidden = false;
+                        toggle.setAttribute('aria-expanded', 'true');
+                        toggle.classList.add('is-open');
+                    }
+                });
+                panel.addEventListener('click', function (e) { e.stopPropagation(); });
+            }
+            function closePopups(except) {
+                popups.forEach(function (p) {
+                    if (p === except || p.panel.hidden) return;
+                    p.panel.hidden = true;
+                    p.toggle.setAttribute('aria-expanded', 'false');
+                    p.toggle.classList.remove('is-open');
+                });
+            }
+            registerPopup(profileToggle, profileDropdown);
+            registerPopup(document.getElementById('createToggle'), document.getElementById('createMenu'));
+            registerPopup(document.getElementById('createFab'), document.getElementById('createSheet'));
+            registerPopup(document.getElementById('sbOrgToggle'), document.getElementById('sbOrgMenu'));
 
-                if (!isActive) {
-                    profileDropdown.classList.add('active');
-                    overlay.style.display = 'block';
+            document.addEventListener('click', function () { closePopups(); });
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    var open = popups.filter(function (p) { return !p.panel.hidden; })[0];
+                    if (open) { closePopups(); open.toggle.focus(); return; }
+                    if (body.classList.contains('shell-drawer-open')) setDrawer(false);
+                }
+                // Ctrl/Cmd + K — фокус в поиск
+                if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K' || e.key === 'л' || e.key === 'Л')) {
+                    var search = document.getElementById('shellSearch');
+                    if (search && search.offsetParent !== null) { e.preventDefault(); search.focus(); }
                 }
             });
 
-            // Закрытие при клике в любом месте документа
-            document.addEventListener('click', function (e) {
-                if (profileDropdown.classList.contains('active')) {
-                    closeProfileDropdown();
-                }
-            });
-
-            // Предотвращаем закрытие при клике внутри dropdown
-            profileDropdown.addEventListener('click', function (e) {
-                e.stopPropagation();
-            });
-
-            // Закрытие при клике на оверлей
-            overlay.addEventListener('click', closeProfileDropdown);
-
-            // Закрытие при клике на кнопку выхода
-            const logoutBtn = document.querySelector('.logout-btn');
+            /* ---------- Выход ---------- */
+            var logoutBtn = document.querySelector('.logout-btn');
             if (logoutBtn) {
                 logoutBtn.addEventListener('click', function (e) {
                     e.preventDefault();
                     window.location.href = '/Account/logout';
                 });
             }
-        });
-    </script>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Обработка подменю в верхнем меню
-            document.querySelectorAll('.tab.has-submenu').forEach(tab => {
-                tab.addEventListener('click', function (e) {
-                    e.stopPropagation();
+            /* ---------- Режим работы компании ---------- */
+            document.querySelectorAll('[data-workspace-mode]').forEach(function (btn) {
+                if (btn.tagName !== 'BUTTON') return;
+                btn.addEventListener('click', function () {
+                    var mode = btn.getAttribute('data-workspace-mode');
+                    if (mode === body.getAttribute('data-workspace-mode')) return;
+                    var group = btn.parentElement;
+                    group.querySelectorAll('button').forEach(function (b) { b.disabled = true; });
+                    group.classList.add('is-busy');
 
-                    // Закрываем другие подменю
-                    document.querySelectorAll('.submenu').forEach(sub => sub.remove());
-
-                    // Создаем подменю
-                    const submenu = document.createElement('div');
-                    submenu.className = 'submenu';
-
-                    // Здесь можно добавить элементы подменю
-                    // Например, для "Клиенты"
-                    if (this.querySelector('span').textContent === 'Клиенты') {
-                        [{ text: 'Контакты', url: '/Contacts' }, { text: 'Компании', url: '#' }, { text: 'Поставщики', url: '#' }].forEach(item => {
-                            const submenuItem = document.createElement('div');
-                            submenuItem.className = 'submenu-item';
-                            submenuItem.textContent = item.text;
-                            submenuItem.addEventListener('click', function (event) {
-                                event.stopPropagation();
-                                if (item.url !== '#') window.location.href = item.url;
+                    fetch('/api/workspace/mode', {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                        body: JSON.stringify({ mode: mode })
+                    })
+                        .then(function (r) {
+                            return r.json().catch(function () { return {}; }).then(function (data) {
+                                if (!r.ok || data.success === false) {
+                                    throw new Error((data && (data.message || data.error)) || ('HTTP ' + r.status));
+                                }
+                                location.href = '/';
                             });
-                            submenu.appendChild(submenuItem);
+                        })
+                        .catch(function (err) {
+                            group.querySelectorAll('button').forEach(function (b) { b.disabled = false; });
+                            group.classList.remove('is-busy');
+                            shellNotify('Не удалось сменить режим: ' + (err && err.message ? err.message : 'ошибка сети'));
                         });
-                    }
-
-                    // Позиционируем подменю
-                    const rect = this.getBoundingClientRect();
-                    submenu.style.position = 'fixed';
-                    submenu.style.top = (rect.bottom + 5) + 'px';
-                    submenu.style.left = rect.left + 'px';
-
-                    document.body.appendChild(submenu);
-
-                    // Закрываем при клике вне подменю
-                    setTimeout(() => {
-                        document.addEventListener('click', function closeSubmenu() {
-                            submenu.remove();
-                            document.removeEventListener('click', closeSubmenu);
-                        });
-                    }, 0);
                 });
             });
-        });
+        })();
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)

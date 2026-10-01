@@ -412,5 +412,22 @@ namespace Crm.Entity.Services
                     .FirstOrDefaultAsync();
             }
         }
+
+        public async Task<bool> SetWorkspaceModeAsync(int companyId, string mode)
+        {
+            using (var db = new CrmContext())
+            {
+                var company = await db.Companies.FirstOrDefaultAsync(c => c.Id == companyId);
+                if (company == null)
+                {
+                    return false;
+                }
+
+                company.WorkspaceMode = mode;
+                company.ModifiedDate = DateTime.Now;
+                await db.SaveChangesAsync();
+                return true;
+            }
+        }
     }
 }

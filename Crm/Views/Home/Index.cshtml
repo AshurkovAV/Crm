@@ -1,552 +1,615 @@
-﻿@{
+@model Crm.Models.Home.HomeIndexViewModel
+@using Crm.Models.Home
+@{
     ViewData["Title"] = "Главная";
-    bool hasOwnCompany = ViewBag.HasOwnCompany ?? false;
-    bool hasAnyCompany = ViewBag.HasAnyCompany ?? false;
+    var m = Model ?? new HomeIndexViewModel
+    {
+        HasOwnCompany = ViewBag.HasOwnCompany ?? false,
+        HasAnyCompany = ViewBag.HasAnyCompany ?? false
+    };
+    var d = m.Data;
+    var now = m.Now;
+    var today = now.Date;
+
+    void RenderTasksCard()
+    {
+        <section class="hm-card hm-panel hm-o-tasks">
+            <div class="hm-panel-head">
+                <h2>Мои задачи</h2>
+                <a class="hm-link" href="/Tasks">Все · @d.MyOpenTasks <i class="fa-solid fa-chevron-right"></i></a>
+            </div>
+            @if (d.MyTasks.Count == 0)
+            {
+                <div class="hm-empty">
+                    <i class="fa-solid fa-mug-hot"></i>
+                    <p>Открытых задач нет — можно взять новую</p>
+                    <a class="hm-btn hm-btn-sm" href="/Tasks">Перейти к задачам</a>
+                </div>
+            }
+            else
+            {
+                <ul class="hm-tasks">
+                    @foreach (var t in d.MyTasks)
+                    {
+                        var late = t.Deadline.HasValue && t.Deadline.Value < now;
+                        var inProgress = t.StatusName != null && t.StatusName.StartsWith("В работе", StringComparison.OrdinalIgnoreCase);
+                        var important = string.Equals(t.Priority, "Высокий", StringComparison.OrdinalIgnoreCase);
+                        <li>
+                            <a href="/Tasks">
+                                <span class="hm-task-dot @(late ? "is-late" : inProgress ? "is-prog" : null)"></span>
+                                <span class="hm-task-body">
+                                    <span class="hm-task-name">@t.Name</span>
+                                    <span class="hm-task-meta">
+                                        @if (t.Deadline.HasValue)
+                                        {
+                                            var dl = t.Deadline.Value;
+                                            var label = dl.Date == today ? "сегодня" : dl.Date == today.AddDays(1) ? "завтра" : HomeIndexViewModel.ShortDate(dl, now);
+                                            <span class="hm-nowrap @(late ? "hm-bad" : null)"><i class="@(late ? "fa-solid fa-triangle-exclamation" : "fa-regular fa-calendar")"></i> @label</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="hm-nowrap"><i class="fa-regular fa-calendar"></i> без срока</span>
+                                        }
+                                        @if (!string.IsNullOrEmpty(t.ProjectName))
+                                        {
+                                            <span class="hm-chip hm-chip-gray">@t.ProjectName</span>
+                                        }
+                                        @if (!string.IsNullOrEmpty(t.StatusName))
+                                        {
+                                            <span class="hm-chip hm-chip-acc">@t.StatusName</span>
+                                        }
+                                        @if (important)
+                                        {
+                                            <span class="hm-chip hm-chip-crit">Важно</span>
+                                        }
+                                    </span>
+                                </span>
+                            </a>
+                        </li>
+                    }
+                </ul>
+            }
+        </section>
+    }
 }
 
-<div class="content-section">
-    @if (!hasAnyCompany)
+<div class="hm">
+    @if (!m.HasAnyCompany)
     {
-        <div class="welcome-message">
-            <h2>Добро пожаловать в CRM-систему!</h2>
-            <p>Чтобы начать работу, выберите один из вариантов:</p>
-        </div>
-
-        <div class="company-actions">
-            <div class="action-card" id="createCompanyCard">
-                <div class="action-icon">🏢</div>
-                <h3>Создать компанию</h3>
-                <p>Станьте владельцем компании, управляйте проектами и приглашайте сотрудников.</p>
-                <button class="btn btn-primary" id="createCompanyBtn">Создать компанию</button>
+        <section class="hm-onb">
+            <div class="hm-onb-head">
+                <span class="hm-onb-logo"><i class="fa-solid fa-layer-group"></i></span>
+                <h1>Добро пожаловать в CRM</h1>
+                <p>Чтобы начать работу, создайте свою компанию или присоединитесь к существующей по коду приглашения.</p>
             </div>
-
-            <div class="action-card" id="joinCompanyCard">
-                <div class="action-icon">🔗</div>
-                <h3>Присоединиться к компании</h3>
-                <p>У вас есть код приглашения? Введите его, чтобы стать участником компании.</p>
-                <button class="btn btn-secondary" id="joinCompanyBtn">Ввести код</button>
-            </div>
-        </div>
-    }
-    else if (hasAnyCompany && !hasOwnCompany)
-    {
-        <div class="main-panel">
-            <div class="panel-header">
-                <div>
-                    <p class="eyebrow">Главная</p>
-                    <h2>Последние новости</h2>
+            <div class="hm-onb-grid">
+                <div class="hm-card hm-onb-card" id="createCompanyCard">
+                    <span class="hm-onb-ic"><i class="fa-solid fa-building"></i></span>
+                    <h3>Создать компанию</h3>
+                    <p>Станьте владельцем компании, ведите задачи и проекты, приглашайте сотрудников.</p>
+                    <button type="button" class="hm-btn hm-btn-pri" id="createCompanyBtn"><i class="fa-solid fa-plus"></i> Создать компанию</button>
                 </div>
-                <span class="panel-badge">Сегодня</span>
-            </div>
-
-            <p class="panel-subtitle">Следите за обновлениями, задачами и событиями вашей компании.</p>
-
-            <div class="news-list">
-                <article class="news-item">
-                    <div class="news-dot"></div>
-                    <div class="news-content">
-                        <div class="news-meta">
-                            <span class="news-date">Сегодня</span>
-                            <span class="news-tag">Сделки</span>
-                        </div>
-                        <h3>Обновлены статусы по текущим сделкам</h3>
-                        <p>Проверьте карточки сделок и завершите согласование с клиентами.</p>
-                    </div>
-                </article>
-
-                <article class="news-item">
-                    <div class="news-dot"></div>
-                    <div class="news-content">
-                        <div class="news-meta">
-                            <span class="news-date">Вчера</span>
-                            <span class="news-tag">Команда</span>
-                        </div>
-                        <h3>Добавлены новые контакты и поставщики</h3>
-                        <p>Обновлён справочник позволяет быстрее находить клиентов и партнёров.</p>
-                    </div>
-                </article>
-
-                <article class="news-item">
-                    <div class="news-dot"></div>
-                    <div class="news-content">
-                        <div class="news-meta">
-                            <span class="news-date">На этой неделе</span>
-                            <span class="news-tag">Проекты</span>
-                        </div>
-                        <h3>Следующий дедлайн по проектам уже назначен</h3>
-                        <p>Проверьте актуальные задачи и распределите загрузку команды.</p>
-                    </div>
-                </article>
-            </div>
-        </div>
-
-        <div class="company-actions" style="margin-top: 30px;">
-            <div class="action-card" id="joinCompanyCardOnly">
-                <div class="action-icon">🔗</div>
-                <h3>Присоединиться к другой компании</h3>
-                <p>У вас есть код приглашения? Введите его, чтобы стать участником ещё одной компании.</p>
-                <button class="btn btn-secondary" id="joinCompanyBtnOnly">Ввести код</button>
-            </div>
-        </div>
-    }
-    else if (hasOwnCompany)
-    {
-        <div class="main-panel">
-            <div class="panel-header">
-                <div>
-                    <p class="eyebrow">Главная</p>
-                    <h2>Последние новости</h2>
+                <div class="hm-card hm-onb-card" id="joinCompanyCard">
+                    <span class="hm-onb-ic hm-onb-ic-alt"><i class="fa-solid fa-link"></i></span>
+                    <h3>Присоединиться к компании</h3>
+                    <p>У вас есть код приглашения? Введите его, чтобы стать участником компании.</p>
+                    <button type="button" class="hm-btn" id="joinCompanyBtn"><i class="fa-solid fa-key"></i> Ввести код</button>
                 </div>
-                <span class="panel-badge">Сегодня</span>
+            </div>
+        </section>
+    }
+    else
+    {
+        <header class="hm-head">
+            <div class="hm-head-text">
+                <h1>Добрый день, @m.GreetingName</h1>
+                <p>@m.Summary</p>
+            </div>
+            <div class="hm-head-actions">
+                <a class="hm-btn" href="/Tasks"><i class="fa-solid fa-list-check"></i> Задачи</a>
+                @if (m.IsFull)
+                {
+                    <a class="hm-btn hm-btn-pri" href="/Deals"><i class="fa-solid fa-handshake"></i> Сделки</a>
+                }
+                else
+                {
+                    <a class="hm-btn hm-btn-pri" href="/Project"><i class="fa-solid fa-folder"></i> Проекты</a>
+                }
+            </div>
+        </header>
+
+        @* ---------- KPI ---------- *@
+        <section class="hm-kpis">
+            @if (m.IsFull && d.SalesLoaded)
+            {
+                <a class="hm-kpi hm-kpi-dark" href="/Deals">
+                    <div class="hm-kpi-top"><span>Сделки в работе</span><i class="fa-solid fa-briefcase"></i></div>
+                    <div class="hm-kpi-val">@d.OpenDeals</div>
+                    <div class="hm-kpi-sub">на сумму <b>@HomeIndexViewModel.Rub(d.OpenDealsAmount)</b></div>
+                </a>
+                if (d.HasProduction)
+                {
+                    <a class="hm-kpi" href="/Workflows">
+                        <div class="hm-kpi-top"><span>Заказы в производстве</span><i class="fa-solid fa-industry"></i></div>
+                        <div class="hm-kpi-val">@d.OrdersInProduction</div>
+                        @if (d.OrdersInProductionOverdue > 0)
+                        {
+                            <div class="hm-kpi-sub hm-bad"><i class="fa-solid fa-triangle-exclamation"></i> @d.OrdersInProductionOverdue с истёкшим сроком</div>
+                        }
+                        else
+                        {
+                            <div class="hm-kpi-sub">сроки не нарушены</div>
+                        }
+                    </a>
+                }
+            }
+            <a class="hm-kpi" href="/Tasks">
+                <div class="hm-kpi-top"><span>Мои задачи в работе</span><i class="fa-solid fa-list-check"></i></div>
+                <div class="hm-kpi-val">@d.MyOpenTasks</div>
+                <div class="hm-kpi-sub">назначены на меня</div>
+            </a>
+            <a class="hm-kpi" href="/Tasks">
+                <div class="hm-kpi-top"><span>Просрочено</span><i class="fa-regular fa-clock"></i></div>
+                <div class="hm-kpi-val @(d.MyOverdueTasks > 0 ? "hm-bad" : null)">@d.MyOverdueTasks</div>
+                <div class="hm-kpi-sub">@(d.MyOverdueTasks > 0 ? "срок уже прошёл" : "всё в срок")</div>
+            </a>
+            @if (!m.IsFull)
+            {
+                <a class="hm-kpi" href="/Tasks">
+                    <div class="hm-kpi-top"><span>Выполнено за 7 дней</span><i class="fa-solid fa-circle-check"></i></div>
+                    <div class="hm-kpi-val">@d.MyDoneLast7Days</div>
+                    <div class="hm-kpi-sub">моих задач</div>
+                </a>
+            }
+            @if (!m.IsFull || !d.SalesLoaded || !d.HasProduction)
+            {
+                <a class="hm-kpi" href="/Project">
+                    <div class="hm-kpi-top"><span>Активных проектов</span><i class="fa-solid fa-folder-open"></i></div>
+                    <div class="hm-kpi-val">@d.ActiveProjects</div>
+                    <div class="hm-kpi-sub">где я участник</div>
+                </a>
+            }
+        </section>
+
+        <div class="hm-grid">
+            <div class="hm-col">
+                @if (m.IsFull && d.SalesLoaded)
+                {
+                    var maxCount = d.DealStages.Count == 0 ? 1 : d.DealStages.Max(s => s.Count);
+                    <section class="hm-card hm-panel hm-o-deals">
+                        <div class="hm-panel-head">
+                            <h2>Сделки по этапам</h2>
+                            <a class="hm-link" href="/Deals">Все сделки <i class="fa-solid fa-chevron-right"></i></a>
+                        </div>
+                        @if (d.DealStages.Count == 0)
+                        {
+                            <div class="hm-empty">
+                                <i class="fa-solid fa-handshake"></i>
+                                <p>Сделок пока нет</p>
+                                <a class="hm-btn hm-btn-sm" href="/Deals">Создать сделку</a>
+                            </div>
+                        }
+                        else
+                        {
+                            <ul class="hm-stages">
+                                @foreach (var s in d.DealStages)
+                                {
+                                    var w = Math.Max(4, (int)Math.Round(100.0 * s.Count / Math.Max(1, maxCount)));
+                                    <li class="@(s.IsClosed ? "is-closed" : null)">
+                                        <span class="hm-stage-name">@s.Status</span>
+                                        <span class="hm-bar"><i style="width:@(w)%"></i></span>
+                                        <span class="hm-stage-cnt">@s.Count</span>
+                                        <span class="hm-stage-sum">@HomeIndexViewModel.RubShort(s.Amount)</span>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </section>
+
+                    if (d.HasProduction)
+                    {
+                        <section class="hm-card hm-panel hm-o-prod">
+                            <div class="hm-panel-head">
+                                <h2>В производстве</h2>
+                                <a class="hm-link" href="/Workflows">Все заказы · @d.OrdersInProduction <i class="fa-solid fa-chevron-right"></i></a>
+                            </div>
+                            @if (d.Production.Count == 0)
+                            {
+                                <div class="hm-empty"><i class="fa-solid fa-industry"></i><p>Все заказы завершены</p></div>
+                            }
+                            else
+                            {
+                                <ul class="hm-prod">
+                                    @foreach (var p in d.Production)
+                                    {
+                                        var pct = p.TotalStages == 0 ? 0 : (int)Math.Round(100.0 * p.DoneStages / p.TotalStages);
+                                        var late = p.DueDate.HasValue && p.DueDate.Value.Date < today;
+                                        var sub = p.ClientName ?? p.DealTitle;
+                                        if (!string.IsNullOrEmpty(p.CurrentStage))
+                                        {
+                                            sub = string.IsNullOrEmpty(sub) ? p.CurrentStage : sub + " · " + p.CurrentStage;
+                                        }
+                                        <li>
+                                            <div class="hm-prod-row">
+                                                <span class="hm-prod-name">@p.Name</span>
+                                                <span class="hm-prod-pct">@pct%</span>
+                                            </div>
+                                            <span class="hm-bar"><i style="width:@(pct)%"></i></span>
+                                            <div class="hm-prod-row hm-meta">
+                                                <span class="hm-ellipsis">@sub</span>
+                                                @if (p.DueDate.HasValue)
+                                                {
+                                                    <span class="hm-nowrap @(late ? "hm-bad" : null)">@if (late)
+                                                        {
+                                                            <i class="fa-solid fa-triangle-exclamation"></i>
+                                                        } до @HomeIndexViewModel.ShortDate(p.DueDate.Value, now)</span>
+                                                }
+                                            </div>
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                        </section>
+                    }
+                }
+
+                @if (!m.IsFull)
+                {
+                    RenderTasksCard();
+                }
+
+                <section class="hm-card hm-panel hm-o-proj">
+                    <div class="hm-panel-head">
+                        <h2>Проекты</h2>
+                        <a class="hm-link" href="/Project">Все · @d.ActiveProjects <i class="fa-solid fa-chevron-right"></i></a>
+                    </div>
+                    @if (d.Projects.Count == 0)
+                    {
+                        <div class="hm-empty">
+                            <i class="fa-solid fa-folder-open"></i>
+                            <p>Активных проектов нет</p>
+                            <a class="hm-btn hm-btn-sm" href="/Project">Перейти к проектам</a>
+                        </div>
+                    }
+                    else
+                    {
+                        <ul class="hm-projects">
+                            @foreach (var p in d.Projects)
+                            {
+                                var pct = p.TotalTasks == 0 ? 0 : (int)Math.Round(100.0 * p.DoneTasks / p.TotalTasks);
+                                var members = $"{p.Members} {HomeIndexViewModel.Plural(p.Members, "участник", "участника", "участников")}";
+                                <li>
+                                    <a href="/Project">
+                                        <span class="hm-proj-ic"><i class="fa-solid fa-folder"></i></span>
+                                        <span class="hm-proj-body">
+                                            <span class="hm-prod-row">
+                                                <span class="hm-prod-name">@p.Name</span>
+                                                @if (!string.IsNullOrEmpty(p.Status))
+                                                {
+                                                    <span class="hm-chip hm-chip-gray">@p.Status</span>
+                                                }
+                                            </span>
+                                            @if (p.TotalTasks > 0)
+                                            {
+                                                <span class="hm-bar"><i style="width:@(pct)%"></i></span>
+                                                <span class="hm-meta">Выполнено @p.DoneTasks из @p.TotalTasks · @pct% · @members</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="hm-meta">Задач пока нет · @members</span>
+                                            }
+                                        </span>
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </section>
             </div>
 
-            <p class="panel-subtitle">Здесь собраны ключевые обновления, задачи и важные события компании.</p>
+            <div class="hm-col">
+                @if (m.IsFull)
+                {
+                    RenderTasksCard();
+                }
 
-            <div class="news-list">
-                <article class="news-item">
-                    <div class="news-dot"></div>
-                    <div class="news-content">
-                        <div class="news-meta">
-                            <span class="news-date">Сегодня</span>
-                            <span class="news-tag">Задачи</span>
-                        </div>
-                        <h3>Скоро будет обновление по текущим задачам</h3>
-                        <p>Проверьте остаток задач и отметьте приоритетные пункты для команды.</p>
+                <section class="hm-card hm-panel hm-o-team">
+                    <div class="hm-panel-head">
+                        <h2>Команда</h2>
+                        <a class="hm-link" href="/company">@d.TeamCount @HomeIndexViewModel.Plural(d.TeamCount, "сотрудник", "сотрудника", "сотрудников") <i class="fa-solid fa-chevron-right"></i></a>
                     </div>
-                </article>
+                    @if (m.Team.Count == 0)
+                    {
+                        <div class="hm-empty"><i class="fa-solid fa-users"></i><p>Сотрудников пока нет</p></div>
+                    }
+                    else
+                    {
+                        <ul class="hm-team">
+                            @foreach (var u in m.Team)
+                            {
+                                <li>
+                                    @if (!string.IsNullOrEmpty(u.AvatarUrl))
+                                    {
+                                        <img class="hm-av" src="@u.AvatarUrl" alt="" loading="lazy" />
+                                    }
+                                    else
+                                    {
+                                        <span class="hm-av hm-av-@u.Tone">@u.Initials</span>
+                                    }
+                                    <span class="hm-team-body">
+                                        <b>@u.Name@if (u.IsMe)
+                                            {
+                                                <em> (вы)</em>
+                                            }</b>
+                                        @if (!string.IsNullOrWhiteSpace(u.Position))
+                                        {
+                                            <span class="hm-meta">@u.Position</span>
+                                        }
+                                    </span>
+                                </li>
+                            }
+                        </ul>
+                        @if (d.TeamCount > m.Team.Count)
+                        {
+                            <a class="hm-more" href="/company">и ещё @(d.TeamCount - m.Team.Count)</a>
+                        }
+                    }
+                    @if (m.HasOwnCompany)
+                    {
+                        <a class="hm-btn hm-btn-dashed" href="/company"><i class="fa-solid fa-user-plus"></i> Пригласить сотрудника</a>
+                    }
+                </section>
 
-                <article class="news-item">
-                    <div class="news-dot"></div>
-                    <div class="news-content">
-                        <div class="news-meta">
-                            <span class="news-date">Вчера</span>
-                            <span class="news-tag">Сотрудники</span>
-                        </div>
-                        <h3>Приглашения сотрудникам готовы к отправке</h3>
-                        <p>Добавьте новых участников и настройте доступы для совместной работы.</p>
+                <section class="hm-card hm-join hm-o-join">
+                    <span class="hm-onb-ic hm-onb-ic-alt"><i class="fa-solid fa-link"></i></span>
+                    <div class="hm-join-text">
+                        <b>Присоединиться к другой компании</b>
+                        <span class="hm-meta">@(m.HasOwnCompany ? "Вас пригласили в другую компанию? Введите код." : "Есть код приглашения? Станьте участником ещё одной компании.")</span>
                     </div>
-                </article>
-
-                <article class="news-item">
-                    <div class="news-dot"></div>
-                    <div class="news-content">
-                        <div class="news-meta">
-                            <span class="news-date">На этой неделе</span>
-                            <span class="news-tag">Контакты</span>
-                        </div>
-                        <h3>Справочник клиентов и поставщиков обновлён</h3>
-                        <p>Теперь все важные записи доступны в одном месте для быстрого поиска.</p>
-                    </div>
-                </article>
-            </div>
-        </div>
-
-        <div class="company-actions" style="margin-top: 30px;">
-            <div class="action-card" id="joinCompanyCardOwn">
-                <div class="action-icon">🔗</div>
-                <h3>Присоединиться к другой компании</h3>
-                <p>Вас пригласили в другую компанию? Введите код.</p>
-                <button class="btn btn-secondary" id="joinCompanyBtnOwn">Ввести код</button>
+                    @if (m.HasOwnCompany)
+                    {
+                        <button type="button" class="hm-btn hm-btn-sm" id="joinCompanyBtnOwn">Ввести код</button>
+                    }
+                    else
+                    {
+                        <button type="button" class="hm-btn hm-btn-sm" id="joinCompanyBtnOnly">Ввести код</button>
+                    }
+                </section>
             </div>
         </div>
     }
 </div>
 
-<!-- Подключаем модальные окна -->
+<!-- Модальные окна (обработчики кнопок createCompanyBtn / joinCompanyBtn* — внутри партиалов) -->
 @await Html.PartialAsync("/Views/Shared/Company/_InviteModal.cshtml")
 @await Html.PartialAsync("/Views/Shared/Company/_CreateCompanyModal.cshtml")
 
 <style>
-    /* Общие стили */
-    .content-section {
-        max-width: 1200px;
+    .hm {
+        --hm-bg: #f4f5f8; --hm-card: #fff; --hm-line: #e4e7ee; --hm-line2: #eef0f4;
+        --hm-ink: #0f172a; --hm-ink2: #334155; --hm-muted: #5b6475; --hm-faint: #8a93a6;
+        --hm-acc: #4f46e5; --hm-acc-h: #4338ca; --hm-acc-s: #eef0ff; --hm-dark: #0f172a;
+        --hm-bad: #b91c1c; --hm-bad-s: #fdecec;
+        font-family: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+        color: var(--hm-ink);
+        font-size: 14px;
+        line-height: 1.4;
+        max-width: 1440px;
         margin: 0 auto;
-        padding: 28px 24px 40px;
-        width: 100%;
+        padding: 28px 32px 40px;
         box-sizing: border-box;
-    }
-
-    .main-panel {
-        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-        border: 1px solid #e2e8f0;
-        border-radius: 20px;
-        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
-        padding: 28px;
-        margin-bottom: 28px;
-    }
-
-    .panel-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
-        margin-bottom: 8px;
-    }
-
-    .eyebrow {
-        margin: 0;
-        font-size: 0.78rem;
-        font-weight: 700;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: #64748b;
-    }
-
-    .panel-header h2 {
-        margin: 6px 0 0;
-        font-size: clamp(1.8rem, 2vw, 2.4rem);
-        line-height: 1.15;
-        color: #0f172a;
-    }
-
-    .panel-badge {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 8px 12px;
-        border-radius: 999px;
-        background: #eef2ff;
-        color: #4f46e5;
-        font-size: 0.8rem;
-        font-weight: 700;
-    }
-
-    .panel-subtitle {
-        margin: 0 0 24px;
-        color: #475569;
-        font-size: 1rem;
-        line-height: 1.5;
-    }
-
-    .news-list {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 18px;
-    }
-
-    .news-item {
-        display: flex;
-        align-items: flex-start;
-        gap: 14px;
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 16px;
-        padding: 18px;
-        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
-    }
-
-    .news-dot {
-        width: 11px;
-        height: 11px;
-        margin-top: 10px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #4f46e5, #7c3aed);
-        box-shadow: 0 0 0 6px rgba(79, 70, 229, 0.12);
-        flex-shrink: 0;
-    }
-
-    .news-content {
-        flex: 1;
-    }
-
-    .news-meta {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 8px;
-        margin-bottom: 8px;
-        flex-wrap: wrap;
-    }
-
-    .news-date {
-        font-size: 0.76rem;
-        font-weight: 600;
-        color: #64748b;
-    }
-
-    .news-tag {
-        display: inline-flex;
-        align-items: center;
-        padding: 4px 8px;
-        border-radius: 999px;
-        background: #f1f5f9;
-        color: #334155;
-        font-size: 0.7rem;
-        font-weight: 700;
-    }
-
-    .news-item h3 {
-        margin: 0 0 8px;
-        color: #0f172a;
-        font-size: 1.05rem;
-        line-height: 1.35;
-    }
-
-    .news-item p {
-        margin: 0;
-        color: #475569;
-        line-height: 1.5;
-        font-size: 0.92rem;
-    }
-
-    .welcome-message {
-        text-align: center;
-        margin-bottom: 40px;
-    }
-
-        .welcome-message h2 {
-            font-size: 1.8rem;
-            color: #2c3e50;
-            margin-bottom: 10px;
-        }
-
-        .welcome-message p {
-            color: #5a6e7c;
-            font-size: 1rem;
-        }
-
-    /* Горизонтальные плашки с прокруткой */
-    .company-actions {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-        gap: 24px;
-        justify-content: center;
-        margin: 30px 0;
-        padding-bottom: 15px;
-        -webkit-overflow-scrolling: touch;
-    }
-
-    .action-card {
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
-        padding: 30px 25px;
         width: 100%;
         min-width: 0;
-        text-align: center;
-        transition: transform 0.2s, box-shadow 0.2s;
-        cursor: pointer;
-        border: 1px solid #e2e8f0;
+        font-feature-settings: "tnum" 1;
     }
+    .hm *, .hm *::before, .hm *::after { box-sizing: border-box; }
+    .hm h1, .hm h2, .hm h3, .hm p, .hm ul { margin: 0; padding: 0; }
+    .hm ul { list-style: none; }
+    .hm a { color: inherit; text-decoration: none; }
 
-        .action-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-        }
+    .hm-card { background: var(--hm-card); border: 1px solid var(--hm-line); border-radius: 20px; min-width: 0; }
+    .hm-meta { color: var(--hm-muted); font-size: 12.5px; }
+    .hm-bad { color: var(--hm-bad) !important; }
+    .hm-nowrap { white-space: nowrap; }
+    .hm-ellipsis { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-    .action-icon {
-        font-size: 48px;
-        margin-bottom: 20px;
+    .hm-btn {
+        height: 44px; border-radius: 12px; padding: 0 16px; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+        font: inherit; font-weight: 700; font-size: 14px; border: 1px solid var(--hm-line); background: #fff; color: var(--hm-ink) !important;
+        white-space: nowrap; cursor: pointer; transition: background .15s, border-color .15s;
     }
+    .hm-btn:hover { background: #f8f9fc; border-color: #d5d9e3; }
+    .hm-btn-pri { background: var(--hm-acc); border-color: var(--hm-acc); color: #fff !important; }
+    .hm-btn-pri:hover { background: var(--hm-acc-h); border-color: var(--hm-acc-h); }
+    .hm-btn-sm { height: 36px; border-radius: 10px; padding: 0 12px; font-size: 13px; }
+    .hm-btn-dashed { width: 100%; margin-top: 16px; border-style: dashed; color: var(--hm-muted) !important; height: 42px; }
+    .hm-btn:disabled { opacity: .6; cursor: not-allowed; }
 
-    .action-card h3 {
-        font-size: 1.3rem;
-        margin-bottom: 15px;
-        color: #2c3e50;
+    .hm-chip { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px; border-radius: 999px; font-size: 11.5px; font-weight: 700; white-space: nowrap; flex: none; }
+    .hm-chip-gray { background: var(--hm-line2); color: var(--hm-ink2); }
+    .hm-chip-acc { background: var(--hm-acc-s); color: var(--hm-acc-h); }
+    .hm-chip-crit { background: var(--hm-bad-s); color: var(--hm-bad); }
+
+    .hm-bar { display: block; height: 6px; border-radius: 99px; background: var(--hm-line2); overflow: hidden; }
+    .hm-bar > i { display: block; height: 100%; border-radius: 99px; background: var(--hm-acc); }
+
+    /* ---------- Шапка */
+    .hm-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 22px; flex-wrap: wrap; }
+    .hm-head-text { min-width: 0; }
+    .hm-head h1 { font-size: 30px; font-weight: 800; letter-spacing: -.5px; line-height: 1.15; overflow-wrap: anywhere; }
+    .hm-head p { color: var(--hm-muted); font-size: 15px; margin-top: 6px; }
+    .hm-head-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    /* ---------- KPI */
+    .hm-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 20px; }
+    .hm-kpi {
+        background: #fff; border: 1px solid var(--hm-line); border-radius: 20px; padding: 20px 22px; min-width: 0;
+        display: flex; flex-direction: column; gap: 6px; transition: border-color .15s, box-shadow .15s;
     }
+    .hm-kpi:hover { border-color: #cfd3f7; box-shadow: 0 6px 20px rgba(15, 23, 42, .05); }
+    .hm-kpi-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-weight: 700; color: var(--hm-ink2); font-size: 14px; }
+    .hm-kpi-top i { width: 36px; height: 36px; border-radius: 10px; background: var(--hm-acc-s); color: var(--hm-acc); display: grid; place-items: center; font-size: 15px; flex: none; }
+    .hm-kpi-val { font-size: 34px; font-weight: 800; letter-spacing: -.5px; line-height: 1.1; }
+    .hm-kpi-sub { color: var(--hm-muted); font-size: 13px; font-weight: 600; }
+    .hm-kpi-sub b { color: var(--hm-ink); font-weight: 800; }
+    .hm .hm-kpi-dark { background: var(--hm-dark); border-color: var(--hm-dark); color: #fff; }
+    .hm-kpi-dark:hover { border-color: var(--hm-dark); box-shadow: 0 10px 28px rgba(15, 23, 42, .25); }
+    .hm-kpi-dark .hm-kpi-top { color: #cbd5e1; }
+    .hm-kpi-dark .hm-kpi-top i { background: rgba(255, 255, 255, .1); color: #fff; }
+    .hm-kpi-dark .hm-kpi-sub { color: #94a3b8; }
+    .hm-kpi-dark .hm-kpi-sub b { color: #fff; }
 
-    .action-card p {
-        color: #5a6e7c;
-        margin-bottom: 25px;
-        font-size: 0.9rem;
-        line-height: 1.4;
+    /* ---------- Сетка */
+    .hm-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 400px); gap: 20px; align-items: start; }
+    .hm-col { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+    .hm-panel { padding: 22px 24px; }
+    .hm-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+    .hm-panel-head h2 { font-size: 18px; font-weight: 800; letter-spacing: -.2px; }
+    .hm-link { color: var(--hm-acc) !important; font-weight: 700; font-size: 13.5px; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+    .hm-link i { font-size: 10px; }
+    .hm-empty { text-align: center; padding: 22px 10px; color: var(--hm-muted); display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .hm-empty > i { font-size: 20px; color: var(--hm-faint); width: 48px; height: 48px; border-radius: 14px; background: var(--hm-line2); display: grid; place-items: center; }
+
+    /* Задачи */
+    .hm-tasks li + li { border-top: 1px solid var(--hm-line2); }
+    .hm-tasks a { display: flex; gap: 12px; padding: 12px 0; align-items: flex-start; }
+    .hm-tasks a:hover .hm-task-name { color: var(--hm-acc); }
+    .hm-task-dot { width: 20px; height: 20px; border-radius: 6px; border: 1.5px solid #c9ceda; flex: none; margin-top: 1px; }
+    .hm-task-dot.is-prog { border-color: var(--hm-acc); background: var(--hm-acc-s); }
+    .hm-task-dot.is-late { border-color: var(--hm-bad); background: var(--hm-bad-s); }
+    .hm-task-body { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 5px; }
+    .hm-task-name { font-weight: 700; font-size: 14.5px; overflow-wrap: anywhere; transition: color .15s; }
+    .hm-task-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; color: var(--hm-muted); font-size: 12.5px; font-weight: 600; min-width: 0; }
+    .hm-task-meta .hm-chip { max-width: 100%; overflow: hidden; text-overflow: ellipsis; display: inline-block; line-height: 22px; }
+
+    /* Сделки по этапам */
+    .hm-stages li { display: grid; grid-template-columns: minmax(90px, 140px) minmax(0, 1fr) 36px minmax(84px, auto); align-items: center; gap: 12px; padding: 10px 0; }
+    .hm-stages li + li { border-top: 1px solid var(--hm-line2); }
+    .hm-stages .hm-bar { height: 10px; }
+    .hm-stage-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .hm-stage-cnt { font-weight: 800; text-align: right; }
+    .hm-stage-sum { color: var(--hm-muted); font-weight: 600; text-align: right; white-space: nowrap; font-size: 13px; }
+    .hm-stages li.is-closed .hm-bar > i { background: #c7caf8; }
+    .hm-stages li.is-closed .hm-stage-name { color: var(--hm-muted); }
+
+    /* Производство и проекты */
+    .hm-prod li { display: flex; flex-direction: column; gap: 8px; padding: 12px 0; }
+    .hm-prod li + li { border-top: 1px solid var(--hm-line2); }
+    .hm-prod-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; }
+    .hm-prod-name { font-weight: 700; font-size: 14.5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .hm-prod-pct { font-weight: 800; }
+    .hm-prod .hm-meta i, .hm-task-meta i { font-size: 11px; margin-right: 2px; }
+
+    .hm-projects li + li { border-top: 1px solid var(--hm-line2); }
+    .hm-projects a { display: flex; gap: 12px; padding: 12px 0; align-items: flex-start; }
+    .hm-projects a:hover .hm-prod-name { color: var(--hm-acc); }
+    .hm-proj-ic { width: 36px; height: 36px; border-radius: 10px; background: var(--hm-acc-s); color: var(--hm-acc); display: grid; place-items: center; flex: none; }
+    .hm-proj-body { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 7px; }
+
+    /* Команда */
+    .hm-team { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; margin-top: 4px; }
+    .hm-team li { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .hm-team-body { min-width: 0; display: flex; flex-direction: column; }
+    .hm-team-body b { font-size: 13.5px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .hm-team-body b em { font-style: normal; color: var(--hm-faint); font-weight: 600; }
+    .hm-team-body .hm-meta { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .hm-av { width: 36px; height: 36px; border-radius: 50%; flex: none; object-fit: cover; display: grid; place-items: center; font-size: 12px; font-weight: 800; color: #fff; background: var(--hm-acc); letter-spacing: .2px; }
+    .hm-av-1 { background: #0f766e; } .hm-av-2 { background: #b45309; } .hm-av-3 { background: #334155; } .hm-av-4 { background: #be185d; }
+    .hm-more { display: inline-block; margin-top: 12px; color: var(--hm-acc) !important; font-weight: 700; font-size: 13px; }
+
+    .hm-join { padding: 16px 18px; display: flex; align-items: center; gap: 12px; }
+    .hm-join .hm-onb-ic { width: 40px; height: 40px; border-radius: 12px; font-size: 16px; margin: 0; }
+    .hm-join-text { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+    .hm-join-text b { font-size: 14px; }
+
+    /* ---------- Онбординг (нет компании) */
+    .hm-onb { max-width: 880px; margin: 24px auto 0; }
+    .hm-onb-head { text-align: center; margin-bottom: 28px; }
+    .hm-onb-logo { width: 56px; height: 56px; border-radius: 16px; background: var(--hm-dark); color: #fff; display: inline-grid; place-items: center; font-size: 22px; margin-bottom: 16px; }
+    .hm-onb-head h1 { font-size: 30px; font-weight: 800; letter-spacing: -.5px; }
+    .hm-onb-head p { color: var(--hm-muted); font-size: 15px; margin: 8px auto 0; max-width: 520px; }
+    .hm-onb-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+    .hm-onb-card { padding: 28px 26px; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; transition: border-color .15s, box-shadow .15s; }
+    .hm-onb-card:hover { border-color: #cfd3f7; box-shadow: 0 10px 28px rgba(15, 23, 42, .06); }
+    .hm-onb-card h3 { font-size: 19px; font-weight: 800; }
+    .hm-onb-card p { color: var(--hm-muted); flex: 1; margin-bottom: 8px; }
+    .hm-onb-ic { width: 48px; height: 48px; border-radius: 14px; background: var(--hm-acc-s); color: var(--hm-acc); display: grid; place-items: center; font-size: 20px; flex: none; margin-bottom: 4px; }
+    .hm-onb-ic-alt { background: #e7f6ef; color: #047857; }
+
+    /* ---------- Модалки создания/вступления в компанию (разметка в партиалах) */
+    #inviteModal.modal, #createCompanyModal.modal {
+        position: fixed; z-index: 1000; inset: 0; background: rgba(15, 23, 42, .45);
+        display: none; align-items: center; justify-content: center; padding: 16px;
     }
-
-    .btn {
-        padding: 10px 24px;
-        border: none;
-        border-radius: 8px;
-        font-size: 0.95rem;
-        cursor: pointer;
-        transition: background 0.2s;
-        font-weight: 500;
+    #inviteModal .modal-content, #createCompanyModal .modal-content {
+        font-family: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+        background: #fff; padding: 28px; border-radius: 20px; width: 460px; max-width: 100%; position: relative;
+        border: 1px solid #e4e7ee; box-shadow: 0 24px 60px rgba(15, 23, 42, .25); box-sizing: border-box;
     }
-
-    .btn-primary {
-        background: #667eea;
-        color: white;
+    #inviteModal .close, #createCompanyModal .close { position: absolute; top: 14px; right: 18px; font-size: 26px; line-height: 1; cursor: pointer; color: #8a93a6; }
+    #inviteModal .close:hover, #createCompanyModal .close:hover { color: #0f172a; }
+    #inviteModal h3, #createCompanyModal h3 { margin: 0 0 18px; color: #0f172a; font-size: 20px; font-weight: 800; }
+    #inviteModal input, #createCompanyModal input, #createCompanyModal textarea {
+        width: 100%; padding: 12px 14px; margin-bottom: 16px; border: 1px solid #e4e7ee; border-radius: 12px;
+        font: inherit; font-size: 15px; box-sizing: border-box; background: #fff; color: #0f172a;
     }
-
-        .btn-primary:hover {
-            background: #5a67d8;
-        }
-
-        .btn-primary:disabled {
-            background: #a0aec0;
-            cursor: not-allowed;
-            opacity: 0.6;
-        }
-
-    .btn-secondary {
-        background: #e2e8f0;
-        color: #2c3e50;
+    #inviteModal input:focus, #createCompanyModal input:focus, #createCompanyModal textarea:focus {
+        outline: none; border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79, 70, 229, .15);
     }
-
-        .btn-secondary:hover {
-            background: #cbd5e1;
-        }
-
-        .btn-secondary:disabled {
-            background: #e2e8f0;
-            cursor: not-allowed;
-            opacity: 0.6;
-        }
-
-    /* Модальное окно */
-    .modal {
-        position: fixed;
-        z-index: 1000;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0,0,0,0.5);
-        display: none;
-        align-items: center;
-        justify-content: center;
+    #inviteModal .modal-buttons, #createCompanyModal .modal-buttons { display: flex; gap: 10px; justify-content: flex-end; }
+    #inviteModal .btn, #createCompanyModal .btn {
+        height: 42px; padding: 0 18px; border-radius: 12px; border: 1px solid #e4e7ee; font: inherit; font-weight: 700; font-size: 14px; cursor: pointer;
     }
+    #inviteModal .btn-primary, #createCompanyModal .btn-primary { background: #4f46e5; border-color: #4f46e5; color: #fff; }
+    #inviteModal .btn-primary:hover, #createCompanyModal .btn-primary:hover { background: #4338ca; }
+    #inviteModal .btn-primary:disabled, #createCompanyModal .btn-primary:disabled { opacity: .6; cursor: not-allowed; }
+    #inviteModal .btn-secondary, #createCompanyModal .btn-secondary { background: #fff; color: #0f172a; }
+    #inviteModal .btn-secondary:hover, #createCompanyModal .btn-secondary:hover { background: #f4f5f8; }
+    #inviteModal .error-message, #createCompanyModal .error-message { margin-top: 14px; font-size: 13px; text-align: center; padding: 8px 10px; border-radius: 10px; }
+    #inviteModal .error-message.error, #createCompanyModal .error-message.error { color: #b91c1c; background: #fdecec; border: 1px solid #f7c6c6; }
+    #inviteModal .error-message.success, #createCompanyModal .error-message.success { color: #047857; background: #e7f6ef; border: 1px solid #a7e3c8; }
 
-    .modal-content {
-        background: white;
-        padding: 30px;
-        border-radius: 20px;
-        width: 450px;
-        max-width: 90%;
-        position: relative;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    /* ---------- Адаптив */
+    @@media (max-width: 1200px) {
+        .hm-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        /* Одна колонка: задачи первыми, как в мобильном макете */
+        .hm-grid { grid-template-columns: minmax(0, 1fr); }
+        .hm-col { display: contents; }
+        .hm-o-tasks { order: 1; } .hm-o-deals { order: 2; } .hm-o-prod { order: 3; }
+        .hm-o-proj { order: 4; } .hm-o-team { order: 5; } .hm-o-join { order: 6; }
     }
-
-    .close {
-        position: absolute;
-        top: 15px;
-        right: 20px;
-        font-size: 28px;
-        cursor: pointer;
-        color: #aaa;
-        transition: color 0.2s;
-    }
-
-        .close:hover {
-            color: black;
-        }
-
-    .modal-content h3 {
-        margin-bottom: 20px;
-        color: #2c3e50;
-        font-size: 1.4rem;
-    }
-
-    .modal-content input,
-    .modal-content textarea {
-        width: 100%;
-        padding: 12px;
-        margin-bottom: 20px;
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-        font-size: 1rem;
-        transition: border-color 0.2s;
-        box-sizing: border-box;
-    }
-
-    .modal-content textarea {
-        font-family: inherit;
-        resize: vertical;
-    }
-
-        .modal-content input:focus,
-        .modal-content textarea:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-    .modal-buttons {
-        display: flex;
-        gap: 12px;
-        justify-content: flex-end;
-    }
-
-    .error-message {
-        margin-top: 15px;
-        font-size: 0.85rem;
-        text-align: center;
-        padding: 8px;
-        border-radius: 6px;
-    }
-
-        .error-message.error {
-            color: #e53e3e;
-            background-color: #fff5f5;
-            border: 1px solid #feb2b2;
-        }
-
-        .error-message.success {
-            color: #38a169;
-            background-color: #f0fff4;
-            border: 1px solid #9ae6b4;
-        }
-
-    /* Адаптив */
     @@media (max-width: 768px) {
-        .content-section {
-            padding-left: 18px;
-            padding-right: 18px;
-        }
-
-        .main-panel {
-            padding: 20px;
-        }
-
-        .panel-header {
-            align-items: flex-start;
-            flex-direction: column;
-        }
-
-        .company-actions {
-            justify-content: flex-start;
-            gap: 20px;
-        }
-
-        .action-card {
-            padding: 20px 15px;
-        }
-
-        .welcome-message h2 {
-            font-size: 1.4rem;
-        }
-
-        .modal-content {
-            width: 90%;
-            padding: 20px;
-        }
+        .hm { padding: 18px 16px 32px; }
+        .hm-head { align-items: flex-start; margin-bottom: 16px; }
+        .hm-head h1 { font-size: 24px; }
+        .hm-head p { font-size: 13.5px; }
+        .hm-kpis { gap: 10px; margin-bottom: 14px; }
+        .hm-kpi { padding: 14px 16px; border-radius: 18px; }
+        .hm-kpi-top { font-size: 13px; align-items: flex-start; }
+        .hm-kpi-top i { width: 30px; height: 30px; font-size: 13px; }
+        .hm-kpi-val { font-size: 26px; }
+        .hm-kpi-sub { font-size: 12px; }
+        .hm-grid { gap: 14px; }
+        .hm-panel { padding: 18px; }
+        .hm-onb { margin-top: 8px; }
+        .hm-onb-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+        .hm-onb-head h1 { font-size: 24px; }
+        .hm-onb-card { padding: 22px 20px; }
+        .hm-stages li { grid-template-columns: minmax(0, 1fr) 30px auto; row-gap: 6px; }
+        .hm-stages .hm-bar { grid-column: 1 / -1; grid-row: 2; }
+        #inviteModal .modal-content, #createCompanyModal .modal-content { padding: 22px 18px; }
     }
-
     @@media (max-width: 480px) {
-        .action-card {
-            width: 260px;
-            min-width: 240px;
-            padding: 15px 12px;
-        }
-
-        .action-icon {
-            font-size: 36px;
-        }
-
-        .action-card h3 {
-            font-size: 1.1rem;
-        }
-
-        .btn {
-            padding: 8px 16px;
-            font-size: 0.85rem;
-        }
-
-        .modal-buttons {
-            flex-direction: column;
-        }
-
-            .modal-buttons .btn {
-                width: 100%;
-            }
+        .hm-head-actions { width: 100%; }
+        .hm-head-actions .hm-btn { flex: 1; }
+        .hm-team { grid-template-columns: minmax(0, 1fr); }
+        .hm-join { flex-wrap: wrap; }
+        .hm-join .hm-btn { width: 100%; }
+        .hm-onb-card .hm-btn { width: 100%; }
+        #inviteModal .modal-buttons, #createCompanyModal .modal-buttons { flex-direction: column-reverse; }
+        #inviteModal .modal-buttons .btn, #createCompanyModal .modal-buttons .btn { width: 100%; }
+    }
+    @@media (max-width: 359px) {
+        .hm-kpis { grid-template-columns: minmax(0, 1fr); }
     }
 </style>

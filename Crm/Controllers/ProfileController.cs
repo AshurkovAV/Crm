@@ -87,7 +87,7 @@ namespace Crm.Controllers
         // POST: Profile/SwitchCompany
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult SwitchCompany(int companyId)
+        public ActionResult SwitchCompany(int companyId, string? returnUrl = null)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
@@ -102,6 +102,11 @@ namespace Crm.Controllers
             {
                 TempData["Error"] = "Не удалось переключить компанию";
             }
+
+            // Переключение из бокового меню возвращает на ту же страницу (если в новом режиме
+            // компании раздел недоступен, WorkspaceModeFilter перенаправит на задачи)
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                return LocalRedirect(returnUrl);
 
             return RedirectToAction("Index");
         }

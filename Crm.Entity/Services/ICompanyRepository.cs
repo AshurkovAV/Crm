@@ -26,5 +26,7 @@ namespace Crm.Entity.Services
         Task<Company?> GetCompanyByIdAsync(int companyId);
         /// <summary>Членство пользователя в компании, в том числе неактивное (null — не состоял)</summary>
         Task<CompanyUser?> GetMembershipAsync(int userId, int companyId);
+        /// <summary>Сменить режим работы компании ("Full" / "Tasks"). false — компания не найдена</summary>
+        Task<bool> SetWorkspaceModeAsync(int companyId, string mode);
     }
 }

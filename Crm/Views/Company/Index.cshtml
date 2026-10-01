@@ -1,30 +1,291 @@
 ﻿@using Crm.Entity.DTO
+@using Crm.Navigation
+@inject Crm.Services.Workspace.IWorkspaceService WorkspaceService
 
 @{
     ViewData["Title"] = "Сотрудники";
+    var workspaceMode = await WorkspaceService.GetCurrentModeAsync();
+    var canChangeMode = await WorkspaceService.CanChangeModeAsync();
+    var workspaceModes = new[]
+    {
+        new { Value = WorkspaceMode.Full,  Icon = "fa-solid fa-layer-group", Title = "Полная CRM",    Text = "Сделки, склад, производство, задачи и команда" },
+        new { Value = WorkspaceMode.Tasks, Icon = "fa-solid fa-list-check",  Title = "Только задачи", Text = "Задачи, проекты, сотрудники и пароли; остальные разделы скрываются" },
+    };
 }
 
 <!-- Подключаем стили -->
 @await Html.PartialAsync("Company/_InvitationModalStyles")
 
-<div class="content-top-bar">
-    <h1 class="content-title">Сотрудники</h1>
-    <div class="content-actions">
-        <button class="content-btn" onclick="showInvitationModal()">
-            <i class="fas fa-plus"></i>
-            <span>Пригласить сотрудника</span>
-        </button>
-        <button class="content-btn secondary">
-            <i class="fas fa-filter"></i>
-            <span>Фильтр</span>
-        </button>
+<style>
+    .cp-page {
+        --cp-bg: #f4f5f8;
+        --cp-card: #ffffff;
+        --cp-border: #e4e7ee;
+        --cp-accent: #4f46e5;
+        --cp-accent-soft: #eef2ff;
+        --cp-ink: #0f172a;
+        --cp-muted: #5b6475;
+        --cp-danger: #b42318;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        color: var(--cp-ink);
+        min-width: 0;
+    }
+
+    .cp-header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+
+    .cp-header-text { min-width: 0; }
+
+    .cp-title {
+        margin: 0;
+        font-size: 28px;
+        line-height: 1.2;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: var(--cp-ink);
+    }
+
+    .cp-subtitle {
+        margin: 6px 0 0;
+        font-size: 14px;
+        color: var(--cp-muted);
+    }
+
+    .cp-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .cp-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        height: 44px;
+        padding: 0 18px;
+        border-radius: 12px;
+        border: 1px solid transparent;
+        font: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+    }
+
+    .cp-btn:focus-visible,
+    .cp-mode-option:focus-visible {
+        outline: 3px solid rgba(79, 70, 229, .35);
+        outline-offset: 2px;
+    }
+
+    .cp-btn-primary { background: var(--cp-accent); color: #fff; }
+    .cp-btn-primary:hover { background: #4338ca; }
+
+    .cp-btn-secondary {
+        background: var(--cp-card);
+        color: var(--cp-ink);
+        border-color: var(--cp-border);
+    }
+    .cp-btn-secondary:hover,
+    .cp-btn-secondary.is-active {
+        border-color: var(--cp-accent);
+        color: var(--cp-accent);
+    }
+
+    .cp-card {
+        background: var(--cp-card);
+        border: 1px solid var(--cp-border);
+        border-radius: 20px;
+        padding: 24px;
+        min-width: 0;
+    }
+
+    .cp-card-title {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--cp-ink);
+    }
+
+    .cp-card-hint {
+        margin: 4px 0 0;
+        font-size: 14px;
+        color: var(--cp-muted);
+    }
+
+    .cp-mode-options {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 18px;
+    }
+
+    .cp-mode-option {
+        position: relative;
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        width: 100%;
+        min-height: 44px;
+        padding: 16px 44px 16px 16px;
+        text-align: left;
+        font: inherit;
+        color: var(--cp-ink);
+        background: var(--cp-card);
+        border: 1px solid var(--cp-border);
+        border-radius: 16px;
+        cursor: pointer;
+        transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease;
+    }
+
+    .cp-mode-option:not(:disabled):hover { border-color: #c7cbf5; }
+
+    .cp-mode-option.is-current {
+        border-color: var(--cp-accent);
+        background: var(--cp-accent-soft);
+        box-shadow: 0 0 0 1px var(--cp-accent) inset;
+    }
+
+    .cp-mode-option:disabled { cursor: default; }
+    .cp-mode-option:disabled:not(.is-current) { opacity: .6; }
+    .cp-mode-option.is-pending { opacity: .7; cursor: progress; }
+
+    .cp-mode-icon {
+        flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: var(--cp-bg);
+        color: var(--cp-muted);
+        font-size: 18px;
+    }
+
+    .cp-mode-option.is-current .cp-mode-icon {
+        background: var(--cp-accent);
+        color: #fff;
+    }
+
+    .cp-mode-text {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+    }
+
+    .cp-mode-title { font-size: 15px; font-weight: 700; }
+
+    .cp-mode-desc {
+        font-size: 13px;
+        line-height: 1.45;
+        color: var(--cp-muted);
+    }
+
+    .cp-mode-check {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: var(--cp-accent);
+        color: #fff;
+        font-size: 11px;
+    }
+
+    .cp-mode-option.is-current .cp-mode-check { display: inline-flex; }
+
+    .cp-mode-error {
+        margin: 12px 0 0;
+        font-size: 13px;
+        color: var(--cp-danger);
+    }
+
+    .cp-grid-card { padding: 16px; overflow-x: auto; }
+
+    @@media (max-width: 720px) {
+        .cp-title { font-size: 24px; }
+        .cp-actions, .cp-actions .cp-btn { width: 100%; }
+        .cp-actions .cp-btn { flex: 1 1 0; padding: 0 12px; }
+        .cp-card { padding: 16px; }
+        .cp-mode-options { grid-template-columns: 1fr; }
+    }
+</style>
+
+<div class="cp-page">
+    <div class="cp-header">
+        <div class="cp-header-text">
+            <h1 class="cp-title">Сотрудники</h1>
+            <p class="cp-subtitle">Команда учреждения, приглашения и режим работы</p>
+        </div>
+        <div class="cp-actions">
+            <button type="button" class="cp-btn cp-btn-secondary" id="cpFilterBtn" onclick="toggleCompanyGridFilter()">
+                <i class="fa-solid fa-filter"></i>
+                <span>Фильтр</span>
+            </button>
+            <button type="button" class="cp-btn cp-btn-primary" onclick="showInvitationModal()">
+                <i class="fa-solid fa-plus"></i>
+                <span>Пригласить сотрудника</span>
+            </button>
+        </div>
     </div>
-</div>
+
+    <section class="cp-card cp-mode-card" aria-labelledby="cpModeTitle">
+        <div class="cp-card-head">
+            <div>
+                <h2 class="cp-card-title" id="cpModeTitle">Режим работы</h2>
+                <p class="cp-card-hint">
+                    @if (canChangeMode)
+                    {
+                        <text>Определяет, какие разделы видят все сотрудники этого учреждения.</text>
+                    }
+                    else
+                    {
+                        <text>Менять режим может владелец или администратор компании.</text>
+                    }
+                </p>
+            </div>
+        </div>
+        <div class="cp-mode-options" role="radiogroup" aria-labelledby="cpModeTitle">
+            @foreach (var option in workspaceModes)
+            {
+                var isCurrent = option.Value == workspaceMode;
+                <button type="button"
+                        class="cp-mode-option@(isCurrent ? " is-current" : "")"
+                        role="radio"
+                        aria-checked="@(isCurrent ? "true" : "false")"
+                        data-mode="@option.Value"
+                        disabled="@(canChangeMode ? null : "disabled")">
+                    <span class="cp-mode-icon"><i class="@option.Icon"></i></span>
+                    <span class="cp-mode-text">
+                        <span class="cp-mode-title">@option.Title</span>
+                        <span class="cp-mode-desc">@option.Text</span>
+                    </span>
+                    <span class="cp-mode-check" aria-hidden="true"><i class="fa-solid fa-check"></i></span>
+                </button>
+            }
+        </div>
+        <p class="cp-mode-error" id="cpModeError" role="alert" hidden></p>
+    </section>
 
 <!-- Подключаем модальное окно -->
 @await Html.PartialAsync("Company/_InvitationModal")
 
-<div class="content-section">
+<section class="cp-card cp-grid-card">
     <div class="dx-grid-container">
         @(Html.DevExtreme().DataGrid<CompanyUserDto>()
             .ID("projectsGrid")
@@ -130,9 +391,57 @@
             .Selection(s => s.Mode(SelectionMode.Single))
             )
     </div>
+</section>
 </div>
 
 @section Scripts {
     <!-- Подключаем скрипты модального окна -->
     @await Html.PartialAsync("Company/_InvitationModalScripts")
+
+    <script>
+        function toggleCompanyGridFilter() {
+            var grid = $("#projectsGrid").dxDataGrid("instance");
+            if (!grid) return;
+            var visible = !grid.option("filterRow.visible");
+            grid.option("filterRow.visible", visible);
+            document.getElementById("cpFilterBtn").classList.toggle("is-active", visible);
+        }
+
+        (function () {
+            var options = document.querySelectorAll(".cp-mode-option[data-mode]");
+            var errorBox = document.getElementById("cpModeError");
+
+            function showError(text) {
+                errorBox.textContent = text;
+                errorBox.hidden = false;
+            }
+
+            options.forEach(function (option) {
+                option.addEventListener("click", async function () {
+                    if (option.disabled || option.classList.contains("is-current")) return;
+                    options.forEach(function (o) { o.disabled = true; });
+                    option.classList.add("is-pending");
+                    errorBox.hidden = true;
+                    try {
+                        var response = await fetch("/api/workspace/mode", {
+                            method: "POST",
+                            credentials: "same-origin",
+                            headers: { "Content-Type": "application/json", "Accept": "application/json" },
+                            body: JSON.stringify({ mode: option.dataset.mode })
+                        });
+                        var data = await response.json().catch(function () { return {}; });
+                        if (response.ok && data.success) {
+                            window.location.reload();
+                            return;
+                        }
+                        showError(data.message || "Не удалось сменить режим работы");
+                    } catch (e) {
+                        showError("Нет связи с сервером. Попробуйте ещё раз.");
+                    }
+                    option.classList.remove("is-pending");
+                    options.forEach(function (o) { o.disabled = false; });
+                });
+            });
+        })();
+    </script>
 }

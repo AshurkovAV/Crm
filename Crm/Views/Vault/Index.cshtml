@@ -8,264 +8,1151 @@
    заказчика. Доступ к каждой записи ограничен только на уровне приложения:
    её видит автор и те, кому автор явно открыл доступ (кнопка "Доступ" в гриде). *@
 
-<div class="content-top-bar">
-    <h1 class="content-title">Пароли</h1>
-    <div class="content-actions">
-        <button class="content-btn" onclick="showCreateVaultEntryModal()">
-            <i class="fas fa-plus"></i>
+<div class="vault-page">
+    <header class="vault-head">
+        <div class="vault-head-main">
+            <h1 class="vault-title">Пароли</h1>
+            <p class="vault-subtitle">Доступы команды. Видите только свои записи и те, которыми с вами поделились.</p>
+        </div>
+
+        <div class="vault-stats" id="vaultStats" aria-live="polite">
+            <div class="vault-stat">
+                <span class="vault-stat-label">Всего записей</span>
+                <span class="vault-stat-value" data-stat="total">—</span>
+            </div>
+            <div class="vault-stat">
+                <span class="vault-stat-label">Мои</span>
+                <span class="vault-stat-value" data-stat="mine">—</span>
+            </div>
+            <div class="vault-stat">
+                <span class="vault-stat-label">Доступны мне</span>
+                <span class="vault-stat-value" data-stat="shared">—</span>
+            </div>
+        </div>
+
+        <button type="button" class="vault-btn vault-btn-primary vault-head-add" onclick="showCreateVaultEntryModal()">
+            <span class="vault-ico" data-icon="plus"></span>
             <span>Новая запись</span>
         </button>
+    </header>
+
+    <div class="vault-toolbar">
+        <div class="vault-tags-filter" id="vaultTagFilter" role="group" aria-label="Фильтр по тегам"></div>
+        <label class="vault-search">
+            <span class="vault-ico" data-icon="search"></span>
+            <input type="search" id="vaultSearch" placeholder="Найти запись, логин, ссылку…" autocomplete="off" aria-label="Поиск по записям" />
+        </label>
     </div>
-</div>
 
-<div class="content-section vault-section">
-    <div class="grid-wrapper" id="vaultGridWrapper">
-        @(Html.DevExtreme().DataGrid<VaultRow>()
-            .ID("vaultGrid")
-            .DataSource(ds => ds.Mvc()
-                .Controller("VaultData")
-                .LoadAction("Get")
-                .InsertAction("Post")
-                .UpdateAction("Put")
-                .DeleteAction("Delete")
-                .Key("Id")
-            )
-            .ShowBorders(true)
-            .ColumnAutoWidth(true)
-            .WordWrapEnabled(false)
-            .ShowColumnLines(true)
-            .ShowRowLines(true)
-            .RowAlternationEnabled(true)
-            .Height("100%")
-            .Paging(p => p.PageSize(20))
-            .Pager(p => p.ShowPageSizeSelector(true).AllowedPageSizes(new[] { 10, 20, 50 }).ShowInfo(true))
-            .FilterRow(f => f.Visible(false))
-            .SearchPanel(s => s.Visible(true).Width(240).Placeholder("Поиск..."))
-            .Editing(e => e
-                .Mode(GridEditMode.Popup)
-                .AllowAdding(true)
-                .AllowUpdating(true)
-                .AllowDeleting(true)
-                .UseIcons(true)
-                .Popup(p => p
-                    .Title("Запись пароля")
-                    .ShowTitle(true)
-                    .Width(520)
-                    .Height("auto")
+    <div class="vault-card">
+        <div class="vault-grid-wrapper" id="vaultGridWrapper">
+            @(Html.DevExtreme().DataGrid<VaultRow>()
+                .ID("vaultGrid")
+                .DataSource(ds => ds.Mvc()
+                    .Controller("VaultData")
+                    .LoadAction("Get")
+                    .InsertAction("Post")
+                    .UpdateAction("Put")
+                    .DeleteAction("Delete")
+                    .Key("Id")
+                    .OnLoaded("onVaultDataLoaded")
                 )
-                .Form(f => f
-                    .ColCount(1)
-                    .LabelLocation(FormLabelLocation.Top)
-                    .Items(items =>
-                    {
-                        items.AddSimpleFor(m => m.Title)
-                            .Label(l => l.Text("Название*"))
-                            .Editor(editor => editor.TextBox().Placeholder("Например: Хостинг, почта, CRM клиента..."));
+                .RemoteOperations(false)
+                .ShowBorders(false)
+                .ColumnAutoWidth(false)
+                .ColumnHidingEnabled(true)
+                .WordWrapEnabled(false)
+                .ShowColumnLines(false)
+                .ShowRowLines(true)
+                .RowAlternationEnabled(false)
+                .HoverStateEnabled(true)
+                .Height("100%")
+                .NoDataText("Ничего не найдено")
+                .Paging(p => p.PageSize(20))
+                .Pager(p => p.ShowPageSizeSelector(true).AllowedPageSizes(new[] { 10, 20, 50 }).ShowInfo(true))
+                .FilterRow(f => f.Visible(false))
+                .SearchPanel(s => s.Visible(false))
+                .Toolbar(t => t.Visible(false))
+                .Editing(e => e
+                    .Mode(GridEditMode.Popup)
+                    .AllowAdding(true)
+                    .AllowUpdating(true)
+                    .AllowDeleting(true)
+                    .UseIcons(true)
+                    .Popup(p => p
+                        .Title("Запись пароля")
+                        .ShowTitle(true)
+                        .Width(new JS("function () { return Math.min(520, window.innerWidth - 24); }"))
+                        .Height("auto")
+                        .MaxHeight("92vh")
+                        .WrapperAttr(new { @class = "vault-popup" })
+                    )
+                    .Form(f => f
+                        .ColCount(1)
+                        .LabelLocation(FormLabelLocation.Top)
+                        .Items(items =>
+                        {
+                            items.AddSimpleFor(m => m.Title)
+                                .Label(l => l.Text("Название*"))
+                                .Editor(editor => editor.TextBox().Placeholder("Например: Хостинг, почта, CRM клиента..."));
 
-                        items.AddSimpleFor(m => m.Login)
-                            .Label(l => l.Text("Логин"))
-                            .Editor(editor => editor.TextBox().Placeholder("Логин или email"));
+                            items.AddSimpleFor(m => m.Login)
+                                .Label(l => l.Text("Логин"))
+                                .Editor(editor => editor.TextBox().Placeholder("Логин или email"));
 
-                        items.AddSimpleFor(m => m.Password)
-                            .Label(l => l.Text("Пароль"))
-                            .Editor(editor => editor.TextBox().Mode(TextBoxMode.Password).Placeholder("Пароль"));
+                            items.AddSimpleFor(m => m.Password)
+                                .Label(l => l.Text("Пароль"))
+                                .Editor(editor => editor.TextBox().Mode(TextBoxMode.Password).Placeholder("Пароль"));
 
-                        items.AddSimpleFor(m => m.Url)
-                            .Label(l => l.Text("Ссылка"))
-                            .Editor(editor => editor.TextBox().Placeholder("https://..."));
+                            items.AddSimpleFor(m => m.Url)
+                                .Label(l => l.Text("Ссылка"))
+                                .Editor(editor => editor.TextBox().Placeholder("https://..."));
 
-                        items.AddSimpleFor(m => m.Tags)
-                            .Label(l => l.Text("Теги"))
-                            .Editor(editor => editor
-                                .TagBox()
-                                .DataSource(new[] { "Хостинг", "Почта", "Соцсети", "Клиент", "Сервис", "Личное" })
-                                .Placeholder("Выберите или добавьте теги")
-                                .ShowSelectionControls(true)
-                                .ShowClearButton(true)
-                            );
+                            items.AddSimpleFor(m => m.Tags)
+                                .Label(l => l.Text("Теги"))
+                                .Editor(editor => editor
+                                    .TagBox()
+                                    .DataSource(new[] { "Хостинг", "Почта", "Соцсети", "Клиент", "Сервис", "Личное" })
+                                    .Placeholder("Выберите или добавьте теги")
+                                    .AcceptCustomValue(true)
+                                    .ShowSelectionControls(true)
+                                    .ShowClearButton(true)
+                                );
 
-                        items.AddSimpleFor(m => m.Notes)
-                            .Label(l => l.Text("Заметки"))
-                            .Editor(editor => editor.TextArea().Height(80).Placeholder("Дополнительная информация..."));
-                    })
+                            items.AddSimpleFor(m => m.Notes)
+                                .Label(l => l.Text("Заметки"))
+                                .Editor(editor => editor.TextArea().Height(80).Placeholder("Дополнительная информация..."));
+                        })
+                    )
                 )
+                .Columns(columns =>
+                {
+                    columns.Add().DataField("Id").Visible(false);
+                    columns.Add().DataField("CreatedByUserId").Visible(false);
+                    columns.Add().DataField("IsOwner").Visible(false);
+
+                    columns.Add().DataField("Title").Caption("Название").MinWidth(220)
+                        .CssClass("vault-col-title")
+                        .CellTemplate(new JS("vaultTitleCell"));
+
+                    columns.Add().DataField("Login").Caption("Логин").MinWidth(160)
+                        .HidingPriority(5)
+                        .CellTemplate(new JS("vaultLoginCell"));
+
+                    columns.Add().DataField("Password")
+                        .Caption("Пароль")
+                        .Width(190)
+                        .AllowFiltering(false)
+                        .AllowSorting(false)
+                        .AllowSearch(false)
+                        .CellTemplate(new JS("vaultPasswordCell"));
+
+                    columns.Add().DataField("Url").Caption("Ссылка").MinWidth(150)
+                        .HidingPriority(2)
+                        .CellTemplate(new JS("vaultUrlCell"));
+
+                    columns.Add().DataField("Tags").Caption("Теги").MinWidth(160)
+                        .HidingPriority(1)
+                        .AllowSorting(false)
+                        .CellTemplate(new JS("vaultTagsCell"));
+
+                    columns.Add().DataField("Notes").Visible(false);
+
+                    columns.Add().Name("Owner").Caption("Владелец").Width(160)
+                        .HidingPriority(3)
+                        .AllowSorting(false)
+                        .AllowSearch(false)
+                        .CellTemplate(new JS("vaultOwnerCell"));
+
+                    columns.Add().DataField("ModifiedDate")
+                        .Caption("Изменено")
+                        .DataType(GridColumnDataType.DateTime)
+                        .SortOrder(SortOrder.Desc)
+                        .Width(130)
+                        .HidingPriority(0)
+                        .AllowEditing(false)
+                        .AllowSearch(false)
+                        .CellTemplate(new JS("vaultDateCell"));
+
+                    // Действия автора (редактировать / доступ / удалить). Для чужих записей пусто —
+                    // сервер всё равно отклонит изменение не-автором.
+                    columns.Add()
+                        .Type(GridCommandColumnType.Buttons)
+                        .Name("actions")
+                        .Caption("")
+                        .Width(124)
+                        .CssClass("vault-col-actions")
+                        .CellTemplate(new JS("vaultActionsCell"));
+                })
+                .OnEditorPreparing("onVaultEditorPreparing")
+                .OnContentReady("onVaultGridContentReady")
             )
-            .Columns(columns =>
-            {
-                columns.Add().DataField("Id").Visible(false);
-                columns.Add().DataField("CreatedByUserId").Visible(false);
-                columns.Add().DataField("IsOwner").Visible(false);
 
-                columns.Add().DataField("Title").Caption("Название").MinWidth(150);
-                columns.Add().DataField("Login").Caption("Логин").MinWidth(120);
-
-                columns.Add().DataField("Password")
-                    .Caption("Пароль")
-                    .MinWidth(140)
-                    .AllowFiltering(false)
-                    .AllowSorting(false)
-                    .CellTemplate(@<text>
-                        <span class="vault-password-cell">
-                            <span class="vault-password-value" data-value="<%- value || '' %>">••••••••</span>
-                            <button type="button" class="vault-icon-btn vault-toggle-btn" title="Показать/скрыть"><i class="fas fa-eye"></i></button>
-                            <button type="button" class="vault-icon-btn vault-copy-btn" title="Скопировать"><i class="fas fa-copy"></i></button>
-                        </span>
-                    </text>);
-
-                columns.Add().DataField("Url").Caption("Ссылка").MinWidth(140)
-                    .CellTemplate(@<text>
-                        <% if (value) { %>
-                            <a href="<%- value %>" target="_blank" rel="noopener" class="vault-url-link"><%- value %></a>
-                        <% } %>
-                    </text>);
-
-                columns.Add().DataField("Tags").Caption("Теги").Width(160).Visible(false);
-                columns.Add().DataField("Notes").Visible(false);
-
-                columns.Add().DataField("ModifiedDate")
-                    .Caption("Изменено")
-                    .DataType(GridColumnDataType.DateTime)
-                    .Format("dd.MM.yyyy HH:mm")
-                    .MinWidth(130)
-                    .AllowEditing(false);
-
-                columns.Add()
-                    .Type(GridCommandColumnType.Buttons)
-                    .Width(120)
-                    .Buttons(b =>
-                    {
-                        b.Add().Name(GridColumnButtonName.Edit).Hint("Редактировать").Icon("edit")
-                            .Visible(new JS("function(e) { return e.row.data.IsOwner; }"));
-                        b.Add().Name(GridColumnButtonName.Delete).Hint("Удалить").Icon("trash")
-                            .Visible(new JS("function(e) { return e.row.data.IsOwner; }"));
-                        b.Add().Hint("Доступ").Icon("user").Visible(new JS("function(e) { return e.row.data.IsOwner; }"))
-                            .OnClick("function(e) { openVaultAccessDialog(e.row.data); }");
-                    });
-            })
-            .OnCellClick("onVaultGridCellClick")
-        )
+            <div class="vault-empty" id="vaultEmpty" hidden>
+                <div class="vault-empty-icon"><span class="vault-ico" data-icon="key"></span></div>
+                <div class="vault-empty-title">Здесь будут общие пароли команды</div>
+                <p class="vault-empty-text">Сохраняйте доступы к сервисам и делитесь ими с коллегами — запись увидят только те, кому вы откроете доступ.</p>
+                <button type="button" class="vault-btn vault-btn-primary" onclick="showCreateVaultEntryModal()">
+                    <span class="vault-ico" data-icon="plus"></span>
+                    <span>Добавить первую запись</span>
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
 @section Styles {
     <style>
-        .content-top-bar {
+        /* ===== vault: page ===== */
+        .vault-page {
+            --v-card: #ffffff;
+            --v-border: #e4e7ee;
+            --v-ink: #0f172a;
+            --v-muted: #5b6475;
+            --v-accent: #4f46e5;
+            --v-accent-hover: #4338ca;
+            --v-accent-soft: #eef0ff;
+            --v-radius: 20px;
+            --v-ctl-radius: 12px;
+            font-family: Manrope, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            color: var(--v-ink);
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
+            gap: 16px;
+            min-width: 0;
+        }
+
+        .vault-ico { display: inline-flex; width: 18px; height: 18px; flex: none; }
+        .vault-ico svg { width: 100%; height: 100%; }
+
+        .vault-head {
+            display: flex;
             align-items: center;
-            padding: 20px;
-            background: white;
-            border-bottom: 1px solid #e0e0e0;
+            gap: 20px;
+            flex-wrap: wrap;
         }
 
-        .content-title {
+        .vault-head-main { min-width: 0; flex: 1 1 280px; }
+
+        .vault-title {
             margin: 0;
-            font-size: 24px;
-            font-weight: 600;
-            color: #2c3e50;
+            font-size: 30px;
+            line-height: 1.15;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: var(--v-ink);
         }
 
-        .content-btn {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
+        .vault-subtitle {
+            margin: 6px 0 0;
+            font-size: 14px;
+            line-height: 1.45;
+            color: var(--v-muted);
+        }
+
+        .vault-stats {
+            display: flex;
+            background: var(--v-card);
+            border: 1px solid var(--v-border);
+            border-radius: 16px;
+            padding: 10px 6px;
+        }
+
+        .vault-stat {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            padding: 0 18px;
+            min-width: 0;
+        }
+
+        .vault-stat + .vault-stat { border-left: 1px solid var(--v-border); }
+        .vault-stat-label { font-size: 13px; color: var(--v-muted); white-space: nowrap; }
+        .vault-stat-value { font-size: 20px; font-weight: 800; color: var(--v-ink); font-variant-numeric: tabular-nums; }
+
+        .vault-btn {
+            height: 44px;
+            padding: 0 18px;
+            border-radius: var(--v-ctl-radius, 12px);
+            border: 1px solid #e4e7ee;
+            background: #fff;
+            color: #0f172a;
+            font: inherit;
+            font-size: 15px;
+            font-weight: 700;
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background-color .15s, border-color .15s, color .15s;
+        }
+
+        .vault-btn:hover { border-color: #cfd4df; }
+        .vault-btn:focus-visible { outline: 2px solid #4f46e5; outline-offset: 2px; }
+        .vault-btn:disabled { opacity: .6; cursor: default; }
+
+        .vault-btn-primary {
+            background: #4f46e5;
+            border-color: #4f46e5;
+            color: #fff;
+        }
+
+        .vault-btn-primary:hover { background: #4338ca; border-color: #4338ca; }
+
+        /* ===== toolbar: tag chips + search ===== */
+        .vault-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .vault-toolbar[hidden] { display: none; }
+
+        .vault-tags-filter {
+            display: flex;
+            gap: 8px;
+            flex: 1 1 auto;
+            min-width: 0;
+            overflow-x: auto;
+            scrollbar-width: none;
+            padding: 2px;
+        }
+
+        .vault-tags-filter::-webkit-scrollbar { display: none; }
+
+        .vault-chip {
+            height: 36px;
+            padding: 0 14px;
+            border-radius: 999px;
+            border: 1px solid var(--v-border);
+            background: var(--v-card);
+            color: var(--v-ink);
+            font: inherit;
             font-size: 14px;
-            background: #3498db;
-            color: white;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            white-space: nowrap;
+            flex: none;
         }
 
-        .content-btn:hover {
-            background: #2980b9;
+        .vault-chip:hover { border-color: #cfd4df; }
+        .vault-chip:focus-visible { outline: 2px solid var(--v-accent); outline-offset: 2px; }
+        .vault-chip-count { color: var(--v-muted); font-weight: 600; font-size: 13px; }
+
+        .vault-chip.is-active {
+            background: var(--v-ink);
+            border-color: var(--v-ink);
+            color: #fff;
         }
 
-        .content-section {
-            padding: 20px;
+        .vault-chip.is-active .vault-chip-count { color: rgba(255, 255, 255, .7); }
+
+        .vault-search {
+            position: relative;
+            display: flex;
+            align-items: center;
+            flex: 0 0 300px;
+            margin: 0;
+        }
+
+        .vault-search .vault-ico {
+            position: absolute;
+            left: 14px;
+            color: var(--v-muted);
+            pointer-events: none;
+        }
+
+        .vault-search input {
+            width: 100%;
+            height: 44px;
+            border: 1px solid var(--v-border);
+            border-radius: var(--v-ctl-radius);
+            background: var(--v-card);
+            padding: 0 14px 0 42px;
+            font: inherit;
+            font-size: 15px;
+            color: var(--v-ink);
+            outline: none;
+        }
+
+        .vault-search input::placeholder { color: #8a93a5; }
+        .vault-search input:focus { border-color: var(--v-accent); box-shadow: 0 0 0 3px var(--v-accent-soft); }
+
+        /* ===== card + grid ===== */
+        .vault-card {
+            background: var(--v-card);
+            border: 1px solid var(--v-border);
+            border-radius: var(--v-radius);
+            padding: 6px 8px 4px;
+            min-width: 0;
         }
 
         /* Грид на всю доступную область окна: высоту wrapper'а выставляет fitVaultGrid() */
-        .vault-section {
-            margin-bottom: 0;
-        }
-
-        .vault-section .grid-wrapper {
+        .vault-grid-wrapper {
+            position: relative;
             width: 100%;
             height: 600px;
             min-height: 360px;
         }
 
-        .vault-password-cell {
+        #vaultGrid { font-family: inherit; color: var(--v-ink); }
+        #vaultGrid .dx-datagrid { background: transparent; color: var(--v-ink); font-family: inherit; }
+        #vaultGrid .dx-datagrid-headers { border-bottom: 1px solid var(--v-border); color: var(--v-muted); }
+
+        #vaultGrid .dx-datagrid-headers .dx-header-row > td {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            color: var(--v-muted);
+            padding-top: 14px;
+            padding-bottom: 12px;
+            border-bottom: none;
+        }
+
+        #vaultGrid .dx-datagrid-rowsview .dx-data-row > td {
+            height: 52px;
+            padding-top: 8px;
+            padding-bottom: 8px;
+            vertical-align: middle;
+            font-size: 14px;
+            border-top: 1px solid #eef0f4;
+        }
+
+        #vaultGrid .dx-datagrid-rowsview .dx-row:first-child > td { border-top: none; }
+        #vaultGrid .dx-datagrid-rowsview .dx-data-row.dx-state-hover:not(.dx-row-focused) > td { background: #f8f9fc; }
+        #vaultGrid .dx-datagrid-rowsview .dx-row-lines > td { border-bottom: none; }
+        #vaultGrid .dx-datagrid-pager { border-top: 1px solid var(--v-border); padding: 10px 6px; }
+        #vaultGrid .dx-pager .dx-pages .dx-selection,
+        #vaultGrid .dx-pager .dx-page-sizes .dx-selection { background: var(--v-accent-soft); color: var(--v-accent); border-radius: 8px; }
+        #vaultGrid .dx-datagrid-nodata { color: var(--v-muted); font-size: 14px; }
+        #vaultGrid .dx-command-adaptive .dx-datagrid-adaptive-more { color: var(--v-muted); }
+        #vaultGrid .dx-adaptive-detail-row .dx-field-item-label-text { color: var(--v-muted); font-size: 13px; }
+
+        .vault-cell { display: flex; align-items: center; gap: 8px; min-width: 0; }
+
+        /* Содержимое ячеек не распирает колонки: ширину задают minWidth/hidingPriority грида, длинное — с многоточием */
+        #vaultGrid .dx-data-row > td > .vault-cell,
+        #vaultGrid .dx-data-row > td > .vault-tags-cell,
+        #vaultGrid .dx-data-row > td > .vault-url-link { contain: inline-size; }
+        #vaultGrid .dx-data-row > td > .vault-url-link { display: flex; }
+        .vault-cell-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .vault-muted { color: var(--v-muted); }
+
+        .vault-badge {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            color: #fff;
+            font-weight: 800;
+            font-size: 14px;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            justify-content: center;
+            flex: none;
+            text-transform: uppercase;
         }
 
-        .vault-password-value {
-            font-family: monospace;
-            letter-spacing: 1px;
-        }
+        .vault-title-text { font-weight: 700; color: var(--v-ink); }
+
+        .vault-note-flag { color: var(--v-muted); display: inline-flex; cursor: help; }
+        .vault-note-flag .vault-ico { width: 15px; height: 15px; }
 
         .vault-icon-btn {
+            width: 32px;
+            height: 32px;
             border: none;
+            border-radius: 8px;
             background: transparent;
-            color: #7f8c8d;
+            color: var(--v-muted);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
-            padding: 2px 4px;
+            flex: none;
+            padding: 0;
         }
 
-        .vault-icon-btn:hover {
-            color: #2980b9;
+        .vault-icon-btn .vault-ico { width: 17px; height: 17px; }
+        .vault-icon-btn:hover { background: var(--v-accent-soft); color: var(--v-accent); }
+        .vault-icon-btn:focus-visible { outline: 2px solid var(--v-accent); outline-offset: 1px; }
+        .vault-icon-btn.is-danger:hover { background: #fdecef; color: #be123c; }
+
+        .vault-password-value {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            letter-spacing: 0;
+            font-size: 13px;
         }
+
+        .vault-password-value.is-masked { letter-spacing: 1px; color: var(--v-muted); }
 
         .vault-url-link {
-            color: #2980b9;
+            color: var(--v-accent);
             text-decoration: none;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            display: inline-block;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            min-width: 0;
             max-width: 100%;
         }
+
+        .vault-url-link:hover { text-decoration: underline; }
+        .vault-url-link .vault-ico { width: 14px; height: 14px; }
+
+        .vault-tag {
+            display: inline-flex;
+            align-items: center;
+            height: 24px;
+            padding: 0 10px;
+            border-radius: 999px;
+            background: #f1f3f8;
+            color: #334155;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .vault-tags-cell { display: flex; gap: 6px; flex-wrap: nowrap; overflow: hidden; }
+
+        .vault-owner-you {
+            display: inline-flex;
+            align-items: center;
+            height: 24px;
+            padding: 0 10px;
+            border-radius: 999px;
+            background: var(--v-accent-soft);
+            color: var(--v-accent);
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .vault-avatar {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 800;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: none;
+        }
+
+        .vault-actions { display: inline-flex; gap: 2px; justify-content: flex-end; width: 100%; }
+
+        /* ===== empty state ===== */
+        .vault-empty {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            background: var(--v-card);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 32px 20px;
+            gap: 10px;
+        }
+
+        .vault-empty[hidden] { display: none; }
+
+        .vault-empty-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 18px;
+            background: var(--v-accent-soft);
+            color: var(--v-accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 6px;
+        }
+
+        .vault-empty-icon .vault-ico { width: 30px; height: 30px; }
+        .vault-empty-title { font-size: 18px; font-weight: 800; color: var(--v-ink); }
+        .vault-empty-text { margin: 0 0 10px; max-width: 420px; color: var(--v-muted); font-size: 14px; line-height: 1.5; }
+
+        /* ===== popups (edit form + access dialog) — живут в body, поэтому без переменных страницы ===== */
+        .vault-popup .dx-overlay-content { border-radius: 20px; font-family: Manrope, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+        .vault-popup .dx-popup-title { border-bottom: 1px solid #e4e7ee; padding: 14px 20px; }
+        .vault-popup .dx-popup-title .dx-toolbar-label { font-size: 18px; font-weight: 800; color: #0f172a; }
+        .vault-popup .dx-popup-bottom { border-top: 1px solid #e4e7ee; padding: 12px 20px; }
+        .vault-popup .dx-popup-bottom .dx-button {
+            height: 44px;
+            border-radius: 12px;
+            border: 1px solid #e4e7ee;
+            background: #fff;
+            color: #0f172a;
+            box-shadow: none;
+        }
+        .vault-popup .dx-popup-bottom .dx-button .dx-button-text { text-transform: none; font-weight: 700; font-size: 15px; letter-spacing: 0; }
+        .vault-popup .dx-popup-bottom .dx-toolbar-item:first-child .dx-button { background: #4f46e5; border-color: #4f46e5; color: #fff; }
+        .vault-popup .dx-popup-bottom .dx-toolbar-item:first-child .dx-button:hover { background: #4338ca; }
+
+        .vault-access { display: flex; flex-direction: column; gap: 12px; min-height: 0; color: #0f172a; font-family: Manrope, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+        .vault-access-hint { margin: 0; color: #5b6475; font-size: 14px; line-height: 1.45; }
+        .vault-access-hint b { color: #0f172a; }
+        .vault-access-state { padding: 24px 4px; color: #5b6475; font-size: 14px; text-align: center; }
+
+        .vault-access-search {
+            width: 100%;
+            height: 44px;
+            border: 1px solid #e4e7ee;
+            border-radius: 12px;
+            padding: 0 14px;
+            font: inherit;
+            font-size: 15px;
+            outline: none;
+            color: #0f172a;
+        }
+
+        .vault-access-search:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px #eef0ff; }
 
         .vault-access-users {
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            padding: 16px;
-            max-height: 320px;
+            gap: 2px;
+            max-height: 340px;
             overflow-y: auto;
+            margin: 0 -8px;
+            padding: 0 8px;
         }
 
         .vault-access-user-row {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 12px;
+            padding: 8px 10px;
+            border-radius: 12px;
+            cursor: pointer;
+            margin: 0;
+        }
+
+        .vault-access-user-row:hover { background: #f8f9fc; }
+        .vault-access-user-row.is-checked { background: #eef0ff; }
+        .vault-access-user-row .vault-avatar { width: 36px; height: 36px; font-size: 13px; }
+        .vault-access-user-info { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+        .vault-access-user-name { font-weight: 700; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .vault-access-user-mail { font-size: 12px; color: #5b6475; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        .vault-access-user-row input[type=checkbox] {
+            width: 20px;
+            height: 20px;
+            accent-color: #4f46e5;
+            flex: none;
+            margin: 0;
+            cursor: pointer;
+        }
+
+        .vault-access-footer {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-top: 12px;
+            border-top: 1px solid #e4e7ee;
+        }
+
+        .vault-access-count { flex: 1; color: #5b6475; font-size: 14px; }
+
+        /* ===== mobile ===== */
+        @@media (max-width: 900px) {
+            .vault-head { gap: 14px; }
+            .vault-stats { order: 3; flex: 1 1 100%; }
+            .vault-stat { flex: 1; }
+        }
+
+        @@media (max-width: 640px) {
+            .vault-page { gap: 12px; }
+            .vault-title { font-size: 24px; }
+            .vault-subtitle { font-size: 13px; }
+            .vault-head-main { flex-basis: 100%; }
+            .vault-head-add { order: 4; width: 100%; }
+            .vault-stat { padding: 0 12px; }
+            .vault-stat-label { font-size: 12px; }
+            .vault-stat-value { font-size: 18px; }
+            .vault-toolbar { flex-direction: column-reverse; align-items: stretch; gap: 10px; }
+            .vault-search { flex: 1 1 auto; }
+            .vault-card { padding: 2px 4px; border-radius: 16px; }
+            #vaultGrid .dx-datagrid-headers .dx-header-row > td { padding-left: 8px; padding-right: 8px; }
+            #vaultGrid .dx-datagrid-rowsview .dx-data-row > td { padding-left: 8px; padding-right: 4px; }
+            .vault-badge { width: 28px; height: 28px; border-radius: 8px; font-size: 13px; }
+            .vault-icon-btn { width: 30px; height: 32px; }
+            .vault-note-flag { display: none; }
+            .vault-password-value.is-masked { letter-spacing: 0; }
+            #vaultGrid .dx-data-row > td .vault-cell { gap: 4px; }
+            #vaultGrid .dx-data-row > td .vault-cell .vault-badge { margin-right: 4px; }
+            .vault-access-footer .vault-btn { padding: 0 14px; }
         }
     </style>
 }
 
 @section Scripts {
     <script>
+        // ========== Иконки (inline SVG, не зависят от загрузки шрифта иконок) ==========
+        var VAULT_ICONS = {
+            plus: '<path d="M12 5v14M5 12h14"/>',
+            search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+            eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+            eyeOff: '<path d="M3 3l18 18"/><path d="M10.6 5.1A10.4 10.4 0 0 1 12 5c6.5 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.2M6.6 6.6C3.9 8.4 2 12 2 12s3.5 7 10 7c1.9 0 3.6-.6 5-1.4"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>',
+            copy: '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+            external: '<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
+            edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+            trash: '<path d="M3 6h18"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+            users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/>',
+            key: '<circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/>',
+            more: '<circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/>',
+            note: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8"/>'
+        };
+
+        function vaultIconHtml(name) {
+            return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (VAULT_ICONS[name] || '') + '</svg>';
+        }
+
+        function vaultIcon(name) {
+            return $('<span class="vault-ico"></span>').html(vaultIconHtml(name));
+        }
+
+        function renderVaultStaticIcons(root) {
+            $(root || document).find('.vault-ico[data-icon]').each(function () {
+                $(this).html(vaultIconHtml($(this).attr('data-icon')));
+            });
+        }
+
+        function vaultIconButton(icon, title, onClick, extraClass) {
+            return $('<button type="button" class="vault-icon-btn"></button>')
+                .addClass(extraClass || '')
+                .attr({ title: title, 'aria-label': title })
+                .append(vaultIcon(icon))
+                .on('click', function (ev) {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    onClick.call(this, ev);
+                });
+        }
+
+        // ========== Утилиты ==========
+        // 6 цветов с контрастом белого текста не ниже 4.5:1
+        var VAULT_PALETTE = ['#4f46e5', '#0f766e', '#b45309', '#be185d', '#0369a1', '#15803d'];
+
+        function vaultColorFor(text) {
+            var s = String(text || ''), h = 0;
+            for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+            return VAULT_PALETTE[Math.abs(h) % VAULT_PALETTE.length];
+        }
+
+        function vaultInitials(name) {
+            var parts = String(name || '').replace(/[@@].*$/, '').trim().split(/[\s._-]+/).filter(Boolean);
+            if (!parts.length) return '?';
+            return (parts[0].charAt(0) + (parts.length > 1 ? parts[1].charAt(0) : '')).toUpperCase();
+        }
+
+        // Теги хранятся строкой "Хостинг, Почта" (поле Tags — string). Поддерживаем и JSON-массив.
+        function parseVaultTags(value) {
+            if (!value) return [];
+            if (Array.isArray(value)) return value.map(function (t) { return String(t).trim(); }).filter(Boolean);
+            var s = String(value).trim();
+            if (s.charAt(0) === '[') {
+                try { return parseVaultTags(JSON.parse(s)); } catch (e) { /* не JSON — режем по запятым */ }
+            }
+            return s.split(/[,;]/).map(function (t) { return t.trim(); }).filter(Boolean);
+        }
+
+        // Открываем только http(s); без схемы — подставляем https://
+        function vaultSafeUrl(value) {
+            var s = String(value || '').trim();
+            if (!s) return null;
+            if (!/^[a-z][a-z0-9+.-]*:/i.test(s)) s = 'https://' + s.replace(/^\/+/, '');
+            try {
+                var u = new URL(s);
+                if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
+                return u;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        var VAULT_MONTHS = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+
+        function vaultPad(n) { return (n < 10 ? '0' : '') + n; }
+
+        function vaultShortDate(value) {
+            if (!value) return { text: '', full: '' };
+            var d = value instanceof Date ? value : new Date(value);
+            if (isNaN(d.getTime())) return { text: '', full: '' };
+            var now = new Date();
+            var time = vaultPad(d.getHours()) + ':' + vaultPad(d.getMinutes());
+            var full = vaultPad(d.getDate()) + '.' + vaultPad(d.getMonth() + 1) + '.' + d.getFullYear() + ' ' + time;
+            var startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+            var startDay = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+            var days = Math.round((startToday - startDay) / 86400000);
+            var text;
+            if (days === 0) {
+                var mins = Math.floor((now - d) / 60000);
+                text = mins >= 0 && mins < 1 ? 'только что' : mins >= 0 && mins < 60 ? mins + ' мин назад' : 'сегодня, ' + time;
+            } else if (days === 1) {
+                text = 'вчера, ' + time;
+            } else if (days > 1 && days < 7) {
+                text = days + ' дн. назад';
+            } else if (d.getFullYear() === now.getFullYear()) {
+                text = d.getDate() + ' ' + VAULT_MONTHS[d.getMonth()];
+            } else {
+                text = vaultPad(d.getDate()) + '.' + vaultPad(d.getMonth() + 1) + '.' + d.getFullYear();
+            }
+            return { text: text, full: full };
+        }
+
+        function vaultNotify(message, type) {
+            if (window.DevExpress && DevExpress.ui && DevExpress.ui.notify) {
+                DevExpress.ui.notify({ message: message, width: 'auto', position: { my: 'bottom center', at: 'bottom center', offset: '0 -24' } }, type || 'success', 1600);
+            }
+        }
+
+        // Копирование: Clipboard API в защищённом контексте, иначе — textarea + execCommand
+        function vaultCopyText(text, successMessage) {
+            if (!text) return;
+            var done = function () { vaultNotify(successMessage, 'success'); };
+            var fallback = function () {
+                var ta = document.createElement('textarea');
+                ta.value = text;
+                ta.setAttribute('readonly', '');
+                ta.style.position = 'fixed';
+                ta.style.top = '-1000px';
+                ta.style.opacity = '0';
+                document.body.appendChild(ta);
+                ta.select();
+                ta.setSelectionRange(0, text.length);
+                var ok = false;
+                try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+                document.body.removeChild(ta);
+                if (ok) done(); else vaultNotify('Не удалось скопировать', 'error');
+            };
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(done, fallback);
+            } else {
+                fallback();
+            }
+        }
+
+        function getVaultGrid() {
+            var $g = $('#vaultGrid');
+            return $g.length && $g.data('dxDataGrid') ? $g.dxDataGrid('instance') : null;
+        }
+
+        // ========== Пользователи компании (имя владельца записи, диалог доступа) ==========
+        var vaultUsersById = {};
+        var vaultUsersPromise = null;
+
+        function loadVaultUsers() {
+            if (!vaultUsersPromise) {
+                vaultUsersPromise = fetch('/UserData/GetUsers')
+                    .then(function (r) { return r.json(); })
+                    .then(function (res) {
+                        var users = normalizeVaultDxResult(res);
+                        vaultUsersById = {};
+                        users.forEach(function (u) { vaultUsersById[u.Id] = u; });
+                        return users;
+                    })
+                    .catch(function (err) {
+                        vaultUsersPromise = null;
+                        throw err;
+                    });
+            }
+            return vaultUsersPromise;
+        }
+
+        function vaultUserName(u) {
+            return u ? (u.FullName || u.Email || ('Пользователь #' + u.Id)) : '';
+        }
+
+        // ========== Шаблоны ячеек (все значения выводятся через .text()) ==========
+        function vaultTitleCell(container, options) {
+            var data = options.data || {};
+            var title = data.Title || 'Без названия';
+            var $cell = $('<div class="vault-cell"></div>');
+            $('<span class="vault-badge" aria-hidden="true"></span>')
+                .text(title.trim().charAt(0) || '?')
+                .css('background', vaultColorFor(title))
+                .appendTo($cell);
+            $('<span class="vault-cell-text vault-title-text"></span>').text(title).attr('title', title).appendTo($cell);
+            if (data.Notes) {
+                $('<span class="vault-note-flag"></span>')
+                    .attr({ title: data.Notes, 'aria-label': 'Заметка: ' + data.Notes })
+                    .append(vaultIcon('note'))
+                    .appendTo($cell);
+            }
+            $(container).append($cell);
+        }
+
+        function vaultLoginCell(container, options) {
+            var login = options.value;
+            var $cell = $('<div class="vault-cell"></div>');
+            if (!login) {
+                $cell.append($('<span class="vault-muted"></span>').text('—'));
+            } else {
+                $('<span class="vault-cell-text"></span>').text(login).attr('title', login).appendTo($cell);
+                $cell.append(vaultIconButton('copy', 'Скопировать логин', function () {
+                    vaultCopyText(String(login), 'Логин скопирован');
+                }));
+            }
+            $(container).append($cell);
+        }
+
+        var VAULT_MASK = '••••••••';
+
+        function vaultPasswordCell(container, options) {
+            var password = options.value ? String(options.value) : '';
+            var $cell = $('<div class="vault-cell"></div>');
+            if (!password) {
+                $cell.append($('<span class="vault-muted vault-cell-text"></span>').text('—'));
+                vaultAppendMobileMenu($cell, options);
+                $(container).append($cell);
+                return;
+            }
+            var mask = vaultIsMobile() ? '••••' : VAULT_MASK;
+            var $value = $('<span class="vault-cell-text vault-password-value is-masked"></span>').text(mask);
+            var shown = false;
+            var $toggle = vaultIconButton('eye', 'Показать пароль', function () {
+                shown = !shown;
+                $value.text(shown ? password : mask).attr('title', shown ? password : null).toggleClass('is-masked', !shown);
+                var label = shown ? 'Скрыть пароль' : 'Показать пароль';
+                $(this).attr({ title: label, 'aria-label': label }).empty().append(vaultIcon(shown ? 'eyeOff' : 'eye'));
+            });
+            $cell.append($value, $toggle, vaultIconButton('copy', 'Скопировать пароль', function () {
+                vaultCopyText(password, 'Пароль скопирован');
+            }));
+            vaultAppendMobileMenu($cell, options);
+            $(container).append($cell);
+        }
+
+        function vaultUrlCell(container, options) {
+            if (!options.value) return;
+            var url = vaultSafeUrl(options.value);
+            if (!url) {
+                $(container).append($('<span class="vault-cell-text vault-muted"></span>').text(options.value).attr('title', options.value));
+                return;
+            }
+            var host = url.hostname.replace(/^www\./, '');
+            $('<a class="vault-url-link" target="_blank" rel="noopener noreferrer"></a>')
+                .attr({ href: url.href, title: String(options.value) })
+                .append($('<span class="vault-cell-text"></span>').text(host), vaultIcon('external'))
+                .on('click', function (ev) { ev.stopPropagation(); })
+                .appendTo(container);
+        }
+
+        function vaultTagsCell(container, options) {
+            var tags = parseVaultTags(options.value);
+            if (!tags.length) return;
+            var $wrap = $('<div class="vault-tags-cell"></div>').attr('title', tags.join(', '));
+            tags.forEach(function (t) { $wrap.append($('<span class="vault-tag"></span>').text(t)); });
+            $(container).append($wrap);
+        }
+
+        function vaultOwnerCell(container, options) {
+            var data = options.data || {};
+            if (data.IsOwner) {
+                $(container).append('<span class="vault-owner-you">Вы</span>');
+                return;
+            }
+            var u = vaultUsersById[data.CreatedByUserId];
+            var name = u ? vaultUserName(u) : 'Коллега';
+            var $cell = $('<div class="vault-cell"></div>');
+            $('<span class="vault-avatar" aria-hidden="true"></span>').text(vaultInitials(name)).css('background', vaultColorFor(name)).appendTo($cell);
+            $('<span class="vault-cell-text"></span>').text(name).attr('title', name).appendTo($cell);
+            $(container).append($cell);
+        }
+
+        function vaultDateCell(container, options) {
+            var d = vaultShortDate(options.value);
+            $('<span class="vault-muted"></span>').text(d.text).attr('title', d.full).appendTo(container);
+        }
+
+        function vaultIsMobile() {
+            return window.matchMedia ? window.matchMedia('(max-width: 640px)').matches : window.innerWidth <= 640;
+        }
+
+        function vaultEditRow(grid, data) {
+            var idx = grid.getRowIndexByKey(data.Id);
+            if (idx >= 0) grid.editRow(idx);
+        }
+
+        function vaultDeleteRow(grid, data) {
+            var idx = grid.getRowIndexByKey(data.Id);
+            if (idx >= 0) grid.deleteRow(idx);
+        }
+
+        function vaultActionsCell(container, options) {
+            var data = options.data || {};
+            if (!data.IsOwner) return;
+            var grid = options.component;
+            var $a = $('<div class="vault-actions"></div>');
+            {
+                $a.append(
+                    vaultIconButton('edit', 'Редактировать', function () { vaultEditRow(grid, data); }),
+                    vaultIconButton('users', 'Доступ', function () { openVaultAccessDialog(data); }),
+                    vaultIconButton('trash', 'Удалить', function () { vaultDeleteRow(grid, data); }, 'is-danger')
+                );
+            }
+            $(container).append($a);
+        }
+
+        // На телефоне колонка действий скрыта: действия автора — одной кнопкой в ячейке пароля
+        function vaultAppendMobileMenu($cell, options) {
+            var data = options.data || {};
+            if (!data.IsOwner || !vaultIsMobile()) return;
+            var grid = options.component;
+            $cell.append(vaultIconButton('more', 'Действия', function () { openVaultRowMenu(grid, data); }, 'vault-more-btn'));
+        }
+
+        function openVaultRowMenu(grid, data) {
+            var $sheet = $('<div></div>').appendTo(document.body);
+            $sheet.dxActionSheet({
+                title: data.Title || 'Запись',
+                showTitle: true,
+                showCancelButton: true,
+                cancelText: 'Отмена',
+                usePopover: false,
+                visible: true,
+                dataSource: [
+                    { text: 'Редактировать', icon: 'edit', action: function () { vaultEditRow(grid, data); } },
+                    { text: 'Доступ', icon: 'user', action: function () { openVaultAccessDialog(data); } },
+                    { text: 'Удалить', icon: 'trash', type: 'danger', action: function () { vaultDeleteRow(grid, data); } }
+                ],
+                onItemClick: function (e) { setTimeout(e.itemData.action, 0); },
+                onVisibleChange: function (visible) {
+                    if (!visible) setTimeout(function () { $sheet.remove(); }, 400);
+                }
+            });
+        }
+
+        // Ширины колонок под телефон / десктоп (скрытие колонок — через hidingPriority)
+        var vaultMobileState = null;
+
+        function applyVaultResponsive() {
+            var grid = getVaultGrid();
+            if (!grid) return;
+            var mobile = vaultIsMobile();
+            if (mobile === vaultMobileState) return;
+            vaultMobileState = mobile;
+            grid.beginUpdate();
+            grid.columnOption('Title', 'minWidth', mobile ? 110 : 220);
+            grid.columnOption('Password', 'width', mobile ? 160 : 190);
+            grid.columnOption('actions', 'visible', !mobile);
+            grid.endUpdate();
+        }
+
+        // Теги в форме: строка из БД <-> массив для TagBox; в подсказки добавляем уже используемые теги
+        var VAULT_DEFAULT_TAGS = ['Хостинг', 'Почта', 'Соцсети', 'Клиент', 'Сервис', 'Личное'];
+
+        function onVaultEditorPreparing(e) {
+            if (e.parentType !== 'dataRow' || e.dataField !== 'Tags') return;
+            var current = parseVaultTags(e.value);
+            var known = VAULT_DEFAULT_TAGS.slice();
+            vaultAllTags.concat(current).forEach(function (t) { if (known.indexOf(t) < 0) known.push(t); });
+            e.editorOptions.dataSource = known;
+            e.editorOptions.acceptCustomValue = true;
+            e.editorOptions.value = current;
+            e.editorOptions.onValueChanged = function (args) {
+                var arr = parseVaultTags(args.value);
+                e.setValue(arr.length ? arr.join(', ') : null);
+            };
+        }
+
+        // ========== Сводка, фильтр тегов, пустое состояние ==========
+        var vaultAllTags = [];
+        var vaultActiveTag = null;
+        var vaultTotalLoaded = null;
+
+        // Вызывается после каждой загрузки с сервера (remoteOperations: false — приходят все доступные записи)
+        function onVaultDataLoaded(result) {
+            var rows = normalizeVaultDxResult(result);
+            vaultTotalLoaded = rows.length;
+            var mine = rows.filter(function (r) { return r.IsOwner; }).length;
+            var $stats = $('#vaultStats');
+            $stats.find('[data-stat=total]').text(rows.length);
+            $stats.find('[data-stat=mine]').text(mine);
+            $stats.find('[data-stat=shared]').text(rows.length - mine);
+
+            var counts = {};
+            rows.forEach(function (r) {
+                parseVaultTags(r.Tags).forEach(function (t) { counts[t] = (counts[t] || 0) + 1; });
+            });
+            vaultAllTags = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a] || a.localeCompare(b, 'ru'); });
+            if (vaultActiveTag && !counts[vaultActiveTag]) setVaultTagFilter(null);
+            renderVaultTagFilter(counts, rows.length);
+
+            if (rows.some(function (r) { return !r.IsOwner; })) {
+                loadVaultUsers().then(function () {
+                    var grid = getVaultGrid();
+                    if (grid) grid.repaint();
+                }).catch(function () { /* имя владельца необязательно */ });
+            }
+        }
+
+        function renderVaultTagFilter(counts, total) {
+            var $box = $('#vaultTagFilter').empty();
+            if (!vaultAllTags.length) return;
+            var make = function (tag, label, count) {
+                var active = (tag === null && !vaultActiveTag) || tag === vaultActiveTag;
+                return $('<button type="button" class="vault-chip"></button>')
+                    .toggleClass('is-active', active)
+                    .attr('aria-pressed', active ? 'true' : 'false')
+                    .append($('<span></span>').text(label), $('<span class="vault-chip-count"></span>').text(count))
+                    .on('click', function () {
+                        setVaultTagFilter(tag);
+                        renderVaultTagFilter(counts, total);
+                    });
+            };
+            $box.append(make(null, 'Все', total));
+            vaultAllTags.forEach(function (t) { $box.append(make(t, t, counts[t])); });
+        }
+
+        function setVaultTagFilter(tag) {
+            vaultActiveTag = tag;
+            var grid = getVaultGrid();
+            if (grid) grid.filter(tag ? ['Tags', 'contains', tag] : null);
+        }
+
+        function onVaultGridContentReady(e) {
+            applyVaultResponsive();
+            $('#vaultEmpty').prop('hidden', vaultTotalLoaded !== 0);
+            $('.vault-toolbar').prop('hidden', vaultTotalLoaded === 0);
+        }
+
+        function showCreateVaultEntryModal() {
+            var grid = getVaultGrid();
+            if (grid) grid.addRow();
+        }
+
         // Растягиваем грид по высоте до низа окна (ширину он и так берёт по контейнеру)
         function fitVaultGrid() {
             var wrapper = document.getElementById('vaultGridWrapper');
             if (!wrapper) return;
-            var section = wrapper.closest('.content-section');
-            var sectionPadding = section ? parseFloat(getComputedStyle(section).paddingBottom) || 0 : 0;
+            var card = wrapper.closest('.vault-card');
+            var cardStyle = card ? getComputedStyle(card) : null;
+            var cardBottom = cardStyle ? (parseFloat(cardStyle.paddingBottom) || 0) + (parseFloat(cardStyle.borderBottomWidth) || 0) : 0;
             var mainContent = wrapper.closest('.main-content');
             var mainPadding = mainContent ? parseFloat(getComputedStyle(mainContent).paddingBottom) || 0 : 0;
             var top = wrapper.getBoundingClientRect().top + window.scrollY;
-            var height = window.innerHeight - top - sectionPadding - mainPadding;
-            wrapper.style.height = Math.max(360, Math.floor(height)) + 'px';
+            var height = window.innerHeight - top - cardBottom - mainPadding;
+            var min = window.innerWidth <= 640 ? 440 : 360;
+            wrapper.style.height = Math.max(min, Math.floor(height)) + 'px';
 
-            var grid = $('#vaultGrid').dxDataGrid('instance');
+            applyVaultResponsive();
+            var grid = getVaultGrid();
             if (grid) grid.updateDimensions();
         }
 
         $(function () {
+            renderVaultStaticIcons();
             fitVaultGrid();
             var resizeTimer;
             $(window).on('resize', function () {
@@ -274,47 +1161,20 @@
             });
             // Сворачивание бокового меню меняет ширину области контента
             $(document).on('transitionend', '.main-content', function () {
-                var grid = $('#vaultGrid').dxDataGrid('instance');
+                var grid = getVaultGrid();
                 if (grid) grid.updateDimensions();
             });
+
+            var searchTimer;
+            $('#vaultSearch').on('input search', function () {
+                var text = this.value;
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(function () {
+                    var grid = getVaultGrid();
+                    if (grid) grid.searchByText(text.trim());
+                }, 200);
+            });
         });
-
-        function showCreateVaultEntryModal() {
-            const grid = $('#vaultGrid').dxDataGrid('instance');
-            if (grid) grid.addRow();
-        }
-
-        // Клик по кнопкам показать/скопировать внутри ячейки пароля
-        function onVaultGridCellClick(e) {
-            if (!e.cellElement) return;
-            var $cell = $(e.cellElement);
-
-            var $toggle = $cell.find('.vault-toggle-btn');
-            if ($toggle.length && $(e.event.target).closest('.vault-toggle-btn').length) {
-                var $value = $cell.find('.vault-password-value');
-                var real = $value.data('value') || '';
-                var isHidden = $value.text() !== real;
-                $value.text(isHidden ? real : '••••••••');
-                $toggle.find('i').toggleClass('fa-eye fa-eye-slash');
-                return;
-            }
-
-            var $copy = $cell.find('.vault-copy-btn');
-            if ($copy.length && $(e.event.target).closest('.vault-copy-btn').length) {
-                var $value = $cell.find('.vault-password-value');
-                var real = $value.data('value') || '';
-                if (real && navigator.clipboard) {
-                    navigator.clipboard.writeText(real);
-                    notifyVaultCopied();
-                }
-            }
-        }
-
-        function notifyVaultCopied() {
-            if (window.DevExpress && DevExpress.ui && DevExpress.ui.notify) {
-                DevExpress.ui.notify('Скопировано в буфер обмена', 'success', 1500);
-            }
-        }
 
         // ========== Попап управления доступом к записи ==========
         // Попап создаётся заново при каждом открытии через contentTemplate (а не через
@@ -326,63 +1186,120 @@
 
             $popupContainer.dxPopup({
                 title: 'Доступ к записи',
-                width: 360,
+                width: function () { return Math.min(440, window.innerWidth - 24); },
                 height: 'auto',
-                maxHeight: '80vh',
+                maxHeight: '86vh',
                 showCloseButton: true,
                 shading: true,
                 visible: true,
+                wrapperAttr: { class: 'vault-popup' },
                 onHidden: function (e) {
                     e.component.dispose();
                     $popupContainer.remove();
                 },
                 contentTemplate: function (contentElement) {
-                    var $content = $('<div class="vault-access-users">Загрузка...</div>');
+                    var $root = $('<div class="vault-access"></div>');
+                    $('<p class="vault-access-hint"></p>')
+                        .append(document.createTextNode('Запись «'), $('<b></b>').text(rowData.Title || ''),
+                            document.createTextNode('» увидят отмеченные коллеги. Редактировать её можете только вы.'))
+                        .appendTo($root);
+                    var $body = $('<div class="vault-access-state">Загрузка…</div>').appendTo($root);
 
+                    vaultUsersPromise = null; // список сотрудников мог измениться — перечитываем
                     Promise.all([
-                        fetch('/UserData/GetUsers').then(function (r) { return r.json(); }),
-                        fetch('/VaultData/access/' + rowData.Id).then(function (r) { return r.json(); })
+                        loadVaultUsers(),
+                        fetch('/VaultData/access/' + encodeURIComponent(rowData.Id)).then(function (r) {
+                            if (!r.ok) throw new Error('access ' + r.status);
+                            return r.json();
+                        })
                     ]).then(function (results) {
-                        var users = normalizeVaultDxResult(results[0]).filter(function (u) { return u.Id !== rowData.CreatedByUserId; });
+                        var users = results[0].filter(function (u) { return u.Id !== rowData.CreatedByUserId; });
                         var grantedIds = results[1] || [];
 
-                        $content.empty();
                         if (!users.length) {
-                            $content.append('<div>В компании больше нет других пользователей.</div>');
+                            $body.text('В компании больше нет других пользователей.');
+                            return;
                         }
+                        $body.remove();
+
+                        var $search = null;
+                        if (users.length > 8) {
+                            $search = $('<input type="search" class="vault-access-search" placeholder="Найти сотрудника" aria-label="Найти сотрудника" />').appendTo($root);
+                        }
+
+                        var $list = $('<div class="vault-access-users"></div>').appendTo($root);
                         users.forEach(function (u) {
-                            var checked = grantedIds.indexOf(u.Id) > -1 ? 'checked' : '';
-                            var $row = $('<label class="vault-access-user-row"></label>');
-                            $row.append('<input type="checkbox" value="' + u.Id + '" ' + checked + ' />');
-                            $row.append('<span>' + (u.FullName || u.Email || ('Пользователь #' + u.Id)) + '</span>');
-                            $content.append($row);
+                            var name = vaultUserName(u);
+                            var isChecked = grantedIds.indexOf(u.Id) > -1;
+                            var $row = $('<label class="vault-access-user-row"></label>')
+                                .attr('data-search', (name + ' ' + (u.Email || '')).toLowerCase())
+                                .toggleClass('is-checked', isChecked);
+                            $('<span class="vault-avatar" aria-hidden="true"></span>').text(vaultInitials(name)).css('background', vaultColorFor(name)).appendTo($row);
+                            var $info = $('<span class="vault-access-user-info"></span>').appendTo($row);
+                            $('<span class="vault-access-user-name"></span>').text(name).appendTo($info);
+                            if (u.Email && u.Email !== name) $('<span class="vault-access-user-mail"></span>').text(u.Email).appendTo($info);
+                            $('<input type="checkbox" />').val(u.Id).prop('checked', isChecked).appendTo($row);
+                            $list.append($row);
                         });
 
-                        var $save = $('<button type="button" class="content-btn" style="margin-top:12px;">Сохранить</button>');
+                        var $footer = $('<div class="vault-access-footer"></div>').appendTo($root);
+                        var $count = $('<span class="vault-access-count"></span>').appendTo($footer);
+                        var updateCount = function () {
+                            var n = $list.find('input[type=checkbox]:checked').length;
+                            $count.text(n ? 'Открыт доступ: ' + n : 'Видите только вы');
+                        };
+                        updateCount();
+
+                        $list.on('change', 'input[type=checkbox]', function () {
+                            $(this).closest('.vault-access-user-row').toggleClass('is-checked', this.checked);
+                            updateCount();
+                        });
+
+                        if ($search) {
+                            $search.on('input search', function () {
+                                var q = this.value.trim().toLowerCase();
+                                $list.children().each(function () {
+                                    $(this).toggle(!q || $(this).attr('data-search').indexOf(q) > -1);
+                                });
+                            });
+                        }
+
+                        $('<button type="button" class="vault-btn">Отмена</button>')
+                            .on('click', function () { $popupContainer.dxPopup('hide'); })
+                            .appendTo($footer);
+
+                        var $save = $('<button type="button" class="vault-btn vault-btn-primary">Сохранить</button>').appendTo($footer);
                         $save.on('click', function () {
                             var selected = [];
-                            $content.find('input[type=checkbox]:checked').each(function () {
+                            $list.find('input[type=checkbox]:checked').each(function () {
                                 selected.push(parseInt($(this).val(), 10));
                             });
+                            $save.prop('disabled', true);
                             fetch('/VaultData/access', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ EntryId: rowData.Id, UserIds: selected })
                             }).then(function (resp) {
                                 if (resp.ok) {
-                                    notifyVaultAccessSaved();
+                                    vaultNotify('Доступ обновлён', 'success');
                                     $popupContainer.dxPopup('hide');
                                 } else {
-                                    alert('Не удалось сохранить список доступа.');
+                                    $save.prop('disabled', false);
+                                    vaultNotify('Не удалось сохранить список доступа', 'error');
                                 }
+                            }).catch(function () {
+                                $save.prop('disabled', false);
+                                vaultNotify('Не удалось сохранить список доступа', 'error');
                             });
                         });
-                        $content.append($save);
+
+                        // Попап с height:auto пересчитываем после наполнения
+                        setTimeout(function () { $popupContainer.dxPopup('repaint'); }, 0);
                     }).catch(function () {
-                        $content.html('<div>Не удалось загрузить список пользователей.</div>');
+                        $body.text('Не удалось загрузить список пользователей.');
                     });
 
-                    return $content;
+                    return $root;
                 }
             });
         }
@@ -391,12 +1308,6 @@
             if (Array.isArray(result)) return result;
             if (result && Array.isArray(result.data)) return result.data;
             return [];
-        }
-
-        function notifyVaultAccessSaved() {
-            if (window.DevExpress && DevExpress.ui && DevExpress.ui.notify) {
-                DevExpress.ui.notify('Доступ обновлён', 'success', 1500);
-            }
         }
     </script>
 }

@@ -18,7 +18,11 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllersWithViews()
+builder.Services.AddControllersWithViews(options =>
+    {
+        // Режим «Только задачи»: блокирует разделы продаж/склада/производства
+        options.Filters.Add<Crm.Filters.WorkspaceModeFilter>();
+    })
     .AddJsonOptions(options => options.JsonSerializerOptions.PropertyNamingPolicy = null);
 
 builder.Services.AddHttpClient();
@@ -45,6 +49,7 @@ builder.Services.AddSingleton<IProductTemplateComponentRepository, ProductTempla
 builder.Services.AddSingleton<IOrderItemRepository,       OrderItemRepository>();
 builder.Services.AddSingleton<ICalculationService,        CalculationService>();
 builder.Services.AddSingleton<IVaultRepository,           VaultRepository>();
+builder.Services.AddSingleton<IDashboardQueries,          DashboardQueries>();
 builder.Services.AddSingleton<ChatTypingStore>();
 builder.Services.AddScoped<IVerificationTokenRepository, VerificationTokenRepository>();
 builder.Services.AddScoped<IRememberDeviceService,       RememberDeviceService>();
@@ -463,6 +468,23 @@ END");
     catch (Exception exception)
     {
         app.Logger.LogWarning(exception, "Не удалось создать таблицу ContractorAccessToken");
+    }
+
+    // ====== Режим работы учреждения («Полная CRM» / «Только задачи») ======
+
+    try
+    {
+        await using var db = new CrmContext();
+        await db.Database.ExecuteSqlRawAsync(@"
+IF COL_LENGTH(N'[dbo].[Company]', N'WorkspaceMode') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[Company] ADD [WorkspaceMode] NVARCHAR(20) NOT NULL
+        CONSTRAINT [DF_Company_WorkspaceMode] DEFAULT (N'Full');
+END");
+    }
+    catch (Exception exception)
+    {
+        app.Logger.LogWarning(exception, "Не удалось добавить WorkspaceMode в Company");
     }
 
     // ====== Хранилище паролей (без шифрования — сознательное решение заказчика) ======
