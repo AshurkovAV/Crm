@@ -1,5 +1,6 @@
 ﻿document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('yandexAuthBtn').addEventListener('click', function () {
+        yandexAuthHandled = false;
         // Весь ваш код здесь
         const width = 500;
         const height = 600;
@@ -37,25 +38,47 @@
     });
 });
 
+// Результат входа приходит из попапа (Views/Account/YandexAuthSuccess.cshtml).
+// Слушаем три канала: window.opener у попапа может быть разорван браузером (COOP),
+// поэтому дополнительно BroadcastChannel и событие storage.
+var yandexAuthHandled = false;
+
+function handleYandexAuthResult(data) {
+    if (!data || yandexAuthHandled) return;
+
+    if (data.type === 'YANDEX_AUTH_SUCCESS') {
+        yandexAuthHandled = true;
+        showAuthSuccessNotification();
+
+        // Перенаправляем на главную страницу
+        setTimeout(function () {
+            window.location.href = '/';
+        }, 1000);
+    } else if (data.type === 'YANDEX_AUTH_ERROR') {
+        // Одно и то же сообщение может прийти по нескольким каналам — показываем один раз
+        yandexAuthHandled = true;
+        alert(data.error || 'Не удалось войти через Яндекс');
+    }
+}
+
 window.addEventListener('message', function (event) {
-            // Проверяем origin сообщения для безопасности
-            if (event.origin !== 'https://crm.biglv.ru') return;
+    // Проверяем origin сообщения для безопасности
+    if (event.origin !== window.location.origin) return;
+    handleYandexAuthResult(event.data);
+});
 
-    if (event.data.type === 'YANDEX_AUTH_SUCCESS') {
-                        console.log('Авторизация успешна через Яндекс');
-                        console.log('Email:', event.data.email);
-                        console.log('Name:', event.data.name);
+if ('BroadcastChannel' in window) {
+    new BroadcastChannel('yandex_auth').onmessage = function (event) {
+        handleYandexAuthResult(event.data);
+    };
+}
 
-                        // Показываем уведомление об успехе
-                        showAuthSuccessNotification();
-
-                        // Перенаправляем на главную страницу
-                        setTimeout(function () {
-                            window.location.href = '/';
-                                    }, 1500);
-                            }
-   }
-   );
+window.addEventListener('storage', function (event) {
+    if (event.key !== 'yandex_auth_result' || !event.newValue) return;
+    try {
+        handleYandexAuthResult(JSON.parse(event.newValue).data);
+    } catch (e) { }
+});
 
     // Функция показа уведомления об успешной авторизации
     function showAuthSuccessNotification() {

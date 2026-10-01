@@ -1,4 +1,4 @@
-﻿@model dynamic
+﻿@model Crm.Models.YandexAuthSuccessViewModel
 @{
     Layout = null;
 }
@@ -36,32 +36,58 @@
     </style>
 </head>
 <body>
-    <div class="success-icon">✅</div>
-    <h1>Авторизация успешна!</h1>
-    <div class="message">Окно закроется автоматически...</div>
-    <div class="loading">⏳</div>
+    @if (Model.Succeeded)
+    {
+        <div class="success-icon">✅</div>
+        <h1>Авторизация успешна!</h1>
+        <div class="message">Окно закроется автоматически...</div>
+        <div class="loading">⏳</div>
+    }
+    else
+    {
+        <div class="success-icon">⚠️</div>
+        <h1>Не удалось войти</h1>
+        <div class="message">@Model.Error</div>
+    }
 
     <script>
-        // Передаем данные в родительское окно и закрываем popup
-        if (window.opener) {
-            // Отправляем сообщение родительскому окну
-            window.opener.postMessage({
-                type: 'YANDEX_AUTH_SUCCESS',
-                email: '@Model.Email',
-                name: '@Model.Name',
-                success: true
-            }, '*');
+        (function () {
+            var data = {
+                type: @Json.Serialize(Model.Succeeded ? "YANDEX_AUTH_SUCCESS" : "YANDEX_AUTH_ERROR"),
+                email: @Json.Serialize(Model.Email),
+                name: @Json.Serialize(Model.Name),
+                error: @Json.Serialize(Model.Error),
+                success: @Json.Serialize(Model.Succeeded)
+            };
 
-            // Закрываем окно через небольшую задержку
+            // window.opener может оказаться null: после перехода через oauth.yandex.ru браузер
+            // (Cross-Origin-Opener-Policy) разрывает связь попапа с основным окном. Поэтому
+            // дублируем сообщение через BroadcastChannel/localStorage — они работают между
+            // окнами одного origin без opener.
+            try {
+                if (window.opener) {
+                    window.opener.postMessage(data, window.location.origin);
+                }
+            } catch (e) { }
+            try {
+                if ('BroadcastChannel' in window) {
+                    var channel = new BroadcastChannel('yandex_auth');
+                    channel.postMessage(data);
+                    channel.close();
+                }
+            } catch (e) { }
+            try {
+                localStorage.setItem('yandex_auth_result', JSON.stringify({ data: data, ts: Date.now() }));
+            } catch (e) { }
+
             setTimeout(function () {
                 window.close();
-            }, 1000);
-        } else {
-            // Если нет родительского окна, просто перенаправляем
-            setTimeout(function () {
-                window.location.href = '/';
-            }, 1500);
-        }
+                // Если браузер не дал закрыть окно — хотя бы уводим попап с экрана логина.
+                setTimeout(function () {
+                    if (data.success) window.location.href = '/';
+                }, 500);
+            }, data.success ? 800 : 3000);
+        })();
     </script>
 </body>
 </html>
