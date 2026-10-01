@@ -49,6 +49,7 @@
         /// Была ли это первая компания пользователя
         /// </summary>
         public bool IsFirstCompany { get; set; }
+        public bool AlreadyMember { get; set; }
 
         /// <summary>
         /// Список ошибок (если есть)

@@ -1,0 +1,520 @@
+@* Views/Invite/_InviteLayout.cshtml — отдельный минимальный макет для страниц приглашения (без шапки и меню CRM) *@
+@{
+    // Шапку приглашения (компания, кто пригласил, сообщение, email, срок) рисуем здесь,
+    // если страница работает с моделью приглашения. Error/Joined её не используют.
+    var invite = Model as Crm.Models.Compan.AcceptInvitationViewModel;
+    string? companyInitial = null;
+    string? expiryText = null;
+    if (invite != null)
+    {
+        // Первая буква названия без организационно-правовой формы и кавычек: ООО «Ромашка» → «Р»
+        var companyName = System.Text.RegularExpressions.Regex.Replace(
+            (invite.CompanyName ?? "").Trim(), @"^(ООО|ОАО|ЗАО|ПАО|АО|ИП|НКО|LLC|Ltd\.?)\s+", "",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        var firstChar = companyName.FirstOrDefault(char.IsLetterOrDigit);
+        companyInitial = firstChar == default(char) ? "К" : char.ToUpperInvariant(firstChar).ToString();
+        var expiry = invite.ExpiryMessage ?? "";
+        expiryText = expiry.Length > 0 ? char.ToLowerInvariant(expiry[0]) + expiry.Substring(1) : expiry;
+    }
+    var pageTitle = ViewData["Title"] as string ?? "Приглашение";
+}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="referrer" content="no-referrer" />
+    <title>@pageTitle — CRM</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        :root {
+            --inv-bg: #f4f5f8;
+            --inv-dot: #dcdfe7;
+            --inv-card: #ffffff;
+            --inv-border: #e4e7ee;
+            --inv-ink: #0f172a;
+            --inv-muted: #5b6475;
+            --inv-faint: #8a92a3;
+            --inv-accent: #4f46e5;
+            --inv-accent-hover: #4338ca;
+            --inv-accent-soft: #eef0ff;
+            --inv-field: #f7f8fa;
+            --inv-ring: 0 0 0 4px rgba(79, 70, 229, .14);
+            --inv-danger: #dc2626;
+            --inv-danger-soft: #fef2f2;
+            --inv-danger-border: #fecaca;
+            --inv-success: #16a34a;
+            --inv-success-soft: #ecfdf3;
+            --inv-warn: #b45309;
+            --inv-warn-soft: #fffbeb;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; }
+
+        html { -webkit-text-size-adjust: 100%; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-size: 15px;
+            line-height: 1.5;
+            color: var(--inv-ink);
+            background-color: var(--inv-bg);
+            background-image: radial-gradient(var(--inv-dot) 1px, transparent 1px);
+            background-size: 22px 22px;
+        }
+
+        a { color: var(--inv-accent); text-decoration: none; }
+        a:hover { color: var(--inv-accent-hover); text-decoration: underline; }
+
+        .inv-page {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 28px 16px 20px;
+        }
+
+        .inv-brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 22px;
+            color: var(--inv-ink);
+            font-weight: 800;
+            font-size: 18px;
+            letter-spacing: .04em;
+        }
+        .inv-brand:hover { text-decoration: none; color: var(--inv-ink); }
+        .inv-brand-mark {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            background: var(--inv-accent);
+            color: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            box-shadow: 0 6px 14px rgba(79, 70, 229, .28);
+        }
+
+        .inv-main {
+            width: 100%;
+            max-width: 480px;
+            flex: 1 0 auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding-bottom: 4vh;
+        }
+
+        .inv-card {
+            background: var(--inv-card);
+            border: 1px solid var(--inv-border);
+            border-radius: 20px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 12px 32px rgba(15, 23, 42, .06);
+            padding: 32px;
+        }
+
+        /* ---------- шапка приглашения ---------- */
+        .inv-head { text-align: center; }
+        .inv-company-badge {
+            width: 56px;
+            height: 56px;
+            margin: 0 auto 14px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #6366f1, var(--inv-accent));
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 700;
+            box-shadow: 0 8px 20px rgba(79, 70, 229, .25);
+        }
+        .inv-title {
+            margin: 0;
+            font-size: 22px;
+            line-height: 1.3;
+            font-weight: 700;
+            letter-spacing: -.01em;
+            overflow-wrap: anywhere;
+        }
+        .inv-subtitle { margin: 6px 0 0; color: var(--inv-muted); overflow-wrap: anywhere; }
+        .inv-subtitle strong { color: var(--inv-ink); font-weight: 600; }
+
+        .inv-quote {
+            margin: 18px 0 0;
+            padding: 12px 14px;
+            border-left: 3px solid var(--inv-accent);
+            border-radius: 4px 12px 12px 4px;
+            background: var(--inv-accent-soft);
+            color: #334155;
+            text-align: left;
+            overflow-wrap: anywhere;
+        }
+        .inv-quote-text { white-space: pre-line; }
+        .inv-quote-author { display: block; margin-top: 6px; font-size: 13px; color: var(--inv-muted); font-style: normal; }
+
+        .inv-meta {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 16px;
+        }
+        .inv-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            max-width: 100%;
+            padding: 5px 11px;
+            border-radius: 999px;
+            background: var(--inv-field);
+            border: 1px solid var(--inv-border);
+            color: var(--inv-muted);
+            font-size: 13px;
+            line-height: 1.35;
+        }
+        .inv-chip span { overflow-wrap: anywhere; }
+        .inv-chip i { color: var(--inv-faint); font-size: 12px; }
+        .inv-chip-strong { color: var(--inv-ink); }
+
+        .inv-divider-line { height: 1px; background: var(--inv-border); margin: 24px 0; border: 0; }
+
+        /* ---------- содержимое ---------- */
+        .inv-section-title { margin: 0 0 4px; font-size: 17px; font-weight: 650; }
+        .inv-text { margin: 0 0 18px; color: var(--inv-muted); overflow-wrap: anywhere; }
+        .inv-text strong { color: var(--inv-ink); font-weight: 600; }
+
+        .inv-alert {
+            display: flex;
+            gap: 10px;
+            padding: 12px 14px;
+            margin-bottom: 18px;
+            border-radius: 12px;
+            border: 1px solid var(--inv-danger-border);
+            background: var(--inv-danger-soft);
+            color: #991b1b;
+            font-size: 14px;
+        }
+        .inv-alert i { margin-top: 3px; }
+        .inv-alert ul { margin: 0; padding-left: 18px; }
+        .inv-alert ul.single { padding-left: 0; list-style: none; }
+
+        .inv-field { margin-bottom: 16px; }
+        .inv-label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #334155;
+        }
+        .inv-label .opt { font-weight: 400; color: var(--inv-faint); }
+        .inv-input-wrap { position: relative; }
+        .inv-input {
+            display: block;
+            width: 100%;
+            height: 44px;
+            padding: 0 14px;
+            border: 1px solid var(--inv-border);
+            border-radius: 12px;
+            background: var(--inv-field);
+            color: var(--inv-ink);
+            font: inherit;
+            font-size: 15px;
+            outline: none;
+            transition: border-color .15s, box-shadow .15s, background-color .15s;
+        }
+        .inv-input::placeholder { color: #a0a7b5; }
+        .inv-input:focus { border-color: var(--inv-accent); background: #fff; box-shadow: var(--inv-ring); }
+        .inv-input[readonly] { color: var(--inv-muted); cursor: default; }
+        .inv-input[readonly]:focus { box-shadow: none; border-color: var(--inv-border); background: var(--inv-field); }
+        .inv-input.is-invalid { border-color: var(--inv-danger); }
+        .inv-input.is-invalid:focus { box-shadow: 0 0 0 4px rgba(220, 38, 38, .12); }
+        .inv-input.has-toggle { padding-right: 46px; }
+        .inv-input-icon { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--inv-faint); font-size: 13px; pointer-events: none; }
+
+        .inv-toggle {
+            position: absolute;
+            right: 4px;
+            top: 4px;
+            width: 36px;
+            height: 36px;
+            border: 0;
+            border-radius: 9px;
+            background: transparent;
+            color: var(--inv-faint);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .inv-toggle:hover { color: var(--inv-ink); background: #eceef3; }
+        .inv-toggle:focus-visible { outline: none; box-shadow: var(--inv-ring); }
+
+        .inv-hint { margin-top: 6px; font-size: 12.5px; color: var(--inv-faint); }
+        .inv-error { margin-top: 6px; font-size: 12.5px; color: var(--inv-danger); display: none; }
+        .inv-error.show { display: block; }
+
+        .inv-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+        .inv-strength { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+        .inv-strength-bar { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+        .inv-strength-bar span { height: 4px; border-radius: 2px; background: #e5e7eb; transition: background-color .2s; }
+        .inv-strength-label { font-size: 12.5px; color: var(--inv-faint); min-width: 84px; text-align: right; }
+        .inv-strength[data-level="1"] .inv-strength-bar span:nth-child(-n+1) { background: var(--inv-danger); }
+        .inv-strength[data-level="2"] .inv-strength-bar span:nth-child(-n+2) { background: #f59e0b; }
+        .inv-strength[data-level="3"] .inv-strength-bar span:nth-child(-n+3) { background: #84cc16; }
+        .inv-strength[data-level="4"] .inv-strength-bar span:nth-child(-n+4) { background: var(--inv-success); }
+
+        /* ---------- кнопки ---------- */
+        .inv-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            width: 100%;
+            min-height: 48px;
+            padding: 10px 18px;
+            border: 1px solid transparent;
+            border-radius: 12px;
+            font: inherit;
+            font-size: 15px;
+            font-weight: 600;
+            line-height: 1.3;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color .15s, border-color .15s, box-shadow .15s, color .15s;
+        }
+        .inv-btn:hover { text-decoration: none; }
+        .inv-btn:focus-visible { outline: none; box-shadow: var(--inv-ring); }
+        .inv-btn[disabled] { opacity: .7; cursor: progress; }
+        .inv-btn-primary { background: var(--inv-accent); color: #fff; box-shadow: 0 6px 16px rgba(79, 70, 229, .22); }
+        .inv-btn-primary:hover { background: var(--inv-accent-hover); color: #fff; }
+        .inv-btn-secondary { background: #fff; color: var(--inv-ink); border-color: var(--inv-border); min-height: 44px; }
+        .inv-btn-secondary:hover { background: var(--inv-field); color: var(--inv-ink); }
+        .inv-btn-ghost { background: transparent; color: var(--inv-muted); min-height: 44px; }
+        .inv-btn-ghost:hover { background: var(--inv-field); color: var(--inv-ink); }
+        .inv-btn + .inv-btn, .inv-btn + form, form + .inv-btn { margin-top: 10px; }
+        .inv-btn-yandex .ya-mark {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #fc3f1d;
+            color: #fff;
+            font-weight: 700;
+            font-size: 13px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .inv-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, .45);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: inv-spin .7s linear infinite;
+            display: none;
+        }
+        .inv-btn.is-loading .inv-spinner { display: inline-block; }
+        .inv-btn.is-loading .inv-btn-icon { display: none; }
+        @@keyframes inv-spin { to { transform: rotate(360deg); } }
+
+        .inv-or { display: flex; align-items: center; gap: 12px; margin: 18px 0; color: var(--inv-faint); font-size: 13px; }
+        .inv-or::before, .inv-or::after { content: ""; flex: 1; height: 1px; background: var(--inv-border); }
+
+        /* ---------- состояния (ошибка, успех, вход) ---------- */
+        .inv-state-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+        }
+        .inv-state-icon.success { background: var(--inv-success-soft); color: var(--inv-success); }
+        .inv-state-icon.danger { background: var(--inv-danger-soft); color: var(--inv-danger); }
+        .inv-state-icon.warn { background: var(--inv-warn-soft); color: var(--inv-warn); }
+        .inv-center { text-align: center; }
+
+        .inv-account {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            margin-bottom: 18px;
+            border: 1px solid var(--inv-border);
+            border-radius: 14px;
+            background: var(--inv-field);
+            text-align: left;
+        }
+        .inv-avatar {
+            flex: 0 0 auto;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e0e7ff;
+            color: var(--inv-accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+        .inv-account-body { min-width: 0; }
+        .inv-account-name { font-weight: 600; overflow-wrap: anywhere; }
+        .inv-account-email { color: var(--inv-muted); font-size: 13.5px; overflow-wrap: anywhere; }
+        .inv-account-tag { margin-left: auto; flex: 0 0 auto; font-size: 12px; color: var(--inv-faint); }
+
+        .inv-steps { list-style: none; margin: 0 0 22px; padding: 0; text-align: left; }
+        .inv-steps li {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--inv-border);
+        }
+        .inv-steps li:last-child { border-bottom: 0; }
+        .inv-step-icon {
+            flex: 0 0 auto;
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            background: var(--inv-accent-soft);
+            color: var(--inv-accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+        .inv-step-title { font-weight: 600; }
+        .inv-step-text { color: var(--inv-muted); font-size: 13.5px; }
+
+        .inv-footer { margin-top: 24px; font-size: 12.5px; color: var(--inv-faint); text-align: center; }
+
+        .inv-sr-only {
+            position: absolute !important;
+            width: 1px; height: 1px;
+            padding: 0; margin: -1px;
+            overflow: hidden; clip: rect(0, 0, 0, 0);
+            white-space: nowrap; border: 0;
+        }
+
+        @@media (max-width: 520px) {
+            .inv-page { padding: 20px 16px 16px; }
+            .inv-brand { margin-bottom: 16px; }
+            .inv-card { padding: 24px 18px; border-radius: 18px; }
+            .inv-title { font-size: 20px; }
+            .inv-row { grid-template-columns: 1fr; gap: 0; }
+        }
+
+        @@media (prefers-reduced-motion: reduce) {
+            .inv-spinner { animation-duration: 1.5s; }
+            * { transition: none !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="inv-page">
+        <a class="inv-brand" href="/" aria-label="CRM — на главную">
+            <span class="inv-brand-mark"><i class="fa-solid fa-layer-group" aria-hidden="true"></i></span>
+            <span>CRM</span>
+        </a>
+
+        <main class="inv-main">
+            <div class="inv-card">
+                @if (invite != null)
+                {
+                    <div class="inv-head">
+                        <div class="inv-company-badge" aria-hidden="true">@companyInitial</div>
+                        <h1 class="inv-title">Приглашение в @invite.CompanyName</h1>
+                        @if (!string.IsNullOrWhiteSpace(invite.InviterName))
+                        {
+                            <p class="inv-subtitle"><strong>@invite.InviterName</strong> приглашает вас в команду</p>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(invite.Message))
+                        {
+                            <blockquote class="inv-quote">
+                                <span class="inv-quote-text">@invite.Message</span>
+                                @if (!string.IsNullOrWhiteSpace(invite.InviterName))
+                                {
+                                    <cite class="inv-quote-author">— @invite.InviterName</cite>
+                                }
+                            </blockquote>
+                        }
+                        <div class="inv-meta">
+                            @if (!string.IsNullOrWhiteSpace(invite.Email))
+                            {
+                                <span class="inv-chip inv-chip-strong" title="Email приглашения"><i class="fa-regular fa-envelope" aria-hidden="true"></i><span>@invite.Email</span></span>
+                            }
+                            <span class="inv-chip"><i class="fa-regular fa-clock" aria-hidden="true"></i><span>Ссылка действительна: @expiryText</span></span>
+                        </div>
+                    </div>
+                    <hr class="inv-divider-line" />
+                }
+
+                @RenderBody()
+            </div>
+        </main>
+
+        <footer class="inv-footer">© @DateTime.Now.Year CRM. Все права защищены.</footer>
+    </div>
+
+    <script>
+        // Общие помощники страниц приглашения
+        (function () {
+            // Показать / скрыть пароль
+            document.querySelectorAll('[data-toggle-password]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var input = document.getElementById(btn.getAttribute('data-toggle-password'));
+                    if (!input) return;
+                    var show = input.type === 'password';
+                    input.type = show ? 'text' : 'password';
+                    btn.setAttribute('aria-label', show ? 'Скрыть пароль' : 'Показать пароль');
+                    btn.setAttribute('aria-pressed', show ? 'true' : 'false');
+                    var icon = btn.querySelector('i');
+                    if (icon) icon.className = show ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
+                });
+            });
+
+            // Состояние загрузки у кнопки отправки формы (защита от двойного нажатия)
+            document.querySelectorAll('form[data-loading-form]').forEach(function (form) {
+                form.addEventListener('submit', function (e) {
+                    if (e.defaultPrevented) return;
+                    var btn = form.querySelector('button[type="submit"]');
+                    if (!btn) return;
+                    if (btn.disabled) { e.preventDefault(); return; }
+                    // Отключаем после отправки, иначе значение кнопки не уйдёт в некоторых браузерах
+                    setTimeout(function () {
+                        // Проверку страницы (Scripts) могли отменить отправку уже после нас
+                        if (e.defaultPrevented) return;
+                        btn.disabled = true;
+                        btn.classList.add('is-loading');
+                        var label = btn.querySelector('[data-loading-text]');
+                        if (label) label.textContent = label.getAttribute('data-loading-text');
+                    }, 0);
+                });
+            });
+
+            // Если страницу вернули из bfcache (кнопка «Назад»), снимаем состояние загрузки
+            window.addEventListener('pageshow', function (e) {
+                if (!e.persisted) return;
+                document.querySelectorAll('.inv-btn.is-loading').forEach(function (btn) {
+                    btn.disabled = false;
+                    btn.classList.remove('is-loading');
+                    var label = btn.querySelector('[data-loading-text]');
+                    if (label && label.hasAttribute('data-default-text')) label.textContent = label.getAttribute('data-default-text');
+                });
+            });
+        })();
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

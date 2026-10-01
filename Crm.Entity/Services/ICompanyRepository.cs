@@ -23,5 +23,8 @@ namespace Crm.Entity.Services
         User GetUserWithCompanies(int userId);
         List<CompanyUser> GetUserActiveCompanies(int userId);
         bool UpdateUserCurrentCompany(int userId, int companyId);
+        Task<Company?> GetCompanyByIdAsync(int companyId);
+        /// <summary>Членство пользователя в компании, в том числе неактивное (null — не состоял)</summary>
+        Task<CompanyUser?> GetMembershipAsync(int userId, int companyId);
     }
 }

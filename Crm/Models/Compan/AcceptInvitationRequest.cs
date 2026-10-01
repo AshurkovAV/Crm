@@ -11,11 +11,11 @@ namespace Crm.Models.Compan
 
         [EmailAddress(ErrorMessage = "Некорректный email адрес")]
         [Display(Name = "Email")]
-        public string Email { get; set; }
+        public string? Email { get; set; }
 
         [Phone(ErrorMessage = "Некорректный номер телефона")]
         [Display(Name = "Телефон (необязательно)")]
-        public string Phone { get; set; }
+        public string? Phone { get; set; }
 
         [Required(ErrorMessage = "Пароль обязателен")]
         [StringLength(100, MinimumLength = 6, ErrorMessage = "Пароль должен быть не менее 6 символов")]
@@ -26,6 +26,10 @@ namespace Crm.Models.Compan
         [DataType(DataType.Password)]
         [Display(Name = "Подтверждение пароля")]
         [Compare("Password", ErrorMessage = "Пароли не совпадают")]
-        public string ConfirmPassword { get; set; }
+        public string? ConfirmPassword { get; set; }
+
+        [StringLength(100, ErrorMessage = "Должность не должна превышать 100 символов")]
+        [Display(Name = "Должность")]
+        public string? Position { get; set; }
     }
 }

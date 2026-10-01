@@ -46,6 +46,14 @@
         /// Должность, на которую приглашают
         /// </summary>
         public string Position { get; set; }
+        /// <summary>
+        /// Кто пригласил (отображаемое имя)
+        /// </summary>
+        public string InviterName { get; set; }
+        /// <summary>
+        /// Сообщение от пригласившего
+        /// </summary>
+        public string Message { get; set; }
 
         /// <summary>
         /// Роль, которая будет назначена

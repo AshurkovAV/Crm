@@ -393,6 +393,24 @@ namespace Crm.Entity.Services
                 await db.SaveChangesAsync();
             }
         }
-       
+
+        public async Task<ModelsCrm.Company?> GetCompanyByIdAsync(int companyId)
+        {
+            using (var db = new CrmContext())
+            {
+                return await db.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.Id == companyId);
+            }
+        }
+
+        public async Task<CompanyUser?> GetMembershipAsync(int userId, int companyId)
+        {
+            using (var db = new CrmContext())
+            {
+                return await db.CompanyUsers.AsNoTracking()
+                    .Where(cu => cu.UserId == userId && cu.CompanyId == companyId)
+                    .OrderByDescending(cu => cu.IsActive)
+                    .FirstOrDefaultAsync();
+            }
+        }
     }
 }

@@ -1,62 +1,80 @@
-﻿@model Crm.Models.Compan.AcceptInvitationViewModel
-
+﻿@* Views/Invite/Login.cshtml — у приглашённого уже есть аккаунт, но он не вошёл *@
+@model Crm.Models.Compan.AcceptInvitationViewModel
 @{
-    ViewData["Title"] = "Вход для принятия приглашения";
-    Layout = "_Layout";
+    ViewData["Title"] = "Вход — приглашение в " + Model.CompanyName;
+    Layout = "_InviteLayout";
+    var codeEncoded = Uri.EscapeDataString(Model.Code ?? "");
+    var emailLocked = Model.EmailFromInvitation;
 }
 
-<div class="content-section">
-    <div class="row justify-content-center">
-        <div class="col-md-5">
-            <div class="card shadow-lg border-0 rounded-lg">
-                <div class="card-header bg-gradient-primary text-white py-4">
-                    <h3 class="mb-0 text-center">
-                        <i class="fas fa-sign-in-alt me-2"></i>
-                        Вход в систему
-                    </h3>
-                </div>
-                <div class="card-body p-4">
-                    <div class="alert alert-info">
-                        <i class="fas fa-envelope me-2"></i>
-                        Приглашение отправлено на <strong>@Model.Email</strong>
-                    </div>
+<h2 class="inv-section-title">У вас уже есть аккаунт</h2>
+@if (emailLocked)
+{
+    <p class="inv-text">Войдите как <strong>@Model.Email</strong>, чтобы принять приглашение.</p>
+}
+else
+{
+    <p class="inv-text">Войдите в свой аккаунт, чтобы принять приглашение.</p>
+}
 
-                    @if (!string.IsNullOrEmpty(Model.Message))
-                    {
-                        <div class="alert alert-warning">
-                            <i class="fas fa-info-circle me-2"></i>
-                            @Model.Message
-                        </div>
-                    }
+@if (Model.HasErrors)
+{
+    <div class="inv-alert" role="alert">
+        <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+        <ul class="@(Model.Errors.Count == 1 ? "single" : "")">
+            @foreach (var error in Model.Errors)
+            {
+                <li>@error</li>
+            }
+        </ul>
+    </div>
+}
 
-                    <form method="post" asp-action="Login" asp-controller="Invite">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
-                        <input type="hidden" name="code" value="@Model.Code" />
+<form id="inviteLoginForm" method="post" action="/invite/@codeEncoded/login" data-loading-form>
+    @Html.AntiForgeryToken()
 
-                        <div class="form-floating mb-3">
-                            <input type="email" class="form-control" id="Email" name="email" value="@Model.Email" readonly />
-                            <label for="Email">Email</label>
-                        </div>
+    @if (emailLocked)
+    {
+        @* Для менеджеров паролей: логин без name — на сервер не отправляется *@
+        <input class="inv-sr-only" type="email" value="@Model.Email" autocomplete="username" readonly tabindex="-1" aria-hidden="true" />
+    }
+    else
+    {
+        <div class="inv-field">
+            <label class="inv-label" for="LoginEmail">Email</label>
+            <input class="inv-input" type="email" id="LoginEmail" name="email" autocomplete="username" required placeholder="you@company.ru" />
+        </div>
+    }
 
-                        <div class="form-floating mb-3">
-                            <input type="password" class="form-control" id="Password" name="password" placeholder="Пароль" required />
-                            <label for="Password">Пароль</label>
-                        </div>
-
-                        @if (!ViewData.ModelState.IsValid)
-                        {
-                            <div class="alert alert-danger">
-                                @Html.ValidationSummary(false)
-                            </div>
-                        }
-
-                        <button type="submit" class="btn btn-primary btn-lg w-100">
-                            <i class="fas fa-sign-in-alt me-2"></i>Войти и принять приглашение
-                        </button>
-                    </form>
-                </div>
-            </div>
+    <div class="inv-field">
+        <label class="inv-label" for="LoginPassword">Пароль</label>
+        <div class="inv-input-wrap">
+            <input class="inv-input has-toggle" type="password" id="LoginPassword" name="password"
+                   autocomplete="current-password" required autofocus />
+            <button type="button" class="inv-toggle" data-toggle-password="LoginPassword" aria-label="Показать пароль" aria-pressed="false">
+                <i class="fa-regular fa-eye" aria-hidden="true"></i>
+            </button>
         </div>
     </div>
-</div>
+
+    <button type="submit" class="inv-btn inv-btn-primary">
+        <span class="inv-spinner" aria-hidden="true"></span>
+        <i class="fa-solid fa-right-to-bracket inv-btn-icon" aria-hidden="true"></i>
+        <span data-loading-text="Входим…" data-default-text="Войти и присоединиться">Войти и присоединиться</span>
+    </button>
+</form>
+
+<div class="inv-or">или</div>
+
+<button type="button" id="yandexAuthBtn" class="inv-btn inv-btn-secondary inv-btn-yandex">
+    <span class="ya-mark" aria-hidden="true">Я</span>
+    <span>Войти через Яндекс</span>
+</button>
+
+@section Scripts {
+    <script>
+        // После входа через Яндекс вернуться на приглашение — там будет кнопка «Присоединиться»
+        window.yandexAuthRedirectUrl = @Json.Serialize("/invite/" + codeEncoded);
+    </script>
+    <script src="~/js/modules/auth/yandexauthorization.js" asp-append-version="true"></script>
+}

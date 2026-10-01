@@ -69,6 +69,14 @@ namespace Crm.Entity.Services
             return true;
         }
 
+        public async Task<Invitation?> GetByCodeAsync(string code)
+        {
+            using (var db = new CrmContext())
+            {
+                return await db.Invitations.AsNoTracking().FirstOrDefaultAsync(i => i.Code == code);
+            }
+        }
+
         public async Task<Invitation> GetInvitationToCode(string code)
         {
             try

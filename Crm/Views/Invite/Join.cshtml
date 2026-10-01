@@ -1,0 +1,30 @@
+@* Views/Invite/Join.cshtml — пользователь уже вошёл, остаётся подтвердить вступление *@
+@model Crm.Models.Compan.AcceptInvitationViewModel
+@{
+    ViewData["Title"] = "Присоединиться к " + Model.CompanyName;
+    Layout = "_InviteLayout";
+    var codeEncoded = Uri.EscapeDataString(Model.Code ?? "");
+    var userName = string.IsNullOrWhiteSpace(Model.CurrentUserName) ? Model.CurrentUserEmail : Model.CurrentUserName;
+    var userInitial = string.IsNullOrWhiteSpace(userName) ? "?" : userName.Trim().Substring(0, 1).ToUpperInvariant();
+}
+
+<div class="inv-account">
+    <div class="inv-avatar" aria-hidden="true">@userInitial</div>
+    <div class="inv-account-body">
+        <div class="inv-account-name">Вы вошли как @userName</div>
+        @if (!string.IsNullOrWhiteSpace(Model.CurrentUserEmail) && Model.CurrentUserEmail != userName)
+        {
+            <div class="inv-account-email">@Model.CurrentUserEmail</div>
+        }
+    </div>
+</div>
+
+<form method="post" action="/invite/@codeEncoded/join" data-loading-form>
+    @Html.AntiForgeryToken()
+    <button type="submit" class="inv-btn inv-btn-primary">
+        <span class="inv-spinner" aria-hidden="true"></span>
+        <i class="fa-solid fa-user-check inv-btn-icon" aria-hidden="true"></i>
+        <span data-loading-text="Присоединяем…" data-default-text="Присоединиться к @Model.CompanyName">Присоединиться к @Model.CompanyName</span>
+    </button>
+</form>
+<a class="inv-btn inv-btn-ghost" href="/">Не сейчас</a>

@@ -1,60 +1,40 @@
-﻿@model Crm.Models.Compan.AcceptInvitationViewModel
-
+@* Views/Invite/Conflict.cshtml — приглашение на один email, а вошли под другим *@
+@model Crm.Models.Compan.AcceptInvitationViewModel
 @{
-    ViewData["Title"] = "Конфликт аккаунтов";
-    Layout = "_Layout";
+    ViewData["Title"] = "Другой аккаунт — приглашение в " + Model.CompanyName;
+    Layout = "_InviteLayout";
+    var codeEncoded = Uri.EscapeDataString(Model.Code ?? "");
+    var userName = string.IsNullOrWhiteSpace(Model.CurrentUserName) ? Model.CurrentUserEmail : Model.CurrentUserName;
+    var userInitial = string.IsNullOrWhiteSpace(userName) ? "?" : userName.Trim().Substring(0, 1).ToUpperInvariant();
 }
 
-<div class="content-section">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card shadow-lg border-0 rounded-lg">
-                <div class="card-header bg-gradient-danger text-white py-4">
-                    <h3 class="mb-0 text-center">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        Внимание
-                    </h3>
-                </div>
-                <div class="card-body p-4">
-                    <div class="text-center mb-4">
-                        <i class="fas fa-user-slash fa-3x text-danger mb-3"></i>
-                        <h4>Несоответствие email</h4>
-                    </div>
-
-                    <div class="alert alert-warning">
-                        <i class="fas fa-envelope me-2"></i>
-                        <strong>Приглашение отправлено на: @Model.Email</strong>
-                    </div>
-
-                    <div class="alert alert-info">
-                        <i class="fas fa-user-circle me-2"></i>
-                        <strong>Вы авторизованы как: @User.Identity.Name</strong>
-                    </div>
-
-                    @if (!string.IsNullOrEmpty(Model.Message))
-                    {
-                        <div class="alert alert-danger">
-                            @Model.Message
-                        </div>
-                    }
-
-                    <div class="d-grid gap-2">
-                        <a href="/account/logout?returnUrl=@Url.Action("Index", "Invite", new { code = Model.Code })"
-                           class="btn btn-warning">
-                            <i class="fas fa-sign-out-alt me-2"></i>Выйти и войти под другим аккаунтом
-                        </a>
-                        <a href="/" class="btn btn-secondary">
-                            <i class="fas fa-home me-2"></i>На главную
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+<div class="inv-center">
+    <div class="inv-state-icon warn" aria-hidden="true"><i class="fa-solid fa-user-lock"></i></div>
+    <h2 class="inv-section-title">Вы вошли в другой аккаунт</h2>
+    <p class="inv-text">
+        Приглашение отправлено на <strong>@Model.Email</strong>, а сейчас вы вошли как
+        <strong>@Model.CurrentUserEmail</strong>. Принять его может только владелец этого адреса.
+    </p>
 </div>
 
-<style>
-    .bg-gradient-danger {
-        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-    }
-</style>
+<div class="inv-account">
+    <div class="inv-avatar" aria-hidden="true">@userInitial</div>
+    <div class="inv-account-body">
+        <div class="inv-account-name">@userName</div>
+        @if (!string.IsNullOrWhiteSpace(Model.CurrentUserEmail) && Model.CurrentUserEmail != userName)
+        {
+            <div class="inv-account-email">@Model.CurrentUserEmail</div>
+        }
+    </div>
+    <span class="inv-account-tag">текущий</span>
+</div>
+
+<form method="post" action="/invite/@codeEncoded/switch" data-loading-form>
+    @Html.AntiForgeryToken()
+    <button type="submit" class="inv-btn inv-btn-primary">
+        <span class="inv-spinner" aria-hidden="true"></span>
+        <i class="fa-solid fa-arrow-right-arrow-left inv-btn-icon" aria-hidden="true"></i>
+        <span data-loading-text="Выходим…" data-default-text="Выйти и продолжить как @Model.Email">Выйти и продолжить как @Model.Email</span>
+    </button>
+</form>
+<a class="inv-btn inv-btn-ghost" href="/">Вернуться в CRM</a>

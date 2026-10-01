@@ -1,0 +1,55 @@
+@* Views/Invite/Joined.cshtml — успешное вступление в компанию *@
+@{
+    var companyName = ViewBag.CompanyName as string ?? "компании";
+    var isNewUser = ViewBag.IsNewUser as bool? ?? false;
+    var alreadyMember = ViewBag.AlreadyMember as bool? ?? false;
+    ViewData["Title"] = alreadyMember ? "Вы уже в команде" : "Добро пожаловать";
+    Layout = "_InviteLayout";
+}
+
+<div class="inv-center">
+    <div class="inv-state-icon success" aria-hidden="true"><i class="fa-solid fa-check"></i></div>
+    @if (alreadyMember)
+    {
+        <h1 class="inv-title">Вы уже в команде @companyName</h1>
+        <p class="inv-text" style="margin-top: 8px;">Повторно принимать приглашение не нужно — всё уже готово к работе.</p>
+    }
+    else
+    {
+        <h1 class="inv-title">Вы в команде @companyName!</h1>
+        <p class="inv-text" style="margin-top: 8px;">Приглашение принято. Коллеги уже видят вас в списке сотрудников.</p>
+    }
+</div>
+
+@if (isNewUser && !alreadyMember)
+{
+    <h2 class="inv-section-title" style="margin-top: 6px;">Что дальше</h2>
+    <ul class="inv-steps">
+        <li>
+            <span class="inv-step-icon" aria-hidden="true"><i class="fa-solid fa-camera"></i></span>
+            <div>
+                <div class="inv-step-title"><a href="/Profile">Заполните профиль и добавьте фото</a></div>
+                <div class="inv-step-text">Так коллегам будет проще вас узнать.</div>
+            </div>
+        </li>
+        <li>
+            <span class="inv-step-icon" aria-hidden="true"><i class="fa-solid fa-list-check"></i></span>
+            <div>
+                <div class="inv-step-title"><a href="/">Посмотрите свои задачи</a></div>
+                <div class="inv-step-text">Новые задачи и сделки появятся на главной.</div>
+            </div>
+        </li>
+        <li>
+            <span class="inv-step-icon" aria-hidden="true"><i class="fa-solid fa-comments"></i></span>
+            <div>
+                <div class="inv-step-title">Познакомьтесь с командой</div>
+                <div class="inv-step-text">Напишите коллегам в чате CRM.</div>
+            </div>
+        </li>
+    </ul>
+}
+
+<a class="inv-btn inv-btn-primary" href="/">
+    <span>Перейти в CRM</span>
+    <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+</a>

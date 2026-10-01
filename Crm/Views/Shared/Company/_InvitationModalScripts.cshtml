@@ -5,7 +5,6 @@
         $('#invitationModal').show();
         // Очищаем поля при открытии
         $('#emailAddresses').val('');
-        $('#departmentSelect').val('');
         $('#emailMessage').val('');
         $('#expiryDays').val('7');
     }
@@ -39,7 +38,6 @@
     function sendEmailInvitations() {
         // Получаем значения напрямую из DOM элементов
         var emailInput = document.getElementById('emailAddresses');
-        var departmentSelect = document.getElementById('departmentSelect');
         var messageInput = document.getElementById('emailMessage');
         var expiryInput = document.getElementById('expiryDays');
 
@@ -49,9 +47,10 @@
         }
 
         var emailText = emailInput.value || '';
-        var department = departmentSelect ? departmentSelect.value : '';
         var message = messageInput ? messageInput.value : '';
-        var expiryDays = expiryInput ? parseInt(expiryInput.value) : 7;
+        var expiryDays = expiryInput ? parseInt(expiryInput.value, 10) : 7;
+        if (isNaN(expiryDays)) expiryDays = 7;
+        expiryDays = Math.min(30, Math.max(1, expiryDays));
 
         // Парсим email адреса
         var emails = parseEmailAddresses(emailText);
@@ -70,12 +69,9 @@
 
         var requestData = {
             emails: emails,
-            department: department || null,
             message: message || null,
-            expiryDays: expiryDays || 7
+            ExpiryDays: expiryDays
         };
-
-        console.error('Sending invitations:', requestData);
 
         $.ajax({
             url: '@Url.Action("SendEmail", "Invitation")',
@@ -86,12 +82,16 @@
                 btn.innerHTML = originalHtml;
                 btn.disabled = false;
 
-                if (response.Success) {
-                    alert('Приглашения успешно отправлены (' + response.count + ' шт.)');
+                // Ответ сервера в PascalCase: { Success, Count, Message }.
+                // Message может перечислять пропущенные / неотправленные адреса — показываем всегда.
+                var serverMessage = response && response.Message ? response.Message : '';
+                if (response && response.Success) {
+                    // Message уже содержит итог («Отправлено приглашений: N; уже в компании: ...»)
+                    alert(serverMessage || ('Отправлено приглашений: ' + (response.Count || 0)));
                     closeInvitationModal();
                     refreshGrid();
                 } else {
-                    alert(response.message || 'Ошибка при отправке');
+                    alert(serverMessage || 'Ошибка при отправке');
                 }
             },
             error: function (xhr) {
@@ -99,8 +99,9 @@
                 btn.disabled = false;
 
                 var errorMessage = 'Ошибка при отправке приглашений';
-                if (xhr.responseJSON && xhr.responseJSON.message) {
-                    errorMessage = xhr.responseJSON.message;
+                var json = xhr.responseJSON;
+                if (json && (json.Message || json.message)) {
+                    errorMessage = json.Message || json.message;
                 }
                 alert(errorMessage);
             }

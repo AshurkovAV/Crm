@@ -267,11 +267,27 @@ namespace Crm.Services.Email
             await SendEmailAsync(mail);
         }
 
-        public async Task SendInvitationEmailAsync(string email, string link, string customMessage = null, string companyName = "CRM System")
+        // 1 день, 2 дня, 5 дней, 21 день...
+        private static string DaysWord(int days)
         {
-            var message = string.IsNullOrEmpty(customMessage)
+            var n = Math.Abs(days) % 100;
+            if (n is >= 11 and <= 14) return "дней";
+            return (n % 10) switch { 1 => "день", 2 or 3 or 4 => "дня", _ => "дней" };
+        }
+
+        public async Task<bool> SendInvitationEmailAsync(string email, string link, string customMessage = null, string companyName = "CRM System", int expiryDays = 7, string inviterName = null)
+        {
+            // Текст сообщения и название компании вводят пользователи — экранируем, чтобы
+            // в письмо нельзя было подставить свою разметку или ссылки
+            var defaultMessage = string.IsNullOrWhiteSpace(inviterName)
                 ? "Вас приглашают присоединиться к команде в корпоративной CRM системе."
-                : customMessage;
+                : $"{inviterName} приглашает вас присоединиться к команде в корпоративной CRM системе.";
+            var message = System.Net.WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(customMessage) ? defaultMessage : customMessage)
+                .Replace("\n", "<br>");
+            var companyNameRaw = string.IsNullOrWhiteSpace(companyName) ? "CRM System" : companyName;
+            companyName = System.Net.WebUtility.HtmlEncode(companyNameRaw);
+            link = System.Net.WebUtility.HtmlEncode(link);
+            var expiryText = $"Ссылка действительна {expiryDays} {DaysWord(expiryDays)}";
 
             var currentYear = DateTime.Now.Year;
 
@@ -750,7 +766,7 @@ namespace Crm.Services.Email
                         <circle cx='12' cy='12' r='10'/>
                         <polyline points='12 6 12 12 16 14'/>
                     </svg>
-                    Ссылка действительна 7 дней
+                    {expiryText}
                 </div>
             </div>
             
@@ -781,7 +797,7 @@ namespace Crm.Services.Email
                 </div>
                 
                 <div class='help-text'>
-                    <p>Есть вопросы? <a href='mailto:support@{companyName.ToLower().Replace(" ", "")}.ru'>Напишите в поддержку</a></p>
+                    <p>Если вы не ждали этого письма, просто проигнорируйте его.</p>
                 </div>
                 
                 <div class='copyright'>
@@ -798,11 +814,11 @@ namespace Crm.Services.Email
             {
                 EmailFrom = "ashurkovav@yandex.ru",
                 EmailTo = email,
-                EmailSubject = $"🎉 Приглашение в {companyName} - присоединяйтесь к команде!",
+                EmailSubject = $"Приглашение в {companyNameRaw} — присоединяйтесь к команде",
                 EmailBody = emailBody
             };
 
-            await SendEmailAsync(mail);
+            return await SendEmailAsync(mail);
         }
 
 

@@ -17,6 +17,11 @@ namespace Crm.Models.Compan
             [EmailAddress(ErrorMessage = "Некорректный email адрес")]
             [Display(Name = "Email")]
             public string Email { get; set; }
+            /// <summary>
+            /// Email задан в самом приглашении (показываем только для чтения).
+            /// false — приглашение по коду/ссылке, email вводит сам пользователь
+            /// </summary>
+            public bool EmailFromInvitation { get; set; }
 
             /// <summary>
             /// Телефон, если был указан в приглашении
@@ -76,6 +81,18 @@ namespace Crm.Models.Compan
             /// Название компании
             /// </summary>
             public string CompanyName { get; set; }
+            /// <summary>
+            /// Кто пригласил
+            /// </summary>
+            public string InviterName { get; set; }
+            /// <summary>
+            /// Email текущего пользователя (если он вошёл в систему)
+            /// </summary>
+            public string CurrentUserEmail { get; set; }
+            /// <summary>
+            /// Имя текущего пользователя (если он вошёл в систему)
+            /// </summary>
+            public string CurrentUserName { get; set; }
 
             /// <summary>
             /// Тип приглашения (Email, SMS, Link)

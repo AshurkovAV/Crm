@@ -1,4 +1,4 @@
-﻿
+
 using Crm.Entity.ModelsCrm;
 
 namespace Crm.Entity.Services
@@ -9,5 +9,7 @@ namespace Crm.Entity.Services
         Task<bool> Update(Invitation invitation);
         Task<bool> AddRange(List<Invitation> invitations);
         Task<Invitation> GetInvitationToCode(string code);
+        /// <summary>Приглашение по коду в любом статусе (для понятного сообщения, если оно уже принято/отозвано)</summary>
+        Task<Invitation?> GetByCodeAsync(string code);
     }
 }

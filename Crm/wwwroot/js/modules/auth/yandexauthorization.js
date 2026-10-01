@@ -50,9 +50,10 @@ function handleYandexAuthResult(data) {
         yandexAuthHandled = true;
         showAuthSuccessNotification();
 
-        // Перенаправляем на главную страницу
+        // Перенаправляем на главную страницу (или туда, куда попросила страница,
+        // например обратно на приглашение — window.yandexAuthRedirectUrl)
         setTimeout(function () {
-            window.location.href = '/';
+            window.location.href = window.yandexAuthRedirectUrl || '/';
         }, 1000);
     } else if (data.type === 'YANDEX_AUTH_ERROR') {
         // Одно и то же сообщение может прийти по нескольким каналам — показываем один раз
