@@ -1,0 +1,146 @@
+@model WikiHomeViewModel
+@{
+    ViewData["Title"] = "База знаний";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/wiki.css" asp-append-version="true" />
+}
+
+<div class="wk" data-wiki-root>
+    @if (Model.NoCompany)
+    {
+        <header class="wk-head"><div class="wk-head-main"><h1 class="wk-title">База знаний</h1></div></header>
+        <section class="wk-card wk-empty">
+            <span class="wk-empty-icon"><i class="fa-solid fa-book"></i></span>
+            <h2>Сначала выберите компанию</h2>
+            <p>База знаний ведётся внутри компании. Создайте компанию или присоединитесь к существующей на главной странице.</p>
+            <a class="wk-btn wk-btn-pri" href="/">На главную</a>
+        </section>
+    }
+    else
+    {
+        <partial name="_WikiHead" model="Model" />
+
+        <div class="wk-home">
+            <div>
+                @if (Model.Sections.Count == 0)
+                {
+                    <section class="wk-card wk-empty">
+                        <span class="wk-empty-icon"><i class="fa-solid fa-book-open"></i></span>
+                        <h2>Здесь будет база знаний команды</h2>
+                        @if (Model.CanManage)
+                        {
+                            <p>Создайте первый раздел — например «Новичкам», «Продажи» или «Регламенты» — и добавьте в него страницы с инструкциями.</p>
+                            <button type="button" class="wk-btn wk-btn-pri" data-wiki-new-section><i class="fa-solid fa-plus"></i>Создать раздел</button>
+                        }
+                        else
+                        {
+                            <p>Руководитель компании ещё не создал ни одного раздела, или вам пока не открыли доступ.</p>
+                        }
+                    </section>
+                }
+                else
+                {
+                    <div class="wk-sections">
+                        @foreach (var s in Model.Sections)
+                        {
+                            <article class="wk-card wk-section-card" data-section-id="@s.Id">
+                                <span class="wk-section-icon" aria-hidden="true">@WikiFormat.SectionIcon(s.Icon)</span>
+                                <div class="wk-section-body">
+                                    <h2 class="wk-section-name"><a href="/Wiki/Section/@s.Id">@s.Name</a></h2>
+                                    @if (!string.IsNullOrWhiteSpace(s.Description))
+                                    {
+                                        <p class="wk-section-desc">@s.Description</p>
+                                    }
+                                    <div class="wk-section-meta">
+                                        <span>@WikiFormat.Pages(s.PageCount)</span>
+                                        @if (s.LastModified.HasValue)
+                                        {
+                                            <span>· обновлено @WikiFormat.Date(s.LastModified.Value).Split(' ')[0]</span>
+                                        }
+                                        @if (s.AccessMode == "Selected")
+                                        {
+                                            <span class="wk-chip"><i class="fa-solid fa-lock" aria-hidden="true"></i>Ограничен</span>
+                                        }
+                                        @if (s.CanEdit && !Model.CanManage)
+                                        {
+                                            <span class="wk-chip wk-chip-acc">Вы редактор</span>
+                                        }
+                                    </div>
+                                </div>
+                                @if (Model.CanManage)
+                                {
+                                    <div class="wk-menu-wrap wk-section-menu">
+                                        <button type="button" class="wk-icon-btn" data-menu-toggle aria-haspopup="true" aria-expanded="false" aria-label="Действия с разделом «@s.Name»">
+                                            <i class="fa-solid fa-ellipsis"></i>
+                                        </button>
+                                        <div class="wk-menu" hidden role="menu">
+                                            <button type="button" role="menuitem" data-wiki-edit-section data-id="@s.Id" data-name="@s.Name" data-icon="@s.Icon" data-description="@s.Description"><i class="fa-solid fa-pen"></i>Изменить</button>
+                                            <button type="button" role="menuitem" data-wiki-access data-id="@s.Id"><i class="fa-solid fa-user-lock"></i>Доступ и редакторы</button>
+                                            <button type="button" role="menuitem" data-wiki-shift-section="-1" data-id="@s.Id"><i class="fa-solid fa-arrow-left"></i>Переместить раньше</button>
+                                            <button type="button" role="menuitem" data-wiki-shift-section="1" data-id="@s.Id"><i class="fa-solid fa-arrow-right"></i>Переместить позже</button>
+                                            <hr />
+                                            <button type="button" role="menuitem" class="is-danger" data-wiki-delete-section data-id="@s.Id" data-name="@s.Name"><i class="fa-solid fa-trash"></i>Удалить раздел</button>
+                                        </div>
+                                    </div>
+                                }
+                            </article>
+                        }
+                        @if (Model.CanManage)
+                        {
+                            <button type="button" class="wk-card wk-section-card wk-section-add" data-wiki-new-section>
+                                <i class="fa-solid fa-plus" aria-hidden="true"></i><span>Новый раздел</span>
+                            </button>
+                        }
+                    </div>
+                }
+            </div>
+
+            <aside class="wk-home-aside">
+                @if (Model.Ctx.CanWriteAnywhere && Model.Sections.Any(s => s.CanEdit))
+                {
+                    <button type="button" class="wk-btn wk-btn-pri" data-wiki-new-page><i class="fa-solid fa-plus"></i>Новая страница</button>
+                }
+                <section class="wk-card wk-panel wk-start">
+                    <div class="wk-panel-head"><h2><i class="fa-solid fa-flag-checkered"></i>Начните отсюда</h2></div>
+                    @if (Model.Pinned.Count == 0)
+                    {
+                        <p class="wk-empty-mini">Редакторы могут закрепить важные страницы — они появятся здесь.</p>
+                    }
+                    else
+                    {
+                        <partial name="_PageList" model="Model.Pinned" />
+                    }
+                </section>
+                <section class="wk-card wk-panel">
+                    <div class="wk-panel-head"><h2><i class="fa-solid fa-star"></i>Избранное</h2></div>
+                    @if (Model.Favorites.Count == 0)
+                    {
+                        <p class="wk-empty-mini">Нажмите <i class="fa-regular fa-star"></i> на странице, чтобы быстро возвращаться к ней.</p>
+                    }
+                    else
+                    {
+                        <partial name="_PageList" model="Model.Favorites" />
+                    }
+                </section>
+                <section class="wk-card wk-panel">
+                    <div class="wk-panel-head"><h2><i class="fa-solid fa-clock-rotate-left"></i>Недавно обновлены</h2></div>
+                    @if (Model.Recent.Count == 0)
+                    {
+                        <p class="wk-empty-mini">Пока нет страниц.</p>
+                    }
+                    else
+                    {
+                        <partial name="_PageList" model="Model.Recent" />
+                    }
+                </section>
+            </aside>
+        </div>
+
+        <partial name="_WikiDialogs" model="Model" />
+    }
+</div>
+
+@section Scripts {
+    <script src="~/js/wiki/wiki.js" asp-append-version="true"></script>
+}

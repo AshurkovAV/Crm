@@ -1,0 +1,43 @@
+@model WikiTreeViewModel
+@{
+    var open = Model.OpenIds();
+    var canDrag = Model.CanEdit;
+
+    void RenderLevel(int? parentId, int depth)
+    {
+        foreach (var item in Model.Children(parentId))
+        {
+            var children = Model.Children(item.Id).Any();
+            var isCurrent = item.Id == Model.CurrentPageId;
+            var collapsed = children && !open.Contains(item.Id) && depth >= 1;
+            <li class="@(collapsed ? "is-collapsed" : null)" data-page-id="@item.Id" data-depth="@depth">
+                <div class="wk-tree-row @(isCurrent ? "is-current" : null)" @(canDrag ? "draggable=true" : null)>
+                    <button type="button" class="wk-tree-toggle @(children ? null : "is-leaf")" aria-label="Свернуть или развернуть" tabindex="@(children ? 0 : -1)"><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+                    <a class="wk-tree-link" href="/Wiki/Page/@item.Id" aria-current="@(isCurrent ? "page" : null)" title="@item.Title">@item.Title</a>
+                    @if (item.IsStale)
+                    {
+                        <i class="fa-regular fa-clock wk-tree-flag is-stale" title="Требует проверки" aria-label="Требует проверки"></i>
+                    }
+                    else if (item.IsPinned)
+                    {
+                        <i class="fa-solid fa-thumbtack wk-tree-flag" title="Начните отсюда" aria-label="Закреплена"></i>
+                    }
+                </div>
+                @if (children)
+                {
+                    <ul>@{ RenderLevel(item.Id, depth + 1); }</ul>
+                }
+            </li>
+        }
+    }
+}
+@if (!Model.Items.Any())
+{
+    <div class="wk-tree-empty">В разделе пока нет страниц.</div>
+}
+else
+{
+    <ul class="wk-tree" data-wiki-tree data-section-id="@Model.Section.Id" data-can-edit="@(Model.CanEdit ? "true" : "false")">
+        @{ RenderLevel(null, 1); }
+    </ul>
+}

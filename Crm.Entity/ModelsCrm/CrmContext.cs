@@ -57,6 +57,24 @@ public partial class CrmContext : DbContext
 
     public virtual DbSet<VaultEntryAccess> VaultEntryAccesses { get; set; }
 
+    public virtual DbSet<WikiSection> WikiSections { get; set; }
+
+    public virtual DbSet<WikiSectionAccess> WikiSectionAccesses { get; set; }
+
+    public virtual DbSet<WikiEditor> WikiEditors { get; set; }
+
+    public virtual DbSet<WikiPage> WikiPages { get; set; }
+
+    public virtual DbSet<WikiPageVersion> WikiPageVersions { get; set; }
+
+    public virtual DbSet<WikiFavorite> WikiFavorites { get; set; }
+
+    public virtual DbSet<WikiAttachment> WikiAttachments { get; set; }
+
+    public virtual DbSet<WikiAttachmentVersion> WikiAttachmentVersions { get; set; }
+
+    public virtual DbSet<WikiPageTask> WikiPageTasks { get; set; }
+
     public virtual DbSet<User> Users { get; set; }
 
     public virtual DbSet<UserToken> UserTokens { get; set; }
@@ -65,7 +83,7 @@ public partial class CrmContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=OMSIT;Database=crm;User ID=sa;Password=12345678;encrypt=false");
+        => optionsBuilder.UseSqlServer(ConnectionStringOverride ?? "Server=OMSIT;Database=crm;User ID=sa;Password=12345678;encrypt=false");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -606,6 +624,96 @@ public partial class CrmContext : DbContext
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getutcdate())");
             entity.Property(e => e.Email).HasMaxLength(255);
             entity.Property(e => e.Token).HasMaxLength(255);
+        });
+
+        // ====== База знаний (схема создаётся при старте приложения, см. Program.cs) ======
+
+        modelBuilder.Entity<WikiSection>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.ToTable("WikiSection");
+            entity.Property(e => e.Name).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.Icon).HasMaxLength(16);
+            entity.Property(e => e.Description).HasMaxLength(1000);
+            entity.Property(e => e.AccessMode).HasMaxLength(20).IsRequired();
+            entity.HasIndex(e => e.CompanyId);
+        });
+
+        modelBuilder.Entity<WikiSectionAccess>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.ToTable("WikiSectionAccess");
+            entity.HasIndex(e => new { e.SectionId, e.UserId }).IsUnique();
+            entity.HasOne(e => e.Section).WithMany(s => s.AccessList)
+                .HasForeignKey(e => e.SectionId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<WikiEditor>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.ToTable("WikiEditor");
+            entity.HasIndex(e => new { e.CompanyId, e.UserId, e.SectionId }).IsUnique();
+        });
+
+        modelBuilder.Entity<WikiPage>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.ToTable("WikiPage");
+            entity.Property(e => e.Title).HasMaxLength(300).IsRequired();
+            entity.Property(e => e.ReviewDueDate).HasColumnType("date");
+            entity.HasIndex(e => new { e.SectionId, e.ParentId, e.SortOrder });
+            entity.HasIndex(e => e.CompanyId);
+            entity.HasOne(e => e.Section).WithMany(s => s.Pages)
+                .HasForeignKey(e => e.SectionId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+        });
+
+        modelBuilder.Entity<WikiPageVersion>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.ToTable("WikiPageVersion");
+            entity.Property(e => e.Title).HasMaxLength(300).IsRequired();
+            entity.Property(e => e.Comment).HasMaxLength(300);
+            entity.HasIndex(e => new { e.PageId, e.VersionNumber }).IsUnique();
+            entity.HasOne(e => e.Page).WithMany(p => p.Versions)
+                .HasForeignKey(e => e.PageId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<WikiFavorite>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.ToTable("WikiFavorite");
+            entity.HasIndex(e => new { e.UserId, e.PageId }).IsUnique();
+        });
+
+        modelBuilder.Entity<WikiAttachment>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.ToTable("WikiAttachment");
+            entity.HasIndex(e => e.PageId);
+        });
+
+        modelBuilder.Entity<WikiAttachmentVersion>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.ToTable("WikiAttachmentVersion");
+            entity.Property(e => e.FileName).HasMaxLength(255).IsRequired();
+            entity.Property(e => e.StoredName).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.ContentType).HasMaxLength(150).IsRequired();
+            entity.HasIndex(e => new { e.AttachmentId, e.VersionNumber }).IsUnique();
+            entity.HasOne(e => e.Attachment).WithMany(a => a.Versions)
+                .HasForeignKey(e => e.AttachmentId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<WikiPageTask>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.ToTable("WikiPageTask");
+            entity.HasIndex(e => new { e.PageId, e.TaskId }).IsUnique();
+            entity.HasIndex(e => e.TaskId);
         });
 
         OnModelCreatingPartial(modelBuilder);

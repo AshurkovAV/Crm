@@ -1,0 +1,47 @@
+@model WikiReviewViewModel
+@{
+    ViewData["Title"] = "Требуют проверки — База знаний";
+    ViewData["WikiSubtitle"] = "Страницы, у которых истёк срок проверки актуальности";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/wiki.css" asp-append-version="true" />
+}
+
+<div class="wk" data-wiki-root>
+    <partial name="_WikiHead" model="Model" />
+
+    @if (Model.Pages.Count == 0)
+    {
+        <section class="wk-card wk-empty">
+            <span class="wk-empty-icon" style="background:#ecfdf5;color:#047857"><i class="fa-solid fa-check"></i></span>
+            <h2>Всё актуально</h2>
+            <p>Нет страниц с истёкшим сроком проверки в разделах, которые вы редактируете. Срок задаётся на странице: «Ещё» → «Ответственный и срок проверки».</p>
+        </section>
+    }
+    else
+    {
+        <section class="wk-card">
+            <div class="wk-results">
+                @foreach (var p in Model.Pages)
+                {
+                    var overdueDays = p.ReviewDueDate.HasValue ? (int)(DateTime.UtcNow.Date - p.ReviewDueDate.Value.Date).TotalDays : 0;
+                    <div class="wk-result" style="flex-direction:row;align-items:center;gap:14px;flex-wrap:wrap">
+                        <span class="wk-list-ico" style="width:40px;height:40px;font-size:19px" aria-hidden="true">@WikiFormat.SectionIcon(p.SectionIcon)</span>
+                        <span style="flex:1 1 260px;min-width:0;display:flex;flex-direction:column;gap:4px">
+                            <a class="wk-result-title" href="/Wiki/Page/@p.Id" style="text-decoration:none">@p.Title</a>
+                            <span class="wk-result-path">@p.SectionName · обновлено @WikiFormat.Date(p.ModifiedDate)@(p.OwnerName != null ? " · ответственный: " + p.OwnerName : "")</span>
+                        </span>
+                        <span class="wk-chip wk-chip-stale"><i class="fa-regular fa-clock"></i>просрочено на @overdueDays дн. (до @WikiFormat.Day(p.ReviewDueDate!.Value))</span>
+                        <button type="button" class="wk-btn wk-btn-sm" data-wiki-reviewed data-page-id="@p.Id"><i class="fa-solid fa-check"></i>Проверено</button>
+                    </div>
+                }
+            </div>
+        </section>
+    }
+
+    <partial name="_WikiDialogs" model="Model" />
+</div>
+
+@section Scripts {
+    <script src="~/js/wiki/wiki.js" asp-append-version="true"></script>
+}

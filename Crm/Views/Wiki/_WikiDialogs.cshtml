@@ -1,0 +1,154 @@
+@model WikiViewModelBase
+@{
+    var editableSections = Model.Sections.Where(s => s.CanEdit).ToList();
+    var emojis = new[] { "📘", "📗", "📕", "📙", "📒", "🚀", "🧭", "🛠️", "💼", "🤝", "📞", "🧾", "🏭", "🚚", "🎓", "🔒", "💡", "⭐" };
+}
+<meta name="wiki-csrf" content="@Antiforgery.GetAndStoreTokens(Context).RequestToken" />
+
+@* ---------- Новая страница ---------- *@
+<dialog class="wk-dialog" id="wkNewPageDialog" aria-labelledby="wkNewPageTitle">
+    <form method="dialog" data-wiki-new-page-form>
+        <div class="wk-dialog-head">
+            <h2 id="wkNewPageTitle">Новая страница</h2>
+            <button type="button" class="wk-icon-btn" data-dialog-close aria-label="Закрыть"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="wk-dialog-body">
+            <label class="wk-field">
+                <span>Название</span>
+                <input class="wk-input" name="title" maxlength="300" placeholder="Например: Как оформить возврат" required autocomplete="off" />
+            </label>
+            <label class="wk-field" data-section-field>
+                <span>Раздел</span>
+                <select class="wk-select" name="sectionId">
+                    @foreach (var s in editableSections)
+                    {
+                        <option value="@s.Id">@WikiFormat.SectionIcon(s.Icon) @s.Name</option>
+                    }
+                </select>
+            </label>
+            <input type="hidden" name="parentId" />
+            <div class="wk-field" data-parent-note hidden><small class="wk-muted"></small></div>
+            <div class="wk-field">
+                <span>Шаблон</span>
+                <div class="wk-templates" role="radiogroup" aria-label="Шаблон страницы">
+                    @{ var first = true; }
+                    @foreach (var t in WikiTemplates.All)
+                    {
+                        <button type="button" class="wk-template @(first ? "is-on" : null)" role="radio" aria-checked="@(first ? "true" : "false")" data-template="@t.Key">
+                            <i class="@t.Icon" aria-hidden="true"></i>
+                            <span><b>@t.Title</b><small>@t.Description</small></span>
+                        </button>
+                        first = false;
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="wk-dialog-foot">
+            <button type="button" class="wk-btn" data-dialog-close>Отмена</button>
+            <button type="submit" class="wk-btn wk-btn-pri"><i class="fa-solid fa-plus"></i>Создать и открыть редактор</button>
+        </div>
+    </form>
+</dialog>
+
+@if (Model.CanManage)
+{
+    @* ---------- Раздел (создание / изменение) ---------- *@
+    <dialog class="wk-dialog" id="wkSectionDialog" aria-labelledby="wkSectionTitle">
+        <form method="dialog" data-wiki-section-form>
+            <div class="wk-dialog-head">
+                <h2 id="wkSectionTitle">Новый раздел</h2>
+                <button type="button" class="wk-icon-btn" data-dialog-close aria-label="Закрыть"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="wk-dialog-body">
+                <input type="hidden" name="id" />
+                <label class="wk-field">
+                    <span>Название</span>
+                    <input class="wk-input" name="name" maxlength="200" placeholder="Например: Продажи, Производство, Новичкам" required autocomplete="off" />
+                </label>
+                <div class="wk-field">
+                    <span>Значок</span>
+                    <div class="wk-emoji-row" data-emoji-row>
+                        @foreach (var e in emojis)
+                        {
+                            <button type="button" class="wk-emoji" data-emoji="@e" aria-label="Значок @e">@e</button>
+                        }
+                    </div>
+                    <input class="wk-input" name="icon" maxlength="16" placeholder="Или вставьте свой эмодзи" style="max-width:220px" autocomplete="off" />
+                </div>
+                <label class="wk-field">
+                    <span>Описание</span>
+                    <textarea class="wk-textarea" name="description" maxlength="1000" placeholder="Что лежит в этом разделе и для кого он"></textarea>
+                </label>
+            </div>
+            <div class="wk-dialog-foot">
+                <button type="button" class="wk-btn" data-dialog-close>Отмена</button>
+                <button type="submit" class="wk-btn wk-btn-pri">Сохранить</button>
+            </div>
+        </form>
+    </dialog>
+
+    @* ---------- Доступ и редакторы раздела ---------- *@
+    <dialog class="wk-dialog" id="wkAccessDialog" aria-labelledby="wkAccessTitle">
+        <form method="dialog" data-wiki-access-form>
+            <div class="wk-dialog-head">
+                <h2 id="wkAccessTitle">Доступ к разделу</h2>
+                <button type="button" class="wk-icon-btn" data-dialog-close aria-label="Закрыть"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="wk-dialog-body">
+                <input type="hidden" name="id" />
+                <div class="wk-field">
+                    <span>Кто видит раздел</span>
+                    <div class="wk-radio-group">
+                        <label class="wk-radio">
+                            <input type="radio" name="accessMode" value="All" checked />
+                            <span><b>Все сотрудники компании</b><small>Раздел открыт всей команде для чтения</small></span>
+                        </label>
+                        <label class="wk-radio">
+                            <input type="radio" name="accessMode" value="Selected" />
+                            <span><b>Только выбранные</b><small>Видят отмеченные ниже сотрудники, редакторы раздела и руководители</small></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="wk-field" data-access-people>
+                    <span>Сотрудники с доступом</span>
+                    <div class="wk-people" data-people="access"></div>
+                </div>
+                <div class="wk-field">
+                    <span>Редакторы раздела</span>
+                    <small>Могут создавать и изменять страницы этого раздела. Руководители и редакторы всей базы знаний редактируют всегда.</small>
+                    <div class="wk-people" data-people="editors"></div>
+                </div>
+            </div>
+            <div class="wk-dialog-foot">
+                <button type="button" class="wk-btn" data-dialog-close>Отмена</button>
+                <button type="submit" class="wk-btn wk-btn-pri">Сохранить доступ</button>
+            </div>
+        </form>
+    </dialog>
+}
+
+@* ---------- Выбор страницы (ссылка на страницу, привязка к задаче) ---------- *@
+<dialog class="wk-dialog" id="wkPickerDialog" aria-labelledby="wkPickerTitle">
+    <form method="dialog">
+        <div class="wk-dialog-head">
+            <h2 id="wkPickerTitle">Выберите страницу</h2>
+            <button type="button" class="wk-icon-btn" data-dialog-close aria-label="Закрыть"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="wk-dialog-body">
+            <input class="wk-input" type="search" data-picker-input placeholder="Начните вводить название…" autocomplete="off" aria-label="Поиск страницы" />
+            <div class="wk-picker-results" data-picker-results role="listbox"></div>
+        </div>
+    </form>
+</dialog>
+
+@* ---------- Просмотр файла ---------- *@
+<dialog class="wk-dialog wk-viewer" id="wkViewerDialog" aria-labelledby="wkViewerTitle">
+    <form method="dialog">
+        <div class="wk-dialog-head">
+            <h2 id="wkViewerTitle" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></h2>
+            <a class="wk-btn wk-btn-sm" data-viewer-download href="#"><i class="fa-solid fa-download"></i>Скачать</a>
+            <button type="button" class="wk-icon-btn" data-dialog-close aria-label="Закрыть"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="wk-dialog-body" data-viewer-body></div>
+    </form>
+</dialog>

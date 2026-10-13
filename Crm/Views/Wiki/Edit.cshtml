@@ -1,0 +1,119 @@
+@model WikiEditViewModel
+@{
+    var p = Model.Page;
+    ViewData["Title"] = "Редактирование: " + p.Title;
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/wiki.css" asp-append-version="true" />
+}
+
+<div class="wk wk-editor-page" data-wiki-root>
+    <nav class="wk-crumbs" aria-label="Навигация" style="margin:0">
+        @for (var i = 0; i < Model.Breadcrumbs.Count; i++)
+        {
+            var c = Model.Breadcrumbs[i];
+            if (i > 0) { <i class="fa-solid fa-chevron-right" aria-hidden="true"></i> }
+            <a href="@c.Url">@c.Title</a>
+        }
+    </nav>
+
+    <div class="wk-card wk-editor-card" data-wiki-editor data-page-id="@p.Id" data-version="@p.Version">
+        <div class="wk-editor-top">
+            <input class="wk-title-input" data-editor-title value="@p.Title" maxlength="300" placeholder="Заголовок страницы" aria-label="Заголовок страницы" />
+        </div>
+
+        <div class="wk-toolbar" role="toolbar" aria-label="Форматирование" data-editor-toolbar>
+            <button type="button" class="wk-tb" data-cmd="paragraph" title="Обычный текст">¶</button>
+            <button type="button" class="wk-tb" data-cmd="h2" title="Заголовок (##)">H2</button>
+            <button type="button" class="wk-tb" data-cmd="h3" title="Подзаголовок (###)">H3</button>
+            <span class="wk-tb-sep"></span>
+            <button type="button" class="wk-tb" data-cmd="bold" title="Жирный (Ctrl+B)"><i class="fa-solid fa-bold"></i></button>
+            <button type="button" class="wk-tb" data-cmd="italic" title="Курсив (Ctrl+I)"><i class="fa-solid fa-italic"></i></button>
+            <button type="button" class="wk-tb" data-cmd="underline" title="Подчёркнутый (Ctrl+U)"><i class="fa-solid fa-underline"></i></button>
+            <button type="button" class="wk-tb" data-cmd="strike" title="Зачёркнутый"><i class="fa-solid fa-strikethrough"></i></button>
+            <button type="button" class="wk-tb" data-cmd="code" title="Код в строке"><i class="fa-solid fa-code"></i></button>
+            <span class="wk-tb-sep"></span>
+            <button type="button" class="wk-tb" data-cmd="bulletList" title="Маркированный список"><i class="fa-solid fa-list-ul"></i></button>
+            <button type="button" class="wk-tb" data-cmd="orderedList" title="Нумерованный список"><i class="fa-solid fa-list-ol"></i></button>
+            <button type="button" class="wk-tb" data-cmd="taskList" title="Чек-лист"><i class="fa-solid fa-square-check"></i></button>
+            <span class="wk-tb-sep"></span>
+            <button type="button" class="wk-tb" data-cmd="link" title="Ссылка (Ctrl+K)"><i class="fa-solid fa-link"></i></button>
+            <button type="button" class="wk-tb" data-cmd="pageLink" title="Ссылка на страницу базы знаний"><i class="fa-solid fa-book"></i></button>
+            <button type="button" class="wk-tb" data-cmd="image" title="Изображение"><i class="fa-regular fa-image"></i></button>
+            <button type="button" class="wk-tb" data-cmd="video" title="Видео YouTube / Rutube / VK"><i class="fa-brands fa-youtube"></i></button>
+            <button type="button" class="wk-tb" data-cmd="table" title="Таблица"><i class="fa-solid fa-table"></i></button>
+            <span class="wk-tb-sep"></span>
+            <button type="button" class="wk-tb" data-cmd="callout-info" title="Блок «Важно»"><i class="fa-solid fa-circle-info" style="color:#1d4ed8"></i></button>
+            <button type="button" class="wk-tb" data-cmd="callout-warning" title="Блок «Внимание»"><i class="fa-solid fa-triangle-exclamation" style="color:#b45309"></i></button>
+            <button type="button" class="wk-tb" data-cmd="callout-tip" title="Блок «Совет»"><i class="fa-solid fa-lightbulb" style="color:#047857"></i></button>
+            <button type="button" class="wk-tb" data-cmd="blockquote" title="Цитата"><i class="fa-solid fa-quote-left"></i></button>
+            <button type="button" class="wk-tb" data-cmd="codeBlock" title="Блок кода"><i class="fa-solid fa-terminal"></i></button>
+            <button type="button" class="wk-tb" data-cmd="hr" title="Разделитель"><i class="fa-solid fa-minus"></i></button>
+            <span class="wk-tb-sep" data-table-tools hidden></span>
+            <button type="button" class="wk-tb" data-cmd="addRow" data-table-tools hidden title="Добавить строку"><i class="fa-solid fa-plus"></i> строка</button>
+            <button type="button" class="wk-tb" data-cmd="addCol" data-table-tools hidden title="Добавить столбец"><i class="fa-solid fa-plus"></i> столбец</button>
+            <button type="button" class="wk-tb" data-cmd="delRow" data-table-tools hidden title="Удалить строку"><i class="fa-solid fa-minus"></i> строка</button>
+            <button type="button" class="wk-tb" data-cmd="delCol" data-table-tools hidden title="Удалить столбец"><i class="fa-solid fa-minus"></i> столбец</button>
+            <button type="button" class="wk-tb" data-cmd="delTable" data-table-tools hidden title="Удалить таблицу"><i class="fa-solid fa-trash"></i></button>
+            <span class="wk-tb-sep"></span>
+            <button type="button" class="wk-tb" data-cmd="undo" title="Отменить (Ctrl+Z)"><i class="fa-solid fa-rotate-left"></i></button>
+            <button type="button" class="wk-tb" data-cmd="redo" title="Повторить (Ctrl+Shift+Z)"><i class="fa-solid fa-rotate-right"></i></button>
+        </div>
+
+        <div class="wk-editor-body">
+            <div data-editor-mount></div>
+            <template data-editor-initial>@Html.Raw(WikiHtml.Sanitize(p.ContentHtml))</template>
+            <input type="file" accept="image/png,image/jpeg,image/gif,image/webp" hidden data-editor-image-input multiple />
+        </div>
+
+        <div class="wk-savebar">
+            <span class="wk-savebar-status" data-editor-status>Введите «/» в начале строки, чтобы вставить блок.</span>
+            <a class="wk-btn" href="/Wiki/Page/@p.Id" data-editor-cancel>Отмена</a>
+            <button type="button" class="wk-btn wk-btn-pri" data-editor-save><i class="fa-solid fa-floppy-disk"></i>Сохранить</button>
+        </div>
+    </div>
+
+    <dialog class="wk-dialog" id="wkConflictDialog" aria-labelledby="wkConflictTitle">
+        <form method="dialog">
+            <div class="wk-dialog-head">
+                <h2 id="wkConflictTitle">Страницу уже изменили</h2>
+            </div>
+            <div class="wk-dialog-body">
+                <div class="wk-banner" style="margin:0"><i class="fa-solid fa-triangle-exclamation"></i><span data-conflict-text></span></div>
+                <p class="wk-muted" style="margin:0;line-height:1.5">Ваши правки ещё не сохранены. Откройте текущую версию в новой вкладке, чтобы сравнить, и решите, что делать.</p>
+            </div>
+            <div class="wk-dialog-foot">
+                <a class="wk-btn" href="/Wiki/Page/@p.Id" target="_blank" rel="noopener"><i class="fa-solid fa-up-right-from-square"></i>Открыть текущую версию</a>
+                <button type="button" class="wk-btn" data-dialog-close>Продолжить редактирование</button>
+                <button type="button" class="wk-btn wk-btn-danger" data-conflict-overwrite>Сохранить поверх</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog class="wk-dialog" id="wkPromptDialog" aria-labelledby="wkPromptTitle">
+        <form method="dialog" data-prompt-form>
+            <div class="wk-dialog-head">
+                <h2 id="wkPromptTitle" data-prompt-title></h2>
+                <button type="button" class="wk-icon-btn" data-dialog-close aria-label="Закрыть"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="wk-dialog-body">
+                <label class="wk-field">
+                    <span data-prompt-label></span>
+                    <input class="wk-input" data-prompt-input autocomplete="off" />
+                    <small data-prompt-hint></small>
+                </label>
+            </div>
+            <div class="wk-dialog-foot">
+                <button type="button" class="wk-btn" data-dialog-close>Отмена</button>
+                <button type="submit" class="wk-btn wk-btn-pri">Готово</button>
+            </div>
+        </form>
+    </dialog>
+
+    <partial name="_WikiDialogs" model="Model" />
+</div>
+
+@section Scripts {
+    <script src="~/js/wiki/wiki.js" asp-append-version="true"></script>
+    <script type="module" src="~/js/wiki/editor.js" asp-append-version="true"></script>
+}

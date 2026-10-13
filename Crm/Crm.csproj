@@ -3,6 +3,8 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Исходники сборки редактора базы знаний (npm) — не часть веб-проекта, результат лежит в wwwroot/lib/tiptap -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);ClientLib\**</DefaultItemExcludes>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="MediatR" Version="13.0.0" />

@@ -1,0 +1,50 @@
+@model WikiSettingsViewModel
+@{
+    ViewData["Title"] = "Редакторы — База знаний";
+    ViewData["WikiSubtitle"] = "Кто может создавать и изменять страницы";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/wiki.css" asp-append-version="true" />
+}
+
+<div class="wk" data-wiki-root>
+    <partial name="_WikiHead" model="Model" />
+
+    <div class="wk-home">
+        <section class="wk-card wk-panel" style="padding:22px 24px">
+            <div class="wk-panel-head"><h2><i class="fa-solid fa-user-pen"></i>Редакторы всей базы знаний</h2></div>
+            <p class="wk-muted" style="margin:0 0 14px;line-height:1.5">Отмеченные сотрудники могут создавать, изменять, перемещать и удалять страницы во всех разделах, которые им видны. Руководители компании редактируют всегда.</p>
+            <form data-wiki-editors-form>
+                <div class="wk-people" style="max-height:none">
+                    @foreach (var m in Model.Members)
+                    {
+                        <label class="wk-person">
+                            <input type="checkbox" name="userId" value="@m.UserId" checked="@(m.IsManager || Model.CompanyEditorIds.Contains(m.UserId))" disabled="@m.IsManager" />
+                            <span class="wk-person-body"><span class="wk-person-name">@m.Name</span><span class="wk-person-mail">@m.Email</span></span>
+                            @if (m.IsManager) { <span class="wk-chip wk-chip-acc">Руководитель</span> }
+                        </label>
+                    }
+                </div>
+                <div style="display:flex;justify-content:flex-end;margin-top:14px">
+                    <button type="submit" class="wk-btn wk-btn-pri">Сохранить</button>
+                </div>
+            </form>
+        </section>
+        <aside class="wk-home-aside">
+            <section class="wk-card wk-panel">
+                <div class="wk-panel-head"><h2><i class="fa-solid fa-circle-info"></i>Как устроены права</h2></div>
+                <ul class="wk-prose" style="font-size:14px;line-height:1.55">
+                    <li><b>Читают</b> все сотрудники компании — кроме разделов с доступом «Только выбранные».</li>
+                    <li><b>Пишут</b> руководители, редакторы всей базы и редакторы конкретного раздела.</li>
+                    <li>Редакторов раздела и доступ к нему настраивают в меню раздела → «Доступ и редакторы».</li>
+                </ul>
+            </section>
+        </aside>
+    </div>
+
+    <partial name="_WikiDialogs" model="Model" />
+</div>
+
+@section Scripts {
+    <script src="~/js/wiki/wiki.js" asp-append-version="true"></script>
+}

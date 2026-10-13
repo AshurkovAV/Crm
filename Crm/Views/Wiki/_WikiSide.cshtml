@@ -1,0 +1,44 @@
+@model WikiTreeViewModel
+@{
+    var s = Model.Section;
+}
+<aside class="wk-card wk-side" aria-label="Страницы раздела">
+    <div class="wk-side-head">
+        <a class="wk-side-back" href="/Wiki"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i>Все разделы</a>
+        <div class="wk-side-section">
+            <span class="wk-section-icon" aria-hidden="true">@WikiFormat.SectionIcon(s.Icon)</span>
+            <a href="/Wiki/Section/@s.Id"><b title="@s.Name">@s.Name</b></a>
+            @if (s.AccessMode == "Selected")
+            {
+                <i class="fa-solid fa-lock wk-faint" title="Только выбранные сотрудники" aria-label="Ограниченный доступ"></i>
+            }
+        </div>
+    </div>
+    <div class="wk-side-body">
+        <partial name="_WikiTree" model="Model" />
+    </div>
+    @if (Model.CanEdit)
+    {
+        <div class="wk-side-foot">
+            <button type="button" class="wk-btn wk-btn-sm" style="width:100%" data-wiki-new-page data-section-id="@s.Id">
+                <i class="fa-solid fa-plus" aria-hidden="true"></i>Новая страница
+            </button>
+        </div>
+    }
+</aside>
+<details class="wk-card wk-side-mobile">
+    <summary>
+        <span class="wk-section-icon" style="width:30px;height:30px;font-size:16px;border-radius:9px" aria-hidden="true">@WikiFormat.SectionIcon(s.Icon)</span>
+        <span>@s.Name · страницы раздела</span>
+        <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+    </summary>
+    <div class="wk-side-body">
+        <partial name="_WikiTree" model="Model" />
+        @if (Model.CanEdit)
+        {
+            <button type="button" class="wk-btn wk-btn-sm" style="width:100%;margin-top:8px" data-wiki-new-page data-section-id="@s.Id">
+                <i class="fa-solid fa-plus" aria-hidden="true"></i>Новая страница
+            </button>
+        }
+    </div>
+</details>

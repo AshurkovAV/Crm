@@ -1,0 +1,118 @@
+@model WikiSectionViewModel
+@{
+    ViewData["Title"] = Model.Section.Name + " — База знаний";
+    var s = Model.Section;
+    var roots = Model.Tree.Children(null).ToList();
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/wiki.css" asp-append-version="true" />
+}
+
+<div class="wk" data-wiki-root>
+    <partial name="_WikiHead" model="Model" />
+
+    <div class="wk-layout">
+        <partial name="_WikiSide" model="Model.Tree" />
+
+        <article class="wk-card wk-article">
+            <nav class="wk-crumbs" aria-label="Навигация">
+                <a href="/Wiki">База знаний</a>
+            </nav>
+            <div class="wk-page-head">
+                <h1 class="wk-page-title"><span aria-hidden="true">@WikiFormat.SectionIcon(s.Icon)</span> @s.Name</h1>
+                <div class="wk-page-actions">
+                    @if (s.CanEdit)
+                    {
+                        <button type="button" class="wk-btn wk-btn-pri" data-wiki-new-page data-section-id="@s.Id"><i class="fa-solid fa-plus"></i>Новая страница</button>
+                    }
+                    @if (Model.CanManage)
+                    {
+                        <div class="wk-menu-wrap">
+                            <button type="button" class="wk-icon-btn" data-menu-toggle aria-haspopup="true" aria-expanded="false" aria-label="Действия с разделом"><i class="fa-solid fa-ellipsis"></i></button>
+                            <div class="wk-menu" hidden role="menu">
+                                <button type="button" role="menuitem" data-wiki-edit-section data-id="@s.Id" data-name="@s.Name" data-icon="@s.Icon" data-description="@s.Description"><i class="fa-solid fa-pen"></i>Изменить раздел</button>
+                                <button type="button" role="menuitem" data-wiki-access data-id="@s.Id"><i class="fa-solid fa-user-lock"></i>Доступ и редакторы</button>
+                                <hr />
+                                <button type="button" role="menuitem" class="is-danger" data-wiki-delete-section data-id="@s.Id" data-name="@s.Name"><i class="fa-solid fa-trash"></i>Удалить раздел</button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="wk-page-meta">
+                <span><i class="fa-regular fa-file-lines"></i>@WikiFormat.Pages(s.PageCount)</span>
+                @if (s.AccessMode == "Selected")
+                {
+                    <span><i class="fa-solid fa-lock"></i>Только выбранные сотрудники</span>
+                }
+                else
+                {
+                    <span><i class="fa-solid fa-users"></i>Все сотрудники компании</span>
+                }
+                @if (s.CanEdit)
+                {
+                    <span class="wk-chip wk-chip-acc">Вы можете редактировать</span>
+                }
+            </div>
+            @if (!string.IsNullOrWhiteSpace(s.Description))
+            {
+                <p class="wk-prose" style="margin-top:16px;color:var(--ui-ink2)">@s.Description</p>
+            }
+
+            @if (Model.Pinned.Count > 0)
+            {
+                <section class="wk-block">
+                    <div class="wk-block-head"><h2><i class="fa-solid fa-flag-checkered" style="color:var(--ui-acc)"></i>Начните отсюда</h2></div>
+                    <div class="wk-children">
+                        @foreach (var p in Model.Pinned)
+                        {
+                            <a class="wk-child" href="/Wiki/Page/@p.Id"><i class="fa-solid fa-thumbtack"></i><span>@p.Title</span></a>
+                        }
+                    </div>
+                </section>
+            }
+
+            <section class="wk-block">
+                <div class="wk-block-head"><h2>Страницы раздела</h2></div>
+                @if (roots.Count == 0)
+                {
+                    <div class="wk-empty" style="padding:28px 12px">
+                        <span class="wk-empty-icon"><i class="fa-regular fa-file-lines"></i></span>
+                        <h2>В разделе пока пусто</h2>
+                        @if (s.CanEdit)
+                        {
+                            <p>Создайте первую страницу — можно начать с шаблона «Инструкция» или «Онбординг новичка».</p>
+                            <button type="button" class="wk-btn wk-btn-pri" data-wiki-new-page data-section-id="@s.Id"><i class="fa-solid fa-plus"></i>Создать страницу</button>
+                        }
+                        else
+                        {
+                            <p>Страницы появятся, когда их добавят редакторы.</p>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="wk-children">
+                        @foreach (var p in roots)
+                        {
+                            var count = Model.Tree.Children(p.Id).Count();
+                            <a class="wk-child" href="/Wiki/Page/@p.Id">
+                                <i class="fa-regular fa-file-lines"></i><span>@p.Title</span>
+                                @if (count > 0)
+                                {
+                                    <small class="wk-faint" style="margin-left:auto;font-weight:600">+@count</small>
+                                }
+                            </a>
+                        }
+                    </div>
+                }
+            </section>
+        </article>
+    </div>
+
+    <partial name="_WikiDialogs" model="Model" />
+</div>
+
+@section Scripts {
+    <script src="~/js/wiki/wiki.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,28 @@
+@model WikiViewModelBase
+@{
+    var subtitle = ViewData["WikiSubtitle"] as string ?? "Инструкции, регламенты и ответы на частые вопросы команды";
+}
+<header class="wk-head">
+    <div class="wk-head-main">
+        <h1 class="wk-title"><a href="/Wiki">База знаний</a></h1>
+        <p class="wk-subtitle">@subtitle</p>
+    </div>
+    <form class="wk-search" role="search" action="/Wiki/Search" method="get">
+        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+        <input type="search" name="q" value="@Model.Query" placeholder="Поиск по статьям и файлам…" aria-label="Поиск по базе знаний" autocomplete="off" minlength="2" />
+    </form>
+    <div class="wk-head-actions">
+        @if (Model.StaleCount > 0)
+        {
+            <a class="wk-btn" href="/Wiki/Review" title="Страницы, срок проверки которых прошёл">
+                <i class="fa-regular fa-clock" aria-hidden="true"></i><span>Требуют проверки</span><span class="wk-badge-count">@Model.StaleCount</span>
+            </a>
+        }
+        @if (Model.CanManage)
+        {
+            <a class="wk-btn" href="/Wiki/Settings" title="Редакторы базы знаний">
+                <i class="fa-solid fa-user-pen" aria-hidden="true"></i><span>Редакторы</span>
+            </a>
+        }
+    </div>
+</header>

@@ -1,0 +1,61 @@
+@model WikiSearchViewModel
+@{
+    ViewData["Title"] = "Поиск — База знаний";
+    ViewData["WikiSubtitle"] = string.IsNullOrWhiteSpace(Model.Query) ? "Поиск по заголовкам, тексту страниц и именам файлов" : $"Результаты по запросу «{Model.Query}»";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/wiki.css" asp-append-version="true" />
+}
+
+<div class="wk" data-wiki-root>
+    <partial name="_WikiHead" model="Model" />
+
+    @if (string.IsNullOrWhiteSpace(Model.Query) || Model.Query.Length < 2)
+    {
+        <section class="wk-card wk-empty">
+            <span class="wk-empty-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+            <h2>Что ищем?</h2>
+            <p>Введите хотя бы два символа — найдём страницы по заголовку, тексту и названиям прикреплённых файлов в доступных вам разделах.</p>
+        </section>
+    }
+    else if (Model.Results.Count == 0)
+    {
+        <section class="wk-card wk-empty">
+            <span class="wk-empty-icon"><i class="fa-regular fa-face-meh"></i></span>
+            <h2>Ничего не нашлось</h2>
+            <p>Попробуйте другое слово или более короткий запрос. Поиск идёт только по разделам, к которым у вас есть доступ.</p>
+        </section>
+    }
+    else
+    {
+        <p class="wk-muted" style="margin:0">Найдено: @Model.Results.Count@(Model.Results.Count >= 50 ? "+ (показаны первые 50)" : "")</p>
+        <section class="wk-card wk-results">
+            @foreach (var r in Model.Results)
+            {
+                <a class="wk-result" href="/Wiki/Page/@r.Hit.PageId">
+                    <span class="wk-result-path"><span aria-hidden="true">@WikiFormat.SectionIcon(r.Hit.SectionIcon)</span>@r.Hit.SectionName · @WikiFormat.Date(r.Hit.ModifiedDate)</span>
+                    <span class="wk-result-title">@Html.Raw(r.TitleHtml)</span>
+                    @if (!string.IsNullOrEmpty(r.ExcerptHtml))
+                    {
+                        <span class="wk-result-text">@Html.Raw(r.ExcerptHtml)</span>
+                    }
+                    @if (r.FilesHtml.Count > 0)
+                    {
+                        <span class="wk-result-files">
+                            @foreach (var f in r.FilesHtml)
+                            {
+                                <span class="wk-chip"><i class="fa-solid fa-paperclip" aria-hidden="true"></i>@Html.Raw(f)</span>
+                            }
+                        </span>
+                    }
+                </a>
+            }
+        </section>
+    }
+
+    <partial name="_WikiDialogs" model="Model" />
+</div>
+
+@section Scripts {
+    <script src="~/js/wiki/wiki.js" asp-append-version="true"></script>
+}

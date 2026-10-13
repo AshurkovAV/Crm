@@ -49,6 +49,8 @@ builder.Services.AddSingleton<IProductTemplateComponentRepository, ProductTempla
 builder.Services.AddSingleton<IOrderItemRepository,       OrderItemRepository>();
 builder.Services.AddSingleton<ICalculationService,        CalculationService>();
 builder.Services.AddSingleton<IVaultRepository,           VaultRepository>();
+builder.Services.AddSingleton<IWikiRepository,            WikiRepository>();
+builder.Services.AddSingleton<Crm.Services.Wiki.WikiFileStorage>();
 builder.Services.AddSingleton<IDashboardQueries,          DashboardQueries>();
 builder.Services.AddSingleton<ChatTypingStore>();
 builder.Services.AddScoped<IVerificationTokenRepository, VerificationTokenRepository>();
@@ -540,6 +542,22 @@ END");
     catch (Exception exception)
     {
         app.Logger.LogWarning(exception, "Не удалось создать таблицу VaultEntryAccess");
+    }
+
+    // ====== База знаний (разделы, страницы, версии, вложения, связи с задачами) ======
+    // Те же идемпотентные IF OBJECT_ID ... CREATE TABLE, тексты скриптов — в Crm/Services/Wiki/WikiSchema.cs.
+
+    foreach (var (table, sql) in Crm.Services.Wiki.WikiSchema.Scripts)
+    {
+        try
+        {
+            await using var db = new CrmContext();
+            await db.Database.ExecuteSqlRawAsync(sql);
+        }
+        catch (Exception exception)
+        {
+            app.Logger.LogWarning(exception, "Не удалось создать таблицу {Table}", table);
+        }
     }
 }
 

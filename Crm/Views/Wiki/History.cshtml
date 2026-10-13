@@ -1,0 +1,132 @@
+@model WikiHistoryViewModel
+@{
+    var p = Model.Page;
+    ViewData["Title"] = "История: " + p.Title;
+    ViewData["WikiSubtitle"] = "История изменений страницы";
+    var sel = Model.Selected;
+    var mode = Context.Request.Query.ContainsKey("view") ? "view" : (Model.Diff != null ? "diff" : "view");
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/wiki.css" asp-append-version="true" />
+}
+
+<div class="wk" data-wiki-root>
+    <partial name="_WikiHead" model="Model" />
+
+    <nav class="wk-crumbs" aria-label="Навигация" style="margin:0">
+        @for (var i = 0; i < Model.Breadcrumbs.Count; i++)
+        {
+            var c = Model.Breadcrumbs[i];
+            if (i > 0) { <i class="fa-solid fa-chevron-right" aria-hidden="true"></i> }
+            <a href="@c.Url">@c.Title</a>
+        }
+        <i class="fa-solid fa-chevron-right" aria-hidden="true"></i><span>История</span>
+    </nav>
+
+    <div class="wk-history">
+        <aside class="wk-card wk-versions" aria-label="Версии">
+            <div class="wk-panel-head" style="padding:8px 8px 4px"><h2><i class="fa-solid fa-clock-rotate-left"></i>Версии · @Model.Versions.Count</h2></div>
+            @foreach (var v in Model.Versions)
+            {
+                var isSel = sel != null && v.VersionNumber == sel.VersionNumber;
+                <a class="wk-version @(isSel ? "is-current" : null)" href="/Wiki/History/@p.Id?v=@v.VersionNumber">
+                    <span class="wk-version-top">
+                        Версия @v.VersionNumber
+                        @if (v.VersionNumber == p.Version) { <span class="wk-chip wk-chip-acc">текущая</span> }
+                    </span>
+                    <small>@WikiFormat.Date(v.CreatedDate) · @(v.AuthorName ?? "—")</small>
+                    @if (!string.IsNullOrWhiteSpace(v.Comment)) { <em>@v.Comment</em> }
+                </a>
+            }
+        </aside>
+
+        <article class="wk-card wk-article">
+            @if (sel == null)
+            {
+                <p class="wk-muted">Версий пока нет.</p>
+            }
+            else
+            {
+                <div class="wk-page-head">
+                    <h1 class="wk-page-title" style="font-size:26px">Версия @sel.VersionNumber</h1>
+                    <div class="wk-page-actions">
+                        @if (Model.CanEdit && sel.VersionNumber != p.Version)
+                        {
+                            <button type="button" class="wk-btn wk-btn-pri" data-wiki-restore="@sel.VersionNumber" data-page-id="@p.Id"><i class="fa-solid fa-rotate-left"></i>Восстановить эту версию</button>
+                        }
+                        <a class="wk-btn" href="/Wiki/Page/@p.Id">К странице</a>
+                    </div>
+                </div>
+                <div class="wk-page-meta">
+                    <span><i class="fa-regular fa-user"></i>@(Model.SelectedAuthor ?? "—")</span>
+                    <span><i class="fa-regular fa-calendar"></i>@WikiFormat.Date(sel.CreatedDate)</span>
+                    @if (!string.IsNullOrWhiteSpace(sel.Comment)) { <span><i class="fa-regular fa-comment"></i>@sel.Comment</span> }
+                </div>
+
+                <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:18px">
+                    <div class="wk-tabs" role="tablist">
+                        @if (Model.CompareWith.HasValue)
+                        {
+                            <a role="tab" class="@(mode == "diff" ? "is-on" : null)" href="/Wiki/History/@p.Id?v=@sel.VersionNumber">Что изменилось</a>
+                        }
+                        <a role="tab" class="@(mode == "view" ? "is-on" : null)" href="/Wiki/History/@p.Id?v=@sel.VersionNumber&view=1">Текст версии</a>
+                    </div>
+                    @if (Model.Versions.Count > 1)
+                    {
+                        <form method="get" action="/Wiki/History/@p.Id" class="wk-diff-legend">
+                            <input type="hidden" name="v" value="@sel.VersionNumber" />
+                            <label for="wkCompare">Сравнить с</label>
+                            <select id="wkCompare" class="wk-select" name="compare" style="height:34px;width:auto" onchange="this.form.submit()">
+                                @foreach (var v in Model.Versions.Where(x => x.VersionNumber != sel.VersionNumber))
+                                {
+                                    <option value="@v.VersionNumber" selected="@(v.VersionNumber == Model.CompareWith)">версией @v.VersionNumber (@WikiFormat.Date(v.CreatedDate).Split(' ')[0])</option>
+                                }
+                            </select>
+                        </form>
+                    }
+                </div>
+
+                <hr class="wk-divider" />
+
+                @if (mode == "diff" && Model.Diff != null)
+                {
+                    var added = Model.Diff.Count(d => d.Kind == WikiDiffKind.Added);
+                    var removed = Model.Diff.Count(d => d.Kind == WikiDiffKind.Removed);
+                    <div class="wk-diff-legend" style="margin-bottom:12px">
+                        <span class="wk-chip wk-chip-ok">+ @added добавлено</span>
+                        <span class="wk-chip wk-chip-stale">− @removed удалено</span>
+                        <span>Сравнение версий @Math.Min(sel.VersionNumber, Model.CompareWith!.Value) → @Math.Max(sel.VersionNumber, Model.CompareWith.Value), по абзацам</span>
+                    </div>
+                    @if (Model.TitleChanged)
+                    {
+                        <div class="wk-banner wk-banner-info" style="margin:0 0 12px"><i class="fa-solid fa-heading"></i><span>Заголовок изменён: «@Model.CompareTitle» ↔ «@sel.Title»</span></div>
+                    }
+                    @if (added == 0 && removed == 0)
+                    {
+                        <p class="wk-muted">Текст не менялся (могли измениться оформление, картинки или заголовок).</p>
+                    }
+                    else
+                    {
+                        <div class="wk-diff">
+                            @foreach (var line in Model.Diff)
+                            {
+                                <div class="@(line.Kind == WikiDiffKind.Added ? "is-add" : line.Kind == WikiDiffKind.Removed ? "is-del" : "is-same")">@line.Text</div>
+                            }
+                        </div>
+                    }
+                }
+                else
+                {
+                    <h2 style="font-size:24px;font-weight:800;margin-bottom:14px">@sel.Title</h2>
+                    <div class="wk-prose">@Html.Raw(WikiHtml.Sanitize(sel.ContentHtml))</div>
+                }
+            }
+        </article>
+    </div>
+
+    <partial name="_WikiDialogs" model="Model" />
+</div>
+
+@section Scripts {
+    <script src="~/js/wiki/wiki.js" asp-append-version="true"></script>
+}

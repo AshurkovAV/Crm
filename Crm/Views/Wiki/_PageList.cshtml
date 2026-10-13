@@ -1,0 +1,25 @@
+@model IEnumerable<WikiPageListItem>
+@{
+    var mode = ViewData["ListMode"] as string; // null | "review"
+}
+<ul class="wk-list">
+    @foreach (var p in Model)
+    {
+        <li>
+            <a href="/Wiki/Page/@p.Id">
+                <span class="wk-list-ico" aria-hidden="true">@WikiFormat.SectionIcon(p.SectionIcon)</span>
+                <span class="wk-list-body">
+                    <span class="wk-list-title">@p.Title</span>
+                    @if (mode == "review" && p.ReviewDueDate.HasValue)
+                    {
+                        <span class="wk-list-meta">@p.SectionName · проверить до @WikiFormat.Day(p.ReviewDueDate.Value)@(p.OwnerName != null ? " · " + p.OwnerName : "")</span>
+                    }
+                    else
+                    {
+                        <span class="wk-list-meta">@p.SectionName · @WikiFormat.Date(p.ModifiedDate)</span>
+                    }
+                </span>
+            </a>
+        </li>
+    }
+</ul>

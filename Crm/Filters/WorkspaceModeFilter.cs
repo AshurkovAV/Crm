@@ -38,7 +38,7 @@ namespace Crm.Filters
         {
             "Account", "Invite", "Invitation", "Profile", "Workspace", "Home", "Dashboard",
             "Tasks", "TaskData", "Project", "Projects", "ProjectData", "ProjectUserData",
-            "Workflows", "Vault", "VaultData", "Company", "Companies", "UserData",
+            "Workflows", "Vault", "VaultData", "Wiki", "Company", "Companies", "UserData",
             "Online", "StatusData", "YandexAuth", "VkAuth", "Email", "SendMail",
             "PublicTracking", "ContractorPortal", "Trash", "CrmSetup", "Test",
         };

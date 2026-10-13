@@ -26,6 +26,7 @@ namespace Crm.Navigation
                 new("home",      "Главная",  "fa-solid fa-house",        "/",          new[] { "Home", "Dashboard" }, Both),
                 new("tasks",     "Задачи",   "fa-solid fa-list-check",   "/Tasks",     new[] { "Tasks" },             Both),
                 new("projects",  "Проекты",  "fa-solid fa-folder",       "/Project",   new[] { "Project", "Projects" }, Both),
+                new("wiki",      "База знаний", "fa-solid fa-book",      "/Wiki",      new[] { "Wiki" },              Both),
                 new("workflows", "Потоки",   "fa-solid fa-diagram-project", "/Workflows", new[] { "Workflows" },     Both),
             }),
             new("Продажи", new List<NavItem>
