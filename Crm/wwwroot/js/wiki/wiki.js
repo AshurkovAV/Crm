@@ -581,6 +581,17 @@
                             '<button type="button" class="wk-icon-btn" data-delete title="Удалить" aria-label="Удалить"><i class="fa-regular fa-trash-can"></i></button>' : '') +
                         '</div></div>' + hist;
                 }).join('');
+                // Файл с расширением картинки, но не картинка: сервер отдаёт его только на скачивание
+                filesBox.querySelectorAll('.wk-file-thumb img').forEach(function (img) {
+                    img.addEventListener('error', function () {
+                        var card = img.closest('.wk-file');
+                        card.querySelectorAll('[data-preview]').forEach(function (el) {
+                            el.removeAttribute('data-preview');
+                            if (el.classList.contains('wk-file-thumb')) el.setAttribute('data-open', el.getAttribute('data-download'));
+                        });
+                        img.replaceWith(Object.assign(document.createElement('i'), { className: 'fa-regular fa-file' }));
+                    });
+                });
             }).catch(function () {
                 filesBox.innerHTML = '<div class="wk-empty-mini">Не удалось загрузить список файлов.</div>';
             });

@@ -19,16 +19,19 @@ namespace Crm.Controllers
         private readonly ICompanyRepository _companyRepository;
         private readonly IDashboardQueries _dashboardQueries;
         private readonly IWorkspaceService _workspaceService;
+        private readonly IWikiRepository _wikiRepository;
 
         public HomeController(
             ICompanyRepository companyRepository,
             IDashboardQueries dashboardQueries,
             IWorkspaceService workspaceService,
+            IWikiRepository wikiRepository,
             ILogger<HomeController> logger)
         {
             _companyRepository = companyRepository;
             _dashboardQueries = dashboardQueries;
             _workspaceService = workspaceService;
+            _wikiRepository = wikiRepository;
             _logger = logger;
         }
 
@@ -62,6 +65,18 @@ namespace Crm.Controllers
             {
                 // Дашборд не должен ронять главную: показываем пустые виджеты.
                 _logger.LogError(ex, "Не удалось загрузить данные главной для пользователя {UserId}", userId);
+            }
+
+            try
+            {
+                // База знаний: сколько страниц ждут проверки актуальности (бейдж на главной)
+                var wikiCtx = await _wikiRepository.GetContextAsync(userId);
+                if (wikiCtx != null)
+                    model.WikiStaleCount = (await _wikiRepository.GetStalePagesAsync(wikiCtx, DateTime.UtcNow)).Count;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Не удалось посчитать страницы базы знаний на проверку для {UserId}", userId);
             }
 
             var tone = 0;

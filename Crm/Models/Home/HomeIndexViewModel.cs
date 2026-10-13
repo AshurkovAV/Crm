@@ -16,6 +16,9 @@ namespace Crm.Models.Home
         public HomeDashboardData Data { get; set; } = new();
         public List<HomeTeamMemberView> Team { get; set; } = new();
 
+        /// <summary>Страницы базы знаний с истёкшим сроком проверки (для редакторов/ответственных).</summary>
+        public int WikiStaleCount { get; set; }
+
         public string GreetingName =>
             !string.IsNullOrWhiteSpace(Data.FirstName) ? Data.FirstName!.Trim()
             : !string.IsNullOrWhiteSpace(Data.DisplayName) ? Data.DisplayName!.Trim()

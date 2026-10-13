@@ -531,7 +531,7 @@ li.is-collapsed > ul { display: none; }
 .wk-file-history { grid-column: 1 / -1; font-size: 12.5px; color: var(--ui-muted); padding: 0 4px; }
 
 /* ---------- предпросмотр ---------- */
-.wk-viewer { width: min(1100px, 96vw); height: min(860px, 92vh); padding: 0; }
+.wk-dialog.wk-viewer { width: min(1100px, 96vw); height: min(860px, 92vh); max-height: 92vh; padding: 0; }
 .wk-viewer .wk-dialog-body { padding: 0; flex: 1; display: flex; background: #f4f5f8; min-height: 0; }
 .wk-viewer iframe { width: 100%; height: 100%; border: 0; background: #fff; }
 .wk-viewer img { max-width: 100%; max-height: 100%; margin: auto; display: block; object-fit: contain; }
@@ -595,6 +595,7 @@ li.is-collapsed > ul { display: none; }
 
 /* ---------- диалоги ---------- */
 .wk-dialog {
+    margin: auto;
     border: 0;
     padding: 0;
     border-radius: 20px;
@@ -721,7 +722,7 @@ li.is-collapsed > ul { display: none; }
 .wk-version-top { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 14px; }
 .wk-version small { color: var(--ui-muted); font-size: 12.5px; }
 .wk-version em { color: var(--ui-faint); font-size: 12px; font-style: normal; }
-.wk-diff { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13.5px; line-height: 1.55; border: 1px solid var(--ui-line); border-radius: 14px; overflow: hidden; }
+.wk-diff { font-family: var(--ui-font); font-size: 14px; line-height: 1.55; border: 1px solid var(--ui-line); border-radius: 14px; overflow: hidden; }
 .wk-diff div { padding: 3px 12px 3px 34px; position: relative; white-space: pre-wrap; overflow-wrap: anywhere; }
 .wk-diff div::before { position: absolute; left: 12px; color: var(--ui-faint); }
 .wk-diff .is-add { background: #ecfdf3; color: #14532d; }
@@ -952,4 +953,20 @@ li.is-collapsed > ul { display: none; }
     .wk-prose h1, .wk-prose h2, .wk-prose h3 { break-after: avoid; }
     .wk-prose table, .wk-prose img, .wk-prose div[data-callout] { break-inside: avoid; }
     .wk-prose div[data-callout] { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+/* ---------- блок статей в карточке задачи (/Tasks) ---------- */
+.wk-task-links { margin: 18px 0 6px; padding-top: 14px; border-top: 1px solid var(--ui-line2); font-family: var(--ui-font); color: var(--ui-ink); }
+.wk-task-links .wk-task { gap: 10px; }
+.wk-task-links .wk-task-meta { max-width: 40%; overflow: hidden; text-overflow: ellipsis; }
+.dx-popup-content .wk-task-links { margin-left: 24px; margin-right: 24px; padding-bottom: 12px; }
+@media (max-width: 640px) { .dx-popup-content .wk-task-links { margin-left: 12px; margin-right: 12px; } }
+
+/* таблицы и задачи на узких экранах */
+.wk-prose th, .wk-prose td { overflow-wrap: normal; word-break: normal; }
+@media (max-width: 640px) {
+    .wk-prose th, .wk-prose td { min-width: 130px; }
+    .wk-task { flex-wrap: wrap; row-gap: 4px; }
+    .wk-task-name { flex: 1 1 calc(100% - 30px); white-space: normal; }
+    .wk-task .wk-chip { margin-left: 26px; }
 }

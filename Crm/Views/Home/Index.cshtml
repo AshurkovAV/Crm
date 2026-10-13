@@ -106,6 +106,12 @@
                 <p>@m.Summary</p>
             </div>
             <div class="hm-head-actions">
+                @if (m.WikiStaleCount > 0)
+                {
+                    <a class="hm-btn hm-btn-wiki" href="/Wiki/Review" title="Страницы базы знаний с истёкшим сроком проверки">
+                        <i class="fa-solid fa-book"></i> Требуют проверки <span class="hm-badge">@m.WikiStaleCount</span>
+                    </a>
+                }
                 <a class="hm-btn" href="/Tasks"><i class="fa-solid fa-list-check"></i> Задачи</a>
                 @if (m.IsFull)
                 {
@@ -407,6 +413,8 @@
     .hm ul { list-style: none; }
     .hm a { color: inherit; text-decoration: none; }
 
+    .hm-btn-wiki { color: var(--hm-bad) !important; border-color: #f5c2c2; background: var(--hm-bad-s); }
+    .hm-badge { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--hm-bad); color: #fff; font-size: 11.5px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; }
     .hm-card { background: var(--hm-card); border: 1px solid var(--hm-line); border-radius: 20px; min-width: 0; }
     .hm-meta { color: var(--hm-muted); font-size: 12.5px; }
     .hm-bad { color: var(--hm-bad) !important; }

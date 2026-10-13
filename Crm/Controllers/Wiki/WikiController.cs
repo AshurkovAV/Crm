@@ -174,7 +174,8 @@ namespace Crm.Controllers
                         // Сравниваем «старую → новую» независимо от порядка параметров
                         var (older, newer) = other.VersionNumber < model.Selected.VersionNumber ? (other, model.Selected) : (model.Selected, other);
                         model.CompareWith = other.VersionNumber;
-                        model.Diff = WikiDiff.Compare(older.ContentText, newer.ContentText);
+                        // Текст берём из HTML заново, чтобы старые и новые версии извлекались одинаково
+                        model.Diff = WikiDiff.Compare(WikiHtml.ToPlainText(older.ContentHtml), WikiHtml.ToPlainText(newer.ContentHtml));
                         model.TitleChanged = older.Title != newer.Title;
                         model.CompareTitle = other.Title;
                     }

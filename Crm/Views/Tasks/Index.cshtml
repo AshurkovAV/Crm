@@ -1,8 +1,11 @@
 ﻿@using Crm.Entity.DTO
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 
 @{
     ViewData["Title"] = "Задачи";
 }
+
+<meta name="wiki-csrf" content="@Antiforgery.GetAndStoreTokens(Context).RequestToken" />
 
 <div class="content-top-bar">
     <h1 class="content-title">Мои задачи</h1>
@@ -380,11 +383,11 @@
                         b.Add().Name(GridColumnButtonName.Delete).Hint("Удалить").Icon("trash");
                     });
             })
-            .OnInitNewRow("function(e) { window.__taskFormIsNew = true; e.data.Status = 1; e.data.Priority = 'Средний'; }")
+            .OnInitNewRow("function(e) { window.__taskFormIsNew = true; e.data.Status = 1; e.data.Priority = 'Средний'; if (window.WikiTaskLinks) WikiTaskLinks.applyDraft(e.data); }")
             .OnEditingStart("function(e) { window.__taskFormIsNew = false; }")
             .OnContentReady("function(e) { updateStatistics(e.component); }")
             .OnRowUpdated("function(e) { updateStatistics(e.component); onTasksGridDataChanged(); }")
-            .OnRowInserted("function(e) { updateStatistics(e.component); onTasksGridDataChanged(); }")
+            .OnRowInserted("function(e) { updateStatistics(e.component); onTasksGridDataChanged(); if (window.WikiTaskLinks) WikiTaskLinks.clearDraft(); }")
             .OnRowRemoved("function(e) { updateStatistics(e.component); onTasksGridDataChanged(); }")
             .AllowColumnReordering(true)
             .AllowColumnResizing(true)
@@ -406,6 +409,7 @@
 
 
 @section Styles {
+    <link rel="stylesheet" href="~/css/wiki.css" asp-append-version="true" />
     <style>
         /* Глобальные стили */
         * {
@@ -910,6 +914,7 @@
 }
 
 @section Scripts {
+    <script src="~/js/wiki/task-links.js" asp-append-version="true"></script>
     <script>
         function getPriorityClass(priority) {
             return priority;
@@ -1317,6 +1322,9 @@
                 } else {
                     form.itemOption('extraFieldsGroup', 'visible', true);
                 }
+
+                // Статьи базы знаний, привязанные к задаче (wwwroot/js/wiki/task-links.js)
+                if (window.WikiTaskLinks) WikiTaskLinks.attach($form, form);
             } catch (err) {
                 console.error('onTaskPopupShown failed', err);
             }

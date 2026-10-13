@@ -35,6 +35,7 @@ namespace Crm.Controllers
         private IUserRepository _userRepository;
         private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly ITaskNotificationDispatcher _taskNotificationDispatcher;
+        private readonly IWikiRepository _wikiRepository;
 
         public TaskDataController(
             ILogger<TaskDataController> logger,
@@ -42,7 +43,8 @@ namespace Crm.Controllers
             IUserContextService userContextService,
             IUserRepository userRepository,
             IWebHostEnvironment webHostEnvironment,
-            ITaskNotificationDispatcher taskNotificationDispatcher)
+            ITaskNotificationDispatcher taskNotificationDispatcher,
+            IWikiRepository wikiRepository)
         {
             _logger = logger;
             _crmRepository = crmRepository;
@@ -50,6 +52,7 @@ namespace Crm.Controllers
             _userRepository = userRepository;
             _webHostEnvironment = webHostEnvironment;
             _taskNotificationDispatcher = taskNotificationDispatcher;
+            _wikiRepository = wikiRepository;
         }
 
         /// <summary>
@@ -236,6 +239,9 @@ namespace Crm.Controllers
             // ��������� � ����
             var result = _crmRepository.InsertTaskCrm(resultData.Data);
 
+            // «Создать задачу по странице» базы знаний: сразу привязываем статью к новой задаче
+            await LinkWikiPageAsync(values, result.Id, userId);
+
             await NotifyAssigneeAsync(resultData.Data, TaskNotificationKind.Created, new List<string>(), userId);
 
             HttpResponseMessage response = new HttpResponseMessage();
@@ -393,6 +399,30 @@ namespace Crm.Controllers
                 return BadRequest(ex.Message);
             }
         }
+        /// <summary>
+        /// Если задача создана со страницы базы знаний (в values есть WikiPageId), привязывает
+        /// статью к задаче. Доступ к статье проверяет репозиторий базы знаний; ошибки не ломают создание задачи.
+        /// </summary>
+        private async Task LinkWikiPageAsync(string values, int taskId, int? userId)
+        {
+            try
+            {
+                if (taskId <= 0 || !userId.HasValue)
+                    return;
+                var json = JObject.Parse(values);
+                if (json.TryGetValue("WikiPageId", out var token) && token.Type == JTokenType.Integer)
+                {
+                    var ctx = await _wikiRepository.GetContextAsync(userId.Value);
+                    if (ctx != null)
+                        await _wikiRepository.LinkTaskAsync(ctx, token.Value<int>(), taskId);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Не удалось привязать статью базы знаний к задаче {TaskId}", taskId);
+            }
+        }
+
         private int? GetUserId()
         {
             var value = User.FindFirstValue(ClaimTypes.NameIdentifier);

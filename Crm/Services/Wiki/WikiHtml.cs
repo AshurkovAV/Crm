@@ -170,7 +170,18 @@ namespace Crm.Services.Wiki
             var lines = sb.ToString()
                 .Split('\n')
                 .Select(l => Regex.Replace(l, @"[ \t ]+", " ").Trim())
-                .Where(l => l.Length > 0);
+                .Where(l => l.Length > 0)
+                .ToList();
+
+            // Отметка пункта чек-листа и его текст (внутри li есть блоки) — в одну строку
+            for (var i = lines.Count - 2; i >= 0; i--)
+            {
+                if (lines[i] is "[x]" or "[ ]")
+                {
+                    lines[i] = lines[i] + " " + lines[i + 1];
+                    lines.RemoveAt(i + 1);
+                }
+            }
             return string.Join("\n", lines);
         }
 
@@ -202,14 +213,22 @@ namespace Crm.Services.Wiki
                 if (name == "input")
                     continue;
 
+                if (name == "tr")
+                {
+                    // Строка таблицы — одной строкой текста: «ячейка | ячейка | ячейка»
+                    var cells = element.Children
+                        .Where(c => c.LocalName is "td" or "th")
+                        .Select(c => Regex.Replace(c.TextContent, @"\s+", " ").Trim());
+                    sb.Append('\n').Append(string.Join(" | ", cells)).Append('\n');
+                    continue;
+                }
+
                 var isBlock = BlockTags.Contains(name);
                 if (isBlock)
                     sb.Append('\n');
 
                 if (name == "li" && element.GetAttribute("data-type") == "taskItem")
                     sb.Append(element.GetAttribute("data-checked") == "true" ? "[x] " : "[ ] ");
-                if (name is "td" or "th")
-                    sb.Append(" | ");
                 if (name == "hr")
                     sb.Append("———");
 
