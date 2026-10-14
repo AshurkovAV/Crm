@@ -364,3 +364,7 @@ FodyWeavers.xsd
 # Загруженные фото профиля (AvatarStorage)
 Crm/App_Data/avatars/
 Crm/App_Data/wiki/
+
+# Секреты сервера (строка подключения, SMTP, MAX, Yandex) — только локально
+**/appsettings.Production.json
+**/appsettings.Local.json
