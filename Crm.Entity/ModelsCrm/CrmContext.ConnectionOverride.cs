@@ -9,4 +9,17 @@ public partial class CrmContext
     /// </summary>
     private static readonly string? ConnectionStringOverride =
         Environment.GetEnvironmentVariable("CRM_DB_CONNECTION") is { Length: > 0 } value ? value : null;
+
+    /// <summary>
+    /// Строка подключения из конфигурации (ConnectionStrings:Crm) — выставляется в Program.cs при старте.
+    /// В исходниках пароля к базе нет: задайте её в appsettings.Production.json / appsettings.Development.json
+    /// на своей машине (не коммитить) или переменной окружения ConnectionStrings__Crm.
+    /// </summary>
+    public static string? ConfiguredConnectionString { get; set; }
+
+    private static string ResolveConnectionString() =>
+        ConnectionStringOverride
+        ?? ConfiguredConnectionString
+        ?? throw new InvalidOperationException(
+            "Не задана строка подключения ConnectionStrings:Crm (appsettings.Production.json или переменная окружения ConnectionStrings__Crm).");
 }

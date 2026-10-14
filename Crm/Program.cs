@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+Crm.Entity.ModelsCrm.CrmContext.ConfiguredConnectionString = builder.Configuration.GetConnectionString("Crm");
 
 // Add services to the container.
 builder.Services.AddControllersWithViews(options =>

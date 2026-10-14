@@ -2,6 +2,7 @@
 using Crm.Services.Notifications;
 using System.Net.Mail;
 using System.Net;
+using Crm.Application.Features.Email.Services;
 
 namespace Crm.Services.Email
 {
@@ -843,7 +844,13 @@ namespace Crm.Services.Email
         {
             try
             {
-                var from = new MailAddress(mail.EmailFrom, "Crm.System");
+                var smtp = SmtpSettings.Read(_configuration);
+                if (!smtp.IsConfigured)
+                {
+                    _logger.LogError("Почта не настроена: задайте Notifications:Smtp (Host, User, Password, From) — письмо на {EmailTo} не отправлено", mail.EmailTo);
+                    return false;
+                }
+                var from = new MailAddress(smtp.From, smtp.FromName);
                 var to = new MailAddress(mail.EmailTo, "client");
 
                 using var message = new MailMessage(from, to)
@@ -859,12 +866,12 @@ namespace Crm.Services.Email
                     message.AlternateViews.Add(AlternateView.CreateAlternateViewFromString(mail.EmailBody, System.Text.Encoding.UTF8, "text/html"));
                 }
 
-                using var smtpClient = new SmtpClient("smtp.yandex.ru", 587)
+                using var smtpClient = new SmtpClient(smtp.Host, smtp.Port)
                 {
-                    EnableSsl = true,
+                    EnableSsl = smtp.EnableSsl,
                     DeliveryMethod = SmtpDeliveryMethod.Network,
                     UseDefaultCredentials = false,
-                    Credentials = new NetworkCredential(from.Address, "kfoavuebmrejiwzr")
+                    Credentials = new NetworkCredential(smtp.User, smtp.Password)
                 };
 
                 await smtpClient.SendMailAsync(message);

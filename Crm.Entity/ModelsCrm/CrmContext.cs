@@ -90,8 +90,7 @@ public partial class CrmContext : DbContext
     public virtual DbSet<VerificationToken> VerificationTokens { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer(ConnectionStringOverride ?? "Server=OMSIT;Database=crm;User ID=sa;Password=12345678;encrypt=false");
+        => optionsBuilder.UseSqlServer(ResolveConnectionString());
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
