@@ -236,10 +236,8 @@ public class ProductionTaskDataController : Controller
             };
         }
 
-        var webRoot = _webHostEnvironment.WebRootPath;
         var folderRelative = Path.Combine("uploads", "production", id.ToString());
-        var folderAbsolute = Path.Combine(webRoot, folderRelative);
-        Directory.CreateDirectory(folderAbsolute);
+        var folderAbsolute = HttpContext.RequestServices.GetRequiredService<Crm.Services.StoragePaths>().Uploads("production", id.ToString());
 
         var fileName = $"{Guid.NewGuid():N}{extension}";
         var fullPath = Path.Combine(folderAbsolute, fileName);

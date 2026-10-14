@@ -19,12 +19,10 @@ namespace Crm.Services
 
         private readonly string _directory;
 
-        public AvatarStorage(IWebHostEnvironment environment, IConfiguration configuration)
+        public AvatarStorage(StoragePaths paths)
         {
-            var configured = configuration["Avatars:StoragePath"];
-            _directory = string.IsNullOrWhiteSpace(configured)
-                ? Path.Combine(environment.ContentRootPath, "App_Data", "avatars")
-                : Path.GetFullPath(configured, environment.ContentRootPath);
+            // Avatars:StoragePath, иначе {Storage:Root}\avatars, иначе App_Data\avatars — см. StoragePaths.
+            _directory = paths.AvatarsDirectory;
             Directory.CreateDirectory(_directory);
         }
 

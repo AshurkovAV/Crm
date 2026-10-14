@@ -86,8 +86,7 @@ namespace Crm.Controllers
                 _ => ".jpg"
             };
 
-            var folderAbsolute = Path.Combine(_webHostEnvironment.WebRootPath, "uploads", "tasks");
-            Directory.CreateDirectory(folderAbsolute);
+            var folderAbsolute = HttpContext.RequestServices.GetRequiredService<Crm.Services.StoragePaths>().Uploads("tasks");
 
             var fileName = $"{Guid.NewGuid():N}{extension}";
             var fullPath = Path.Combine(folderAbsolute, fileName);

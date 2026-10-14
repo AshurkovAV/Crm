@@ -68,6 +68,7 @@ builder.Services.AddScoped<IEmailService,                EmailService>();
 builder.Services.AddScoped<ITaskNotificationChannel,     OutboxTaskNotificationChannel>();
 builder.Services.AddScoped<ITaskNotificationDispatcher,  TaskNotificationDispatcher>();
 builder.Services.AddScoped<UserService>();
+builder.Services.AddSingleton<StoragePaths>();
 builder.Services.AddSingleton<AvatarStorage>();
 builder.Services.AddScoped<Crm.Services.Workspace.IWorkspaceService, Crm.Services.Workspace.WorkspaceService>();
 
@@ -584,6 +585,11 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts(); // HTTP Strict Transport Security
 }
+
+// Загруженные файлы — вне папки публикации, если задан Storage:Root (см. StoragePaths).
+var storagePaths = app.Services.GetRequiredService<StoragePaths>();
+storagePaths.CopyLegacyFiles(app.Logger);
+storagePaths.UseExternalUploads(app);
 
 app.UseStaticFiles();
 app.UseRouting();

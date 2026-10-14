@@ -92,8 +92,8 @@ namespace Crm.Controllers
                 return BadRequest("Можно загружать только изображения");
 
             // Сохраняем файл
-            var fileName = $"{Guid.NewGuid()}_{file.FileName}";
-            var filePath = Path.Combine("wwwroot/uploads/avatars", fileName);
+            var fileName = $"{Guid.NewGuid()}_{Path.GetFileName(file.FileName)}";
+            var filePath = Path.Combine(HttpContext.RequestServices.GetRequiredService<Crm.Services.StoragePaths>().Uploads("avatars"), fileName);
 
             using (var stream = new FileStream(filePath, FileMode.Create))
             {

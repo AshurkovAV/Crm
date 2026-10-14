@@ -35,12 +35,10 @@ namespace Crm.Services.Wiki
 
         private readonly string _root;
 
-        public WikiFileStorage(IWebHostEnvironment environment, IConfiguration configuration)
+        public WikiFileStorage(StoragePaths paths, IConfiguration configuration)
         {
-            var configured = configuration["Wiki:StoragePath"];
-            _root = string.IsNullOrWhiteSpace(configured)
-                ? Path.Combine(environment.ContentRootPath, "App_Data", "wiki")
-                : Path.GetFullPath(configured, environment.ContentRootPath);
+            // Wiki:StoragePath, иначе {Storage:Root}\wiki, иначе App_Data\wiki — см. StoragePaths.
+            _root = paths.WikiDirectory;
 
             var maxMb = configuration.GetValue<long?>("Wiki:MaxFileSizeMb");
             MaxFileSizeBytes = maxMb is > 0 ? maxMb.Value * 1024 * 1024 : DefaultMaxFileSizeBytes;
