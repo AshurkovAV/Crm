@@ -19,6 +19,7 @@ function init(host) {
     const statusEl = host.querySelector('[data-editor-status]');
     const saveBtn = host.querySelector('[data-editor-save]');
     const imageInput = host.querySelector('[data-editor-image-input]');
+    const notifyBox = host.querySelector('[data-editor-notify]');
     const initialHtml = host.querySelector('[data-editor-initial]').innerHTML;
     const draftKey = 'wiki-draft-' + pageId;
 
@@ -488,7 +489,7 @@ function init(host) {
         saveBtn.disabled = true;
         setStatus('Сохраняю…');
         W.api('/Wiki/api/pages/' + pageId + '/save', {
-            body: { BaseVersion: baseVersion, Force: !!force, Title: title, Html: editor.getHTML(), Json: editor.getJSON() },
+            body: { BaseVersion: baseVersion, Force: !!force, Title: title, Html: editor.getHTML(), Json: editor.getJSON(), Notify: !!(notifyBox && notifyBox.checked) },
         }).then(() => {
             dirty = false;
             clearDraft();

@@ -617,40 +617,7 @@ li.is-collapsed > ul { display: none; }
 .wk-row { display: flex; gap: 10px; }
 .wk-row > * { flex: 1; min-width: 0; }
 
-.wk-emoji-row { display: flex; flex-wrap: wrap; gap: 6px; }
-.wk-emoji {
-    width: 40px;
-    height: 40px;
-    border-radius: 11px;
-    border: 1px solid var(--ui-line);
-    background: #fff;
-    font-size: 20px;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-.wk-emoji:hover { background: #f6f7fb; }
-.wk-emoji.is-on { border-color: var(--ui-acc); box-shadow: 0 0 0 3px var(--ui-acc-s); }
 
-.wk-templates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-.wk-template {
-    display: flex;
-    gap: 10px;
-    align-items: flex-start;
-    padding: 10px 12px;
-    border-radius: 14px;
-    border: 1px solid var(--ui-line);
-    cursor: pointer;
-    background: #fff;
-    text-align: left;
-    font: inherit;
-}
-.wk-template:hover { border-color: #c7cbf5; }
-.wk-template.is-on { border-color: var(--ui-acc); box-shadow: 0 0 0 3px var(--ui-acc-s); }
-.wk-template i { color: var(--ui-acc); margin-top: 3px; width: 18px; text-align: center; }
-.wk-template b { display: block; font-size: 14px; }
-.wk-template small { color: var(--ui-faint); font-size: 12px; line-height: 1.35; }
 
 .wk-radio-group { display: flex; flex-direction: column; gap: 8px; }
 .wk-radio {
@@ -970,3 +937,173 @@ li.is-collapsed > ul { display: none; }
     .wk-task-name { flex: 1 1 calc(100% - 30px); white-space: normal; }
     .wk-task .wk-chip { margin-left: 26px; }
 }
+
+/* =====================================================================
+   Значки разделов: линейная иконка в скруглённой плитке с мягким фоном
+   ===================================================================== */
+.wk-tile {
+    --tile-fg: #4f46e5;
+    --tile-bg: #eef0ff;
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    background: var(--tile-bg);
+    color: var(--tile-fg);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    font-size: 19px;
+    line-height: 1;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tile-fg) 12%, transparent);
+}
+.wk-tile-xs { width: 20px; height: 20px; border-radius: 6px; font-size: 10px; }
+.wk-tile-sm { width: 30px; height: 30px; border-radius: 9px; font-size: 13px; }
+.wk-tile-md { width: 38px; height: 38px; border-radius: 11px; font-size: 16px; }
+.wk-tile-lg { width: 52px; height: 52px; border-radius: 15px; font-size: 22px; }
+.wk-tile-xl { width: 64px; height: 64px; border-radius: 18px; font-size: 27px; }
+.wk-title-with-tile { display: flex; align-items: center; gap: 14px; }
+
+/* ---------- карточки разделов на главной базы знаний ---------- */
+.wk-section-card { padding: 20px; gap: 12px; min-height: 176px; transition: border-color .15s, box-shadow .2s, transform .2s; }
+.wk-section-card:hover { transform: translateY(-2px); border-color: #d6d9f6; box-shadow: 0 14px 32px rgba(15, 23, 42, .07); }
+.wk-section-card .wk-tile { width: 48px; height: 48px; border-radius: 15px; font-size: 20px; }
+.wk-section-card:hover .wk-tile { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tile-fg) 25%, transparent); }
+.wk-section-name { font-size: 17px; letter-spacing: -.1px; }
+.wk-section-meta { gap: 6px; font-size: 12.5px; color: var(--ui-muted); }
+.wk-section-meta .wk-meta-dot { width: 3px; height: 3px; border-radius: 50%; background: #c3c8d3; }
+.wk-section-add { min-height: 176px; flex-direction: column; gap: 10px; }
+.wk-section-add .wk-tile { background: #fff; color: var(--ui-muted); box-shadow: inset 0 0 0 1px var(--ui-line); }
+.wk-section-add:hover .wk-tile { background: var(--ui-acc-s); color: var(--ui-acc); }
+.wk-list a .wk-tile { margin-right: 2px; }
+.wk-side-section .wk-tile { flex: none; }
+.wk-result-path .wk-tile { margin-right: 2px; }
+
+/* ---------- диалог «Новый раздел»: выбор значка ---------- */
+.wk-icon-picker {
+    display: grid;
+    grid-template-columns: 150px minmax(0, 1fr);
+    grid-template-areas: "preview icons" "preview colors";
+    gap: 12px 16px;
+    padding: 14px;
+    border: 1px solid var(--ui-line);
+    border-radius: 16px;
+    background: #fbfbfd;
+}
+.wk-icon-preview {
+    grid-area: preview;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px 8px;
+    border-radius: 14px;
+    background: #fff;
+    border: 1px solid var(--ui-line2);
+    text-align: center;
+}
+.wk-icon-preview-name { font-weight: 800; font-size: 14px; line-height: 1.25; overflow-wrap: anywhere; }
+.wk-icon-grid { grid-area: icons; display: grid; grid-template-columns: repeat(auto-fill, minmax(38px, 1fr)); gap: 6px; }
+.wk-icon-opt {
+    height: 38px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--ui-ink2);
+    font-size: 15px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .12s, color .12s;
+}
+.wk-icon-opt:hover { background: #eef0f4; color: var(--ui-ink); }
+.wk-icon-opt.is-on { background: var(--pick-bg, var(--ui-acc-s)); color: var(--pick-fg, var(--ui-acc)); border-color: color-mix(in srgb, var(--pick-fg, #4f46e5) 35%, transparent); }
+.wk-color-row { grid-area: colors; display: flex; flex-wrap: wrap; gap: 8px; padding-top: 4px; border-top: 1px dashed var(--ui-line); }
+.wk-color-opt {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 0;
+    background: var(--sw);
+    cursor: pointer;
+    box-shadow: 0 0 0 2px #fff, 0 0 0 3px transparent;
+    margin-top: 6px;
+    transition: box-shadow .12s, transform .12s;
+}
+.wk-color-opt:hover { transform: scale(1.08); }
+.wk-color-opt.is-on { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--sw); }
+
+/* ---------- диалог «Новая страница» ---------- */
+.wk-dialog.wk-dialog-wide { width: min(860px, calc(100vw - 24px)); }
+.wk-dialog-head .wk-dialog-titles { flex: 1; min-width: 0; }
+.wk-dialog-head .wk-dialog-titles h2 { flex: none; }
+.wk-dialog-sub { margin: 2px 0 0; color: var(--ui-muted); font-size: 13px; }
+.wk-tpl-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: stretch; }
+.wk-templates { display: flex; flex-direction: column; gap: 6px; }
+.wk-template {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: 14px;
+    border: 1px solid var(--ui-line);
+    background: #fff;
+    cursor: pointer;
+    text-align: left;
+    font: inherit;
+    color: var(--ui-ink);
+    transition: border-color .12s, background .12s, box-shadow .12s;
+}
+.wk-template:hover { border-color: #cdd1f3; background: #fbfbff; }
+.wk-template.is-on { border-color: var(--ui-acc); box-shadow: 0 0 0 3px var(--ui-acc-s); background: #fff; }
+.wk-template-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.wk-template-text b { font-size: 14.5px; font-weight: 800; }
+.wk-template-text small { color: var(--ui-muted); font-size: 12.5px; line-height: 1.35; }
+.wk-template-check { color: var(--ui-acc); font-size: 17px; opacity: 0; transition: opacity .12s; }
+.wk-template.is-on .wk-template-check { opacity: 1; }
+.wk-tpl-preview {
+    border-radius: 16px;
+    background: linear-gradient(180deg, #f4f5fb, #eef0f6);
+    border: 1px solid var(--ui-line2);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+}
+.wk-tpl-preview-head { font-size: 11.5px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; color: var(--ui-faint); display: flex; gap: 6px; align-items: center; }
+.wk-tpl-paper {
+    flex: 1;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, .06);
+    padding: 16px 16px 0;
+    height: 340px;
+    overflow: hidden;
+    position: relative;
+}
+.wk-tpl-paper::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 60px; background: linear-gradient(transparent, #fff); }
+.wk-tpl-title { font-size: 16px; font-weight: 800; margin-bottom: 8px; letter-spacing: -.2px; }
+.wk-tpl-body.wk-prose { font-size: 11px; line-height: 1.5; pointer-events: none; }
+.wk-tpl-body.wk-prose h2 { font-size: 13px; margin-top: 1em; }
+.wk-tpl-body.wk-prose div[data-callout] { padding: 6px 8px 6px 26px; border-radius: 8px; }
+.wk-tpl-body.wk-prose div[data-callout]::before { left: 8px; top: 6px; font-size: 10px; }
+.wk-tpl-body.wk-prose th, .wk-tpl-body.wk-prose td { padding: 3px 6px; font-size: 10.5px; min-width: 0; }
+.wk-tpl-body.wk-prose ul[data-type="taskList"] li > label input { width: 11px; height: 11px; }
+
+@media (max-width: 760px) {
+    .wk-tpl-layout { grid-template-columns: minmax(0, 1fr); }
+    .wk-tpl-preview { display: none; }
+    .wk-icon-picker { grid-template-columns: minmax(0, 1fr); grid-template-areas: "preview" "icons" "colors"; }
+    .wk-icon-preview { flex-direction: row; justify-content: flex-start; padding: 10px; }
+    .wk-icon-preview .wk-tile-xl { width: 48px; height: 48px; font-size: 20px; border-radius: 14px; }
+}
+
+/* «Уведомить сотрудников» в панели сохранения редактора */
+.wk-notify { display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 700; color: var(--ui-ink2); cursor: pointer; padding: 0 6px; user-select: none; }
+.wk-notify input { width: 17px; height: 17px; accent-color: var(--ui-acc); margin: 0; }
+.wk-notify i { color: var(--ui-muted); }
+@media (max-width: 640px) { .wk-notify { order: -1; width: 100%; } }
+#wkSectionDialog { width: min(640px, calc(100vw - 24px)); }

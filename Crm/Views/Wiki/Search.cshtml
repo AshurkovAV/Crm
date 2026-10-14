@@ -33,7 +33,7 @@
             @foreach (var r in Model.Results)
             {
                 <a class="wk-result" href="/Wiki/Page/@r.Hit.PageId">
-                    <span class="wk-result-path"><span aria-hidden="true">@WikiFormat.SectionIcon(r.Hit.SectionIcon)</span>@r.Hit.SectionName · @WikiFormat.Date(r.Hit.ModifiedDate)</span>
+                    <span class="wk-result-path">@WikiFormat.Tile(r.Hit.SectionIcon, r.Hit.SectionColor, "xs")@r.Hit.SectionName · @WikiFormat.Date(r.Hit.ModifiedDate)</span>
                     <span class="wk-result-title">@Html.Raw(r.TitleHtml)</span>
                     @if (!string.IsNullOrEmpty(r.ExcerptHtml))
                     {

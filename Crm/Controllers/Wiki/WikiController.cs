@@ -30,12 +30,15 @@ namespace Crm.Controllers
         private readonly IWikiRepository _wiki;
         private readonly WikiFileStorage _files;
         private readonly ILogger<WikiController> _logger;
+        private readonly Crm.Services.Notifications.INotificationQueue _notifications;
 
-        public WikiController(IWikiRepository wiki, WikiFileStorage files, ILogger<WikiController> logger)
+        public WikiController(IWikiRepository wiki, WikiFileStorage files, ILogger<WikiController> logger,
+            Crm.Services.Notifications.INotificationQueue notifications)
         {
             _wiki = wiki;
             _files = files;
             _logger = logger;
+            _notifications = notifications;
         }
 
         // =====================================================================
@@ -282,7 +285,7 @@ namespace Crm.Controllers
         // API: разделы и редакторы (только руководители)
         // =====================================================================
 
-        public record SectionRequest(string? Name, string? Icon, string? Description);
+        public record SectionRequest(string? Name, string? Icon, string? Color, string? Description);
 
         [HttpPost("api/sections")]
         public async Task<IActionResult> CreateSection([FromBody] SectionRequest request)
@@ -295,7 +298,7 @@ namespace Crm.Controllers
             if (string.IsNullOrWhiteSpace(request.Name))
                 return BadRequest(new { message = "Укажите название раздела." });
 
-            var section = await _wiki.CreateSectionAsync(ctx, request.Name, request.Icon, request.Description);
+            var section = await _wiki.CreateSectionAsync(ctx, request.Name, request.Icon, request.Color, request.Description);
             return section == null ? Denied() : Json(new { section.Id, Url = $"/Wiki/Section/{section.Id}" });
         }
 
@@ -310,7 +313,7 @@ namespace Crm.Controllers
             if (string.IsNullOrWhiteSpace(request.Name))
                 return BadRequest(new { message = "Укажите название раздела." });
 
-            return await _wiki.UpdateSectionAsync(ctx, id, request.Name, request.Icon, request.Description) ? Ok(new { ok = true }) : NotFound();
+            return await _wiki.UpdateSectionAsync(ctx, id, request.Name, request.Icon, request.Color, request.Description) ? Ok(new { ok = true }) : NotFound();
         }
 
         [HttpPost("api/sections/{id:int}/delete")]
@@ -438,7 +441,8 @@ namespace Crm.Controllers
             };
         }
 
-        public record SavePageRequest(int BaseVersion, bool Force, string? Title, string? Html, JsonElement? Json);
+        /// <param name="Notify">«Уведомить сотрудников»: по умолчанию включено для новой страницы, выключено для правок.</param>
+        public record SavePageRequest(int BaseVersion, bool Force, string? Title, string? Html, JsonElement? Json, bool Notify = false);
 
         [HttpPost("api/pages/{id:int}/save")]
         [RequestSizeLimit(8 * 1024 * 1024)]
@@ -455,6 +459,19 @@ namespace Crm.Controllers
             var html = WikiHtml.Sanitize(request.Html);
             var json = request.Json is { ValueKind: JsonValueKind.Object } element ? element.GetRawText() : null;
             var result = await _wiki.SavePageAsync(ctx, id, request.BaseVersion, request.Force, title, json, html, WikiHtml.ToPlainText(html));
+            if (result.Status == WikiSaveStatus.Ok && request.Notify && result.Version != request.BaseVersion)
+            {
+                // Рассылка читателям раздела — фоном, дайджестом (см. WikiDigestBuilder)
+                try
+                {
+                    await _notifications.AddWikiEventAsync(ctx.CompanyId, id, ctx.UserId, isUpdate: request.BaseVersion > 1);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Не удалось поставить уведомление о странице {PageId}", id);
+                }
+            }
+
             return result.Status switch
             {
                 WikiSaveStatus.Ok => Json(new { ok = true, result.Version }),
@@ -592,10 +609,10 @@ namespace Crm.Controllers
             else
             {
                 var hits = await _wiki.SearchAsync(ctx, q, 15);
-                items = hits.Select(h => new WikiPageListItem { Id = h.PageId, Title = h.Title, SectionId = h.SectionId, SectionName = h.SectionName, SectionIcon = h.SectionIcon }).ToList();
+                items = hits.Select(h => new WikiPageListItem { Id = h.PageId, Title = h.Title, SectionId = h.SectionId, SectionName = h.SectionName, SectionIcon = h.SectionIcon, SectionColor = h.SectionColor }).ToList();
             }
 
-            return Json(items.Select(i => new { i.Id, i.Title, i.SectionName, SectionIcon = WikiFormat.SectionIcon(i.SectionIcon), Url = $"/Wiki/Page/{i.Id}" }));
+            return Json(items.Select(i => new { i.Id, i.Title, i.SectionName, Tile = WikiFormat.TileData(i.SectionIcon, i.SectionColor), Url = $"/Wiki/Page/{i.Id}" }));
         }
 
         // =====================================================================
@@ -753,7 +770,7 @@ namespace Crm.Controllers
             var pages = await _wiki.GetLinkedPagesForTaskAsync(ctx, taskId);
             if (pages == null)
                 return NotFound();
-            return Json(pages.Select(p => new { p.Id, p.Title, p.SectionName, SectionIcon = WikiFormat.SectionIcon(p.SectionIcon), Url = $"/Wiki/Page/{p.Id}" }));
+            return Json(pages.Select(p => new { p.Id, p.Title, p.SectionName, Tile = WikiFormat.TileData(p.SectionIcon, p.SectionColor), Url = $"/Wiki/Page/{p.Id}" }));
         }
 
         public record TaskLinkRequest(int PageId);
@@ -832,7 +849,7 @@ namespace Crm.Controllers
             var crumbs = new List<WikiCrumb>
             {
                 new("База знаний", "/Wiki"),
-                new($"{WikiFormat.SectionIcon(section.Icon)} {section.Name}", $"/Wiki/Section/{section.Id}"),
+                new(section.Name, $"/Wiki/Section/{section.Id}"),
             };
             var byId = tree.ToDictionary(t => t.Id);
             var chain = new List<WikiTreeItem>();

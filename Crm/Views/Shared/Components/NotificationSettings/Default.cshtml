@@ -1,0 +1,81 @@
+@model Crm.Controllers.NotificationSettingsState
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+@{
+    var token = Antiforgery.GetAndStoreTokens(Context).RequestToken;
+    var maxState = !Model.MaxConfigured ? "off" : Model.MaxLinked ? "linked" : "unlinked";
+}
+<link rel="stylesheet" href="~/css/notifications.css" asp-append-version="true" />
+<section class="pf-card nt-card" id="notificationSettings" data-csrf="@token" data-max-state="@maxState">
+    <div class="nt-head">
+        <span class="nt-tile" style="--tile-fg:#4f46e5;--tile-bg:#eef0ff" aria-hidden="true"><i class="fa-regular fa-bell"></i></span>
+        <div>
+            <h2 class="nt-title">Уведомления</h2>
+            <p class="nt-sub">Куда сообщать о новых задачах и статьях базы знаний</p>
+        </div>
+    </div>
+
+    <div class="nt-max" data-max-block>
+        <span class="nt-tile nt-tile-max" aria-hidden="true"><i class="fa-regular fa-paper-plane"></i></span>
+        <div class="nt-max-body">
+            <b>Мессенджер MAX</b>
+            <span class="nt-max-status" data-max-status>
+                @if (!Model.MaxConfigured)
+                {
+                    <text>Бот MAX ещё не настроен администратором сервера.</text>
+                }
+                else if (Model.MaxLinked)
+                {
+                    <text><i class="fa-solid fa-circle-check" style="color:#15803d"></i> Подключён@(Model.MaxLinkedAt.HasValue ? " " + Model.MaxLinkedAt.Value.ToLocalTime().ToString("dd.MM.yyyy") : "")@(Model.BotName != null ? " · @" + Model.BotName : "")</text>
+                }
+                else
+                {
+                    <text>Не подключён — сообщения будут приходить в личный чат с ботом@(Model.BotName != null ? " @" + Model.BotName : "").</text>
+                }
+            </span>
+        </div>
+        @if (Model.MaxConfigured)
+        {
+            <button type="button" class="nt-btn @(Model.MaxLinked ? "" : "nt-btn-pri")" data-max-action="@(Model.MaxLinked ? "unlink" : "link")" @(Model.CanLink || Model.MaxLinked ? null : "disabled")>
+                @(Model.MaxLinked ? "Отключить" : "Подключить MAX")
+            </button>
+        }
+    </div>
+    <div class="nt-link" data-max-link hidden>
+        <p>Откройте ссылку на телефоне или в MAX для компьютера и нажмите «Начать». Ссылка действует <b data-max-minutes>15</b> минут.</p>
+        <div class="nt-link-row">
+            <a class="nt-btn nt-btn-pri" data-max-open target="_blank" rel="noopener"><i class="fa-solid fa-arrow-up-right-from-square"></i>Открыть MAX</a>
+            <button type="button" class="nt-btn" data-max-copy><i class="fa-regular fa-copy"></i>Скопировать ссылку</button>
+            <button type="button" class="nt-btn nt-btn-ghost" data-max-check>Я подключил — проверить</button>
+        </div>
+    </div>
+
+    <div class="nt-table" role="table" aria-label="Каналы уведомлений">
+        <div class="nt-row nt-row-head" role="row">
+            <span role="columnheader">Событие</span>
+            <span role="columnheader"><i class="fa-regular fa-envelope"></i> Почта</span>
+            <span role="columnheader"><i class="fa-regular fa-paper-plane"></i> MAX</span>
+        </div>
+        <div class="nt-row" role="row">
+            <span class="nt-event" role="cell"><b>Задачи</b><small>Вам назначили задачу или изменили назначенную</small></span>
+            <label class="nt-switch" role="cell"><input type="checkbox" data-pref="TaskEmail" @(Model.TaskEmail ? "checked" : null) aria-label="Задачи — почта"><span></span></label>
+            <label class="nt-switch" role="cell"><input type="checkbox" data-pref="TaskMax" @(Model.TaskMax ? "checked" : null) aria-label="Задачи — MAX" data-max-pref><span></span></label>
+        </div>
+        <div class="nt-row" role="row">
+            <span class="nt-event" role="cell"><b>База знаний</b><small>Новые статьи и важные обновления в доступных вам разделах</small></span>
+            <label class="nt-switch" role="cell"><input type="checkbox" data-pref="WikiEmail" @(Model.WikiEmail ? "checked" : null) aria-label="База знаний — почта"><span></span></label>
+            <label class="nt-switch" role="cell"><input type="checkbox" data-pref="WikiMax" @(Model.WikiMax ? "checked" : null) aria-label="База знаний — MAX" data-max-pref><span></span></label>
+        </div>
+    </div>
+    <p class="nt-foot">
+        @if (string.IsNullOrWhiteSpace(Model.Email))
+        {
+            <text><i class="fa-solid fa-triangle-exclamation" style="color:#b45309"></i> В профиле не указана почта — письма отправлять некуда.</text>
+        }
+        else
+        {
+            <text>Письма приходят на <b>@Model.Email</b>.</text>
+        }
+        <span class="nt-saved" data-saved hidden><i class="fa-solid fa-check"></i> Сохранено</span>
+    </p>
+</section>
+<script src="~/js/notifications/settings.js" asp-append-version="true"></script>

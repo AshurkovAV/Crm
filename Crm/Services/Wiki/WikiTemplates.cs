@@ -2,7 +2,7 @@ using System.Text;
 
 namespace Crm.Services.Wiki
 {
-    public sealed record WikiTemplate(string Key, string Title, string Icon, string Description, string Html);
+    public sealed record WikiTemplate(string Key, string Title, string Icon, string Description, string Html, string Color = "slate");
 
     /// <summary>
     /// Шаблоны новой страницы. HTML в том же формате, что сохраняет редактор (Tiptap),
@@ -12,9 +12,9 @@ namespace Crm.Services.Wiki
     {
         public static readonly IReadOnlyList<WikiTemplate> All = new List<WikiTemplate>
         {
-            new("blank", "Пустая", "fa-regular fa-file", "Чистый лист", ""),
+            new("blank", "Пустая", "fa-regular fa-file", "Начните с чистого листа", "", "slate"),
 
-            new("instruction", "Инструкция", "fa-solid fa-list-ol", "Пошаговое руководство с результатом",
+            new("instruction", "Инструкция", "fa-solid fa-list-ol", "Пошаговое руководство: что нужно, шаги, результат",
                 H2("Зачем это нужно") +
                 P("Коротко: какую задачу решает инструкция и для кого она.") +
                 Callout("info", "Перед началом убедитесь, что у вас есть нужные доступы.") +
@@ -24,9 +24,9 @@ namespace Crm.Services.Wiki
                 Ol("Откройте …", "Нажмите …", "Проверьте, что …") +
                 H2("Результат") +
                 P("Как понять, что всё сделано правильно.") +
-                Callout("tip", "Если что-то пошло не так — напишите ответственному за страницу.")),
+                Callout("tip", "Если что-то пошло не так — напишите ответственному за страницу."), "indigo"),
 
-            new("regulation", "Регламент", "fa-solid fa-scale-balanced", "Правила, роли и сроки",
+            new("regulation", "Регламент", "fa-solid fa-scale-balanced", "Цель, роли, порядок действий и сроки",
                 H2("Цель") +
                 P("Что регулирует документ и почему это важно.") +
                 H2("Область применения") +
@@ -37,13 +37,13 @@ namespace Crm.Services.Wiki
                 Ol("…", "…", "…") +
                 H2("Сроки") +
                 P("…") +
-                Callout("warning", "Нарушение регламента обсуждается с руководителем.")),
+                Callout("warning", "Нарушение регламента обсуждается с руководителем."), "violet"),
 
-            new("checklist", "Чек-лист", "fa-solid fa-square-check", "Список пунктов с галочками",
+            new("checklist", "Чек-лист", "fa-solid fa-square-check", "Пункты с галочками — для проверок и приёмки",
                 P("Отмечайте пункты по мере выполнения.") +
-                Tasks("Первый пункт", "Второй пункт", "Третий пункт", "Финальная проверка")),
+                Tasks("Первый пункт", "Второй пункт", "Третий пункт", "Финальная проверка"), "green"),
 
-            new("onboarding", "Онбординг новичка", "fa-solid fa-user-plus", "План первых дней сотрудника",
+            new("onboarding", "Онбординг новичка", "fa-solid fa-user-plus", "План первого дня и недели, контакты, ссылки",
                 Callout("info", "Добро пожаловать в команду! Здесь всё, что нужно в первые дни.") +
                 H2("Первый день") +
                 Tasks("Получить доступы к почте и CRM", "Познакомиться с командой", "Прочитать раздел «Как мы работаем»") +
@@ -52,9 +52,9 @@ namespace Crm.Services.Wiki
                 H2("Контакты") +
                 Table(new[] { "Вопрос", "К кому обращаться" }, new[] { new[] { "Доступы и техника", "…" }, new[] { "Задачи и приоритеты", "…" } }) +
                 H2("Полезные ссылки") +
-                Ul("…", "…")),
+                Ul("…", "…"), "sky"),
 
-            new("client", "Работа с клиентом", "fa-solid fa-handshake", "Этапы, скрипты и типовые ошибки",
+            new("client", "Работа с клиентом", "fa-solid fa-handshake", "Этапы, скрипт звонка, частые вопросы",
                 H2("Этапы работы") +
                 Ol("Первый контакт", "Выявление потребностей", "Предложение", "Согласование и оплата", "Выполнение и сдача") +
                 H2("Скрипт первого звонка") +
@@ -63,7 +63,7 @@ namespace Crm.Services.Wiki
                 Table(new[] { "Вопрос клиента", "Ответ" }, new[] { new[] { "Сколько стоит?", "…" }, new[] { "Какие сроки?", "…" } }) +
                 Callout("warning", "Не обещайте сроки, не согласовав их с производством.") +
                 H2("Чек-лист после встречи") +
-                Tasks("Внести итоги в карточку сделки", "Отправить письмо с договорённостями", "Поставить задачу на следующий шаг")),
+                Tasks("Внести итоги в карточку сделки", "Отправить письмо с договорённостями", "Поставить задачу на следующий шаг"), "teal"),
         };
 
         public static WikiTemplate? Find(string? key) => All.FirstOrDefault(t => t.Key == key);

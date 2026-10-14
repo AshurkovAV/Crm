@@ -61,16 +61,17 @@ builder.Services.AddScoped<IAuthenticationService,       AuthenticationService>(
 
 builder.Services.AddScoped<IInvitationService,           InvitationService>();
 builder.Services.AddScoped<IEmailService,                EmailService>();
-// Уведомления о задачах: сейчас только email. Чтобы добавить Макс — реализовать
-// ITaskNotificationChannel (например MaxTaskNotificationChannel) и зарегистрировать
-// его здесь ещё одной строкой AddScoped — диспетчер подхватит его сам.
-builder.Services.AddScoped<ITaskNotificationChannel,     EmailTaskNotificationChannel>();
+// Уведомления о задачах кладутся в очередь (outbox): письмо + MAX по настройкам исполнителя,
+// отправляет их фоновый NotificationWorker (см. Crm/Services/Notifications). Прямой канал
+// EmailTaskNotificationChannel больше не регистрируется — запрос не должен ждать SMTP.
+builder.Services.AddScoped<ITaskNotificationChannel,     OutboxTaskNotificationChannel>();
 builder.Services.AddScoped<ITaskNotificationDispatcher,  TaskNotificationDispatcher>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddSingleton<AvatarStorage>();
 builder.Services.AddScoped<Crm.Services.Workspace.IWorkspaceService, Crm.Services.Workspace.WorkspaceService>();
 
 builder.Services.AddApplication();
+builder.Services.AddCrmNotifications(builder.Configuration);
 
 // ====== КОНФИГУРАЦИЯ АУТЕНТИФИКАЦИИ ЧЕРЕЗ КУКИ ======
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -559,6 +560,21 @@ END");
             app.Logger.LogWarning(exception, "Не удалось создать таблицу {Table}", table);
         }
     }
+
+    // ====== Уведомления: очередь отправки, настройки, привязка MAX, события базы знаний ======
+
+    foreach (var (table, sql) in Crm.Services.Notifications.NotificationSchema.Scripts)
+    {
+        try
+        {
+            await using var db = new CrmContext();
+            await db.Database.ExecuteSqlRawAsync(sql);
+        }
+        catch (Exception exception)
+        {
+            app.Logger.LogWarning(exception, "Не удалось создать таблицу {Table}", table);
+        }
+    }
 }
 
 // Configure the HTTP request pipeline.
@@ -574,6 +590,13 @@ app.UseRouting();
 // ВАЖНО: этот порядок!
 app.UseAuthentication(); // Сначала аутентификация
 app.UseAuthorization();  // Затем авторизация
+
+if (args.Contains(NotificationsModule.RegisterWebhookFlag))
+{
+    // dotnet Crm.dll --max-register-webhook — подписать бота MAX на вебхук и выйти
+    Environment.ExitCode = await NotificationsModule.RegisterMaxWebhookAsync(app.Services);
+    return;
+}
 
 app.MapControllerRoute(
     name: "default",

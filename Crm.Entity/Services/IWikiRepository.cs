@@ -18,8 +18,8 @@ public interface IWikiRepository
     // ----- разделы -----
     Task<List<WikiSectionInfo>> GetSectionsAsync(WikiUserContext ctx);
     Task<WikiSection?> GetSectionAsync(WikiUserContext ctx, int sectionId);
-    Task<WikiSection?> CreateSectionAsync(WikiUserContext ctx, string name, string? icon, string? description);
-    Task<bool> UpdateSectionAsync(WikiUserContext ctx, int sectionId, string name, string? icon, string? description);
+    Task<WikiSection?> CreateSectionAsync(WikiUserContext ctx, string name, string? icon, string? color, string? description);
+    Task<bool> UpdateSectionAsync(WikiUserContext ctx, int sectionId, string name, string? icon, string? color, string? description);
     Task<(bool Ok, string? Message, List<WikiFileInfo> FilesToDelete)> DeleteSectionAsync(WikiUserContext ctx, int sectionId);
     Task<bool> ShiftSectionAsync(WikiUserContext ctx, int sectionId, int delta);
     Task<(string AccessMode, List<int> AccessUserIds, List<int> EditorUserIds)?> GetSectionSettingsAsync(WikiUserContext ctx, int sectionId);

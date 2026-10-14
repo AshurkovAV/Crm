@@ -161,6 +161,22 @@ namespace Crm.Models.Wiki
             return $"{n} {word}";
         }
 
-        public static string SectionIcon(string? icon) => string.IsNullOrWhiteSpace(icon) ? "📘" : icon;
+        /// <summary>Плитка значка раздела: линейная иконка на мягком цветном фоне (size: sm | md | lg | пусто).</summary>
+        public static Microsoft.AspNetCore.Html.IHtmlContent Tile(string? icon, string? color, string? size = null, string? extraClass = null)
+        {
+            var i = WikiIcons.Resolve(icon);
+            var c = WikiIcons.ResolveColor(color);
+            var cls = "wk-tile" + (string.IsNullOrEmpty(size) ? "" : " wk-tile-" + size) + (string.IsNullOrEmpty(extraClass) ? "" : " " + extraClass);
+            return new Microsoft.AspNetCore.Html.HtmlString(
+                $"<span class=\"{cls}\" style=\"--tile-fg:{c.Fg};--tile-bg:{c.Bg}\" aria-hidden=\"true\"><i class=\"{i.Css}\"></i></span>");
+        }
+
+        /// <summary>Данные значка для JSON (страница выбора, карточка задачи).</summary>
+        public static object TileData(string? icon, string? color)
+        {
+            var i = WikiIcons.Resolve(icon);
+            var c = WikiIcons.ResolveColor(color);
+            return new { Css = i.Css, Fg = c.Fg, Bg = c.Bg };
+        }
     }
 }

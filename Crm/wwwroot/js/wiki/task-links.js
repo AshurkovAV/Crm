@@ -32,6 +32,11 @@
         });
     }
 
+    function tileHtml(t) {
+        t = t || {};
+        return '<span class="wk-tile wk-tile-sm" style="--tile-fg:' + esc(t.Fg || '#4f46e5') + ';--tile-bg:' + esc(t.Bg || '#eef0ff') + '" aria-hidden="true"><i class="' + esc(t.Css || 'fa-solid fa-book') + '"></i></span>';
+    }
+
     var draft = null; // заготовка задачи по странице (?wikiPage=)
 
     function render(panel, taskId) {
@@ -46,9 +51,9 @@
         panel.querySelector('[data-wtl-add]').hidden = false;
         api('/Wiki/api/tasks/' + taskId + '/pages').then(function (pages) {
             list.innerHTML = pages.length ? pages.map(function (p) {
-                return '<div class="wk-task" style="padding:6px 6px 6px 12px"><i class="fa-solid fa-book"></i>' +
+                return '<div class="wk-task" style="padding:6px 6px 6px 8px">' + tileHtml(p.Tile) +
                     '<a class="wk-task-name" href="' + esc(p.Url) + '" target="_blank" rel="noopener" style="text-decoration:none">' + esc(p.Title) + '</a>' +
-                    '<span class="wk-task-meta">' + esc(p.SectionIcon + ' ' + p.SectionName) + '</span>' +
+                    '<span class="wk-task-meta">' + esc(p.SectionName) + '</span>' +
                     '<button type="button" class="wk-icon-btn" data-wtl-unlink="' + p.Id + '" title="Отвязать" aria-label="Отвязать статью"><i class="fa-solid fa-xmark"></i></button></div>';
             }).join('') : '<div class="wk-empty-mini">Статьи базы знаний не привязаны.</div>';
         }).catch(function () {
@@ -75,7 +80,7 @@
         function search() {
             api('/Wiki/api/lookup?q=' + encodeURIComponent(input.value.trim())).then(function (items) {
                 results.innerHTML = items.length ? items.map(function (p) {
-                    return '<button type="button" class="wk-picker-item" data-wtl-pick="' + p.Id + '"><span class="wk-list-ico">' + esc(p.SectionIcon) + '</span>' +
+                    return '<button type="button" class="wk-picker-item" data-wtl-pick="' + p.Id + '">' + tileHtml(p.Tile) +
                         '<span><b>' + esc(p.Title) + '</b><small>' + esc(p.SectionName) + '</small></span></button>';
                 }).join('') : '<div class="wk-empty-mini">Ничего не найдено</div>';
             }).catch(function () { results.innerHTML = ''; });

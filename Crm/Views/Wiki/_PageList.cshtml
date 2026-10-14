@@ -7,7 +7,7 @@
     {
         <li>
             <a href="/Wiki/Page/@p.Id">
-                <span class="wk-list-ico" aria-hidden="true">@WikiFormat.SectionIcon(p.SectionIcon)</span>
+                @WikiFormat.Tile(p.SectionIcon, p.SectionColor, "sm")
                 <span class="wk-list-body">
                     <span class="wk-list-title">@p.Title</span>
                     @if (mode == "review" && p.ReviewDueDate.HasValue)

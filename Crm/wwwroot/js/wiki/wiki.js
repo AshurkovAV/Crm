@@ -70,6 +70,11 @@
             .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
+    function tileHtml(t) {
+        t = t || {};
+        return '<span class="wk-tile wk-tile-sm" style="--tile-fg:' + esc(t.Fg || '#4f46e5') + ';--tile-bg:' + esc(t.Bg || '#eef0ff') + '" aria-hidden="true"><i class="' + esc(t.Css || 'fa-solid fa-book') + '"></i></span>';
+    }
+
     function openDialog(id) {
         var d = document.getElementById(id);
         if (d && !d.open) d.showModal();
@@ -88,7 +93,7 @@
         d.addEventListener('click', function (e) { if (e.target === d) d.close(); });
     });
 
-    window.WikiApi = { api: api, toast: toast, esc: esc, openDialog: openDialog, csrf: csrf };
+    window.WikiApi = { api: api, toast: toast, esc: esc, openDialog: openDialog, csrf: csrf, tileHtml: tileHtml };
 
     // ---------------------------------------------------------------- меню «…»
     function closeMenus(except) {
@@ -129,14 +134,33 @@
         var npForm = newPageDialog.querySelector('form');
         var npTemplate = 'blank';
 
-        newPageDialog.querySelectorAll('[data-template]').forEach(function (b) {
-            b.addEventListener('click', function () {
-                npTemplate = b.getAttribute('data-template');
-                newPageDialog.querySelectorAll('[data-template]').forEach(function (x) {
-                    x.classList.toggle('is-on', x === b);
-                    x.setAttribute('aria-checked', x === b ? 'true' : 'false');
-                });
+        var tplBody = newPageDialog.querySelector('[data-tpl-body]');
+        var tplTitle = newPageDialog.querySelector('[data-tpl-title]');
+
+        function showTemplate(key) {
+            var tpl = newPageDialog.querySelector('template[data-tpl-html="' + key + '"]');
+            var html = tpl ? tpl.innerHTML.trim() : '';
+            tplBody.innerHTML = html || '<p class="wk-faint">Пустая страница — начните писать сразу в редакторе.</p>';
+            tplBody.querySelectorAll('input').forEach(function (i) { i.disabled = true; });
+        }
+
+        function selectTemplate(b) {
+            npTemplate = b.getAttribute('data-template');
+            newPageDialog.querySelectorAll('[data-template]').forEach(function (x) {
+                x.classList.toggle('is-on', x === b);
+                x.setAttribute('aria-checked', x === b ? 'true' : 'false');
             });
+            showTemplate(npTemplate);
+        }
+
+        newPageDialog.querySelectorAll('[data-template]').forEach(function (b) {
+            b.addEventListener('click', function () { selectTemplate(b); });
+            // Наведение показывает структуру шаблона, уход — возвращает выбранный
+            b.addEventListener('mouseenter', function () { showTemplate(b.getAttribute('data-template')); });
+            b.addEventListener('mouseleave', function () { showTemplate(npTemplate); });
+        });
+        npForm.elements.title.addEventListener('input', function () {
+            tplTitle.textContent = npForm.elements.title.value.trim() || 'Новая страница';
         });
 
         document.addEventListener('click', function (e) {
@@ -156,8 +180,11 @@
             }
             npForm.elements.parentId.value = parentId || '';
             var note = npForm.querySelector('[data-parent-note]');
-            note.hidden = !parentId;
-            if (parentId) note.querySelector('small').textContent = 'Подстраница для «' + (btn.getAttribute('data-parent-title') || '') + '»';
+            note.textContent = parentId
+                ? 'Подстраница для «' + (btn.getAttribute('data-parent-title') || '') + '»'
+                : 'Выберите шаблон — структуру можно поменять в редакторе';
+            selectTemplate(newPageDialog.querySelector('[data-template="blank"]'));
+            tplTitle.textContent = 'Новая страница';
             openDialog('wkNewPageDialog');
             setTimeout(function () { npForm.elements.title.focus(); }, 30);
         });
@@ -186,17 +213,32 @@
     var sectionDialog = document.getElementById('wkSectionDialog');
     if (sectionDialog) {
         var sForm = sectionDialog.querySelector('form');
-        var emojiButtons = sectionDialog.querySelectorAll('[data-emoji]');
-        function markEmoji(value) {
-            emojiButtons.forEach(function (b) { b.classList.toggle('is-on', b.getAttribute('data-emoji') === value); });
+        var iconButtons = sectionDialog.querySelectorAll('[data-icon-key]');
+        var colorButtons = sectionDialog.querySelectorAll('[data-color-key]');
+        var preview = sectionDialog.querySelector('[data-icon-preview]');
+        var previewName = sectionDialog.querySelector('[data-icon-preview-name]');
+
+        function markPicker() {
+            var icon = sForm.elements.icon.value || 'book';
+            var color = sForm.elements.color.value || 'indigo';
+            var iconBtn = sectionDialog.querySelector('[data-icon-key="' + icon + '"]') || iconButtons[0];
+            var colorBtn = sectionDialog.querySelector('[data-color-key="' + color + '"]') || colorButtons[0];
+            iconButtons.forEach(function (b) { var on = b === iconBtn; b.classList.toggle('is-on', on); b.setAttribute('aria-checked', on ? 'true' : 'false'); });
+            colorButtons.forEach(function (b) { var on = b === colorBtn; b.classList.toggle('is-on', on); b.setAttribute('aria-checked', on ? 'true' : 'false'); });
+            sectionDialog.style.setProperty('--pick-fg', colorBtn.getAttribute('data-fg'));
+            sectionDialog.style.setProperty('--pick-bg', colorBtn.getAttribute('data-bg'));
+            preview.style.setProperty('--tile-fg', colorBtn.getAttribute('data-fg'));
+            preview.style.setProperty('--tile-bg', colorBtn.getAttribute('data-bg'));
+            preview.querySelector('i').className = iconBtn.getAttribute('data-icon-css');
+            previewName.textContent = sForm.elements.name.value.trim() || 'Новый раздел';
         }
-        emojiButtons.forEach(function (b) {
-            b.addEventListener('click', function () {
-                sForm.elements.icon.value = b.getAttribute('data-emoji');
-                markEmoji(sForm.elements.icon.value);
-            });
+        iconButtons.forEach(function (b) {
+            b.addEventListener('click', function () { sForm.elements.icon.value = b.getAttribute('data-icon-key'); markPicker(); });
         });
-        sForm.elements.icon.addEventListener('input', function () { markEmoji(sForm.elements.icon.value); });
+        colorButtons.forEach(function (b) {
+            b.addEventListener('click', function () { sForm.elements.color.value = b.getAttribute('data-color-key'); markPicker(); });
+        });
+        sForm.elements.name.addEventListener('input', markPicker);
 
         document.addEventListener('click', function (e) {
             var create = e.target.closest('[data-wiki-new-section]');
@@ -207,9 +249,10 @@
             sectionDialog.querySelector('h2').textContent = edit ? 'Изменить раздел' : 'Новый раздел';
             sForm.elements.id.value = edit ? edit.getAttribute('data-id') : '';
             sForm.elements.name.value = edit ? edit.getAttribute('data-name') : '';
-            sForm.elements.icon.value = edit ? (edit.getAttribute('data-icon') || '') : '📘';
+            sForm.elements.icon.value = edit ? (edit.getAttribute('data-icon') || 'book') : 'book';
+            sForm.elements.color.value = edit ? (edit.getAttribute('data-color') || 'indigo') : 'indigo';
             sForm.elements.description.value = edit ? (edit.getAttribute('data-description') || '') : '';
-            markEmoji(sForm.elements.icon.value);
+            markPicker();
             openDialog('wkSectionDialog');
             setTimeout(function () { sForm.elements.name.focus(); }, 30);
         });
@@ -217,7 +260,7 @@
         sForm.addEventListener('submit', function (e) {
             e.preventDefault();
             var id = sForm.elements.id.value;
-            var body = { Name: sForm.elements.name.value, Icon: sForm.elements.icon.value, Description: sForm.elements.description.value };
+            var body = { Name: sForm.elements.name.value, Icon: sForm.elements.icon.value, Color: sForm.elements.color.value, Description: sForm.elements.description.value };
             api(id ? '/Wiki/api/sections/' + id : '/Wiki/api/sections', { body: body })
                 .then(function (data) { location.href = id ? location.href : data.Url; })
                 .catch(function (err) { toast(err.message, true); });
@@ -326,7 +369,7 @@
         }
         box.innerHTML = pickerItems.map(function (p, i) {
             return '<button type="button" class="wk-picker-item' + (i === pickerActive ? ' is-active' : '') + '" role="option" data-index="' + i + '">' +
-                '<span class="wk-list-ico">' + esc(p.SectionIcon) + '</span><span><b>' + esc(p.Title) + '</b><small>' + esc(p.SectionName) + '</small></span></button>';
+                tileHtml(p.Tile) + '<span><b>' + esc(p.Title) + '</b><small>' + esc(p.SectionName) + '</small></span></button>';
         }).join('');
     }
     function loadPicker(q) {

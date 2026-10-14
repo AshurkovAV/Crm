@@ -9,5 +9,8 @@ namespace Crm.Services.Email
 
         /// <summary>Письмо исполнителю о новой/изменённой задаче.</summary>
         Task SendTaskNotificationEmailAsync(TaskNotificationContext context);
+
+        /// <summary>Готовое письмо (HTML + текстовая альтернатива) через почтовый ящик CRM. Используется очередью уведомлений.</summary>
+        Task<bool> SendRawAsync(string to, string subject, string html, string? text);
     }
 }

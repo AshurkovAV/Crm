@@ -6,7 +6,7 @@
     <div class="wk-side-head">
         <a class="wk-side-back" href="/Wiki"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i>Все разделы</a>
         <div class="wk-side-section">
-            <span class="wk-section-icon" aria-hidden="true">@WikiFormat.SectionIcon(s.Icon)</span>
+            @WikiFormat.Tile(s.Icon, s.Color, "md")
             <a href="/Wiki/Section/@s.Id"><b title="@s.Name">@s.Name</b></a>
             @if (s.AccessMode == "Selected")
             {
@@ -28,7 +28,7 @@
 </aside>
 <details class="wk-card wk-side-mobile">
     <summary>
-        <span class="wk-section-icon" style="width:30px;height:30px;font-size:16px;border-radius:9px" aria-hidden="true">@WikiFormat.SectionIcon(s.Icon)</span>
+        @WikiFormat.Tile(s.Icon, s.Color, "sm")
         <span>@s.Name · страницы раздела</span>
         <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
     </summary>

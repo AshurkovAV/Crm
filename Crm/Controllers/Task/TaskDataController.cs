@@ -445,8 +445,9 @@ namespace Crm.Controllers
                 if (taskData.Assignee.Value == currentUserId)
                     return;
 
+                // Адрес почты не обязателен: уведомление может уйти и в MAX (каналы выбирает очередь уведомлений)
                 var assignee = _userRepository.GetUserById(taskData.Assignee.Value)?.Data;
-                if (assignee == null || string.IsNullOrWhiteSpace(assignee.DefaultEmail))
+                if (assignee == null)
                     return;
 
                 string? authorName = null;
@@ -470,6 +471,7 @@ namespace Crm.Controllers
                     AssigneeUserId = assignee.Id,
                     AssigneeName = assignee.DisplayName ?? assignee.DefaultEmail,
                     AssigneeEmail = assignee.DefaultEmail,
+                    ActorUserId = currentUserId,
                     ChangedFields = changedFields
                 };
 

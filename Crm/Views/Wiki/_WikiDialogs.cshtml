@@ -1,47 +1,63 @@
 @model WikiViewModelBase
 @{
     var editableSections = Model.Sections.Where(s => s.CanEdit).ToList();
-    var emojis = new[] { "📘", "📗", "📕", "📙", "📒", "🚀", "🧭", "🛠️", "💼", "🤝", "📞", "🧾", "🏭", "🚚", "🎓", "🔒", "💡", "⭐" };
 }
 <meta name="wiki-csrf" content="@Antiforgery.GetAndStoreTokens(Context).RequestToken" />
 
 @* ---------- Новая страница ---------- *@
-<dialog class="wk-dialog" id="wkNewPageDialog" aria-labelledby="wkNewPageTitle">
+<dialog class="wk-dialog wk-dialog-wide" id="wkNewPageDialog" aria-labelledby="wkNewPageTitle">
     <form method="dialog" data-wiki-new-page-form>
         <div class="wk-dialog-head">
-            <h2 id="wkNewPageTitle">Новая страница</h2>
+            <span class="wk-tile wk-tile-md" style="--tile-fg:#4f46e5;--tile-bg:#eef0ff" aria-hidden="true"><i class="fa-regular fa-file-lines"></i></span>
+            <div class="wk-dialog-titles">
+                <h2 id="wkNewPageTitle">Новая страница</h2>
+                <p class="wk-dialog-sub" data-parent-note>Выберите шаблон — структуру можно поменять в редакторе</p>
+            </div>
             <button type="button" class="wk-icon-btn" data-dialog-close aria-label="Закрыть"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div class="wk-dialog-body">
-            <label class="wk-field">
-                <span>Название</span>
-                <input class="wk-input" name="title" maxlength="300" placeholder="Например: Как оформить возврат" required autocomplete="off" />
-            </label>
-            <label class="wk-field" data-section-field>
-                <span>Раздел</span>
-                <select class="wk-select" name="sectionId">
-                    @foreach (var s in editableSections)
-                    {
-                        <option value="@s.Id">@WikiFormat.SectionIcon(s.Icon) @s.Name</option>
-                    }
-                </select>
-            </label>
+            <div class="wk-row">
+                <label class="wk-field" style="flex:2">
+                    <span>Название</span>
+                    <input class="wk-input" name="title" maxlength="300" placeholder="Например: Как оформить возврат" required autocomplete="off" />
+                </label>
+                <label class="wk-field" data-section-field>
+                    <span>Раздел</span>
+                    <select class="wk-select" name="sectionId">
+                        @foreach (var s in editableSections)
+                        {
+                            <option value="@s.Id">@s.Name</option>
+                        }
+                    </select>
+                </label>
+            </div>
             <input type="hidden" name="parentId" />
-            <div class="wk-field" data-parent-note hidden><small class="wk-muted"></small></div>
-            <div class="wk-field">
-                <span>Шаблон</span>
+            <div class="wk-tpl-layout">
                 <div class="wk-templates" role="radiogroup" aria-label="Шаблон страницы">
                     @{ var first = true; }
                     @foreach (var t in WikiTemplates.All)
                     {
+                        var c = WikiIcons.ResolveColor(t.Color);
                         <button type="button" class="wk-template @(first ? "is-on" : null)" role="radio" aria-checked="@(first ? "true" : "false")" data-template="@t.Key">
-                            <i class="@t.Icon" aria-hidden="true"></i>
-                            <span><b>@t.Title</b><small>@t.Description</small></span>
+                            <span class="wk-tile wk-tile-md" style="--tile-fg:@c.Fg;--tile-bg:@c.Bg" aria-hidden="true"><i class="@t.Icon"></i></span>
+                            <span class="wk-template-text"><b>@t.Title</b><small>@t.Description</small></span>
+                            <i class="fa-solid fa-circle-check wk-template-check" aria-hidden="true"></i>
                         </button>
                         first = false;
                     }
                 </div>
+                <div class="wk-tpl-preview" aria-live="polite">
+                    <div class="wk-tpl-preview-head"><i class="fa-regular fa-eye"></i>Предпросмотр структуры</div>
+                    <div class="wk-tpl-paper">
+                        <div class="wk-tpl-title" data-tpl-title>Новая страница</div>
+                        <div class="wk-prose wk-tpl-body" data-tpl-body></div>
+                    </div>
+                </div>
             </div>
+            @foreach (var t in WikiTemplates.All)
+            {
+                <template data-tpl-html="@t.Key">@Html.Raw(t.Html)</template>
+            }
         </div>
         <div class="wk-dialog-foot">
             <button type="button" class="wk-btn" data-dialog-close>Отмена</button>
@@ -66,14 +82,27 @@
                     <input class="wk-input" name="name" maxlength="200" placeholder="Например: Продажи, Производство, Новичкам" required autocomplete="off" />
                 </label>
                 <div class="wk-field">
-                    <span>Значок</span>
-                    <div class="wk-emoji-row" data-emoji-row>
-                        @foreach (var e in emojis)
-                        {
-                            <button type="button" class="wk-emoji" data-emoji="@e" aria-label="Значок @e">@e</button>
-                        }
+                    <span>Значок и цвет</span>
+                    <div class="wk-icon-picker">
+                        <div class="wk-icon-preview">
+                            <span class="wk-tile wk-tile-xl" data-icon-preview style="--tile-fg:#4f46e5;--tile-bg:#eef0ff"><i class="fa-solid fa-book"></i></span>
+                            <span class="wk-icon-preview-name" data-icon-preview-name>Раздел</span>
+                        </div>
+                        <div class="wk-icon-grid" role="radiogroup" aria-label="Значок раздела">
+                            @foreach (var ic in WikiIcons.Icons)
+                            {
+                                <button type="button" class="wk-icon-opt" role="radio" aria-checked="false" data-icon-key="@ic.Key" data-icon-css="@ic.Css" title="@ic.Title" aria-label="@ic.Title"><i class="@ic.Css"></i></button>
+                            }
+                        </div>
+                        <div class="wk-color-row" role="radiogroup" aria-label="Цвет">
+                            @foreach (var c in WikiIcons.Colors)
+                            {
+                                <button type="button" class="wk-color-opt" role="radio" aria-checked="false" data-color-key="@c.Key" data-fg="@c.Fg" data-bg="@c.Bg" title="@c.Title" aria-label="@c.Title" style="--sw:@c.Fg"></button>
+                            }
+                        </div>
                     </div>
-                    <input class="wk-input" name="icon" maxlength="16" placeholder="Или вставьте свой эмодзи" style="max-width:220px" autocomplete="off" />
+                    <input type="hidden" name="icon" />
+                    <input type="hidden" name="color" />
                 </div>
                 <label class="wk-field">
                     <span>Описание</span>

@@ -167,6 +167,7 @@ public class WikiRepository : IWikiRepository
                 s.CompanyId,
                 s.Name,
                 s.Icon,
+                s.Color,
                 s.Description,
                 s.SortOrder,
                 s.AccessMode,
@@ -180,6 +181,7 @@ public class WikiRepository : IWikiRepository
             Id = s.Id,
             Name = s.Name,
             Icon = s.Icon,
+            Color = s.Color,
             Description = s.Description,
             SortOrder = s.SortOrder,
             AccessMode = s.AccessMode,
@@ -195,7 +197,7 @@ public class WikiRepository : IWikiRepository
         return await ReadableSections(db, ctx).AsNoTracking().FirstOrDefaultAsync(s => s.Id == sectionId);
     }
 
-    public async Task<WikiSection?> CreateSectionAsync(WikiUserContext ctx, string name, string? icon, string? description)
+    public async Task<WikiSection?> CreateSectionAsync(WikiUserContext ctx, string name, string? icon, string? color, string? description)
     {
         if (!WikiAccess.CanManage(ctx))
             return null;
@@ -209,7 +211,8 @@ public class WikiRepository : IWikiRepository
         {
             CompanyId = ctx.CompanyId,
             Name = Clip(name, MaxSectionNameLength),
-            Icon = Clip(icon, 16),
+            Icon = WikiIcons.NormalizeIcon(icon),
+            Color = WikiIcons.NormalizeColor(color),
             Description = Clip(description, 1000),
             SortOrder = maxOrder + 1,
             AccessMode = WikiSection.AccessAll,
@@ -222,7 +225,7 @@ public class WikiRepository : IWikiRepository
         return section;
     }
 
-    public async Task<bool> UpdateSectionAsync(WikiUserContext ctx, int sectionId, string name, string? icon, string? description)
+    public async Task<bool> UpdateSectionAsync(WikiUserContext ctx, int sectionId, string name, string? icon, string? color, string? description)
     {
         if (!WikiAccess.CanManage(ctx))
             return false;
@@ -233,7 +236,8 @@ public class WikiRepository : IWikiRepository
             return false;
 
         section.Name = Clip(name, MaxSectionNameLength);
-        section.Icon = Clip(icon, 16);
+        section.Icon = WikiIcons.NormalizeIcon(icon);
+        section.Color = WikiIcons.NormalizeColor(color);
         section.Description = Clip(description, 1000);
         section.ModifiedDate = DateTime.UtcNow;
         await db.SaveChangesAsync();
@@ -806,6 +810,7 @@ public class WikiRepository : IWikiRepository
                 p.SectionId,
                 SectionName = p.Section.Name,
                 SectionIcon = p.Section.Icon,
+                SectionColor = p.Section.Color,
                 p.ContentText,
                 p.ModifiedDate,
                 TitleMatch = EF.Functions.Like(p.Title, pattern, "\\"),
@@ -829,6 +834,7 @@ public class WikiRepository : IWikiRepository
             SectionId = p.SectionId,
             SectionName = p.SectionName,
             SectionIcon = p.SectionIcon,
+            SectionColor = p.SectionColor,
             ContentText = p.ContentText,
             ModifiedDate = p.ModifiedDate,
             TitleMatch = p.TitleMatch,
@@ -1193,6 +1199,7 @@ public class WikiRepository : IWikiRepository
                 p.SectionId,
                 SectionName = p.Section.Name,
                 SectionIcon = p.Section.Icon,
+                SectionColor = p.Section.Color,
                 p.ModifiedDate,
                 p.ModifiedByUserId,
                 p.ReviewDueDate,
@@ -1215,6 +1222,7 @@ public class WikiRepository : IWikiRepository
             SectionId = r.SectionId,
             SectionName = r.SectionName,
             SectionIcon = r.SectionIcon,
+            SectionColor = r.SectionColor,
             ModifiedDate = r.ModifiedDate,
             ModifiedByName = names.GetValueOrDefault(r.ModifiedByUserId),
             ReviewDueDate = r.ReviewDueDate,

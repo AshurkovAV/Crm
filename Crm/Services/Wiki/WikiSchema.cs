@@ -191,6 +191,30 @@ BEGIN
     CREATE UNIQUE INDEX [UQ_WikiPageTask_Page_Task] ON [dbo].[WikiPageTask]([PageId], [TaskId]);
     CREATE INDEX [IX_WikiPageTask_TaskId] ON [dbo].[WikiPageTask]([TaskId]);
 END"),
+
+            // Значок раздела: цвет плитки + перевод старых эмодзи в ключи иконок (см. WikiIcons).
+            // Сравнение эмодзи — только в бинарной сортировке: в обычной все символы вне BMP «равны».
+            ("WikiSection.Color", @"
+IF COL_LENGTH(N'[dbo].[WikiSection]', N'Color') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[WikiSection] ADD [Color] NVARCHAR(20) NULL;
+END"),
+
+            ("WikiSection.Icon migration", @"
+UPDATE [dbo].[WikiSection] SET
+    [Color] = COALESCE([Color], CASE [Icon] COLLATE Latin1_General_100_BIN2
+        WHEN N'🚀' THEN N'indigo' WHEN N'🤝' THEN N'teal' WHEN N'🏭' THEN N'orange' WHEN N'🔒' THEN N'slate'
+        WHEN N'📗' THEN N'green' WHEN N'📕' THEN N'rose' WHEN N'📙' THEN N'amber' WHEN N'📒' THEN N'amber'
+        WHEN N'🧭' THEN N'sky' WHEN N'🛠️' THEN N'slate' WHEN N'💼' THEN N'violet' WHEN N'📞' THEN N'teal'
+        WHEN N'🧾' THEN N'amber' WHEN N'🚚' THEN N'orange' WHEN N'🎓' THEN N'violet' WHEN N'💡' THEN N'amber'
+        WHEN N'⭐' THEN N'amber' ELSE N'indigo' END),
+    [Icon] = CASE [Icon] COLLATE Latin1_General_100_BIN2
+        WHEN N'🚀' THEN N'rocket' WHEN N'🤝' THEN N'handshake' WHEN N'🏭' THEN N'industry' WHEN N'🔒' THEN N'lock'
+        WHEN N'📘' THEN N'book' WHEN N'📗' THEN N'book' WHEN N'📕' THEN N'book' WHEN N'📙' THEN N'book' WHEN N'📒' THEN N'book'
+        WHEN N'🧭' THEN N'compass' WHEN N'🛠️' THEN N'wrench' WHEN N'💼' THEN N'briefcase' WHEN N'📞' THEN N'phone'
+        WHEN N'🧾' THEN N'receipt' WHEN N'🚚' THEN N'truck' WHEN N'🎓' THEN N'graduation' WHEN N'💡' THEN N'lightbulb'
+        WHEN N'⭐' THEN N'star' ELSE [Icon] END
+WHERE [Color] IS NULL;"),
         };
     }
 }

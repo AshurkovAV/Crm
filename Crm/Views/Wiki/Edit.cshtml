@@ -68,6 +68,10 @@
 
         <div class="wk-savebar">
             <span class="wk-savebar-status" data-editor-status>Введите «/» в начале строки, чтобы вставить блок.</span>
+            <label class="wk-notify" title="Читатели раздела получат письмо и сообщение в MAX (по их настройкам)">
+                <input type="checkbox" data-editor-notify @(p.Version <= 1 ? "checked" : null) />
+                <span><i class="fa-regular fa-bell"></i> Уведомить сотрудников</span>
+            </label>
             <a class="wk-btn" href="/Wiki/Page/@p.Id" data-editor-cancel>Отмена</a>
             <button type="button" class="wk-btn wk-btn-pri" data-editor-save><i class="fa-solid fa-floppy-disk"></i>Сохранить</button>
         </div>

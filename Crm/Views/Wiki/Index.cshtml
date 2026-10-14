@@ -45,7 +45,7 @@
                         @foreach (var s in Model.Sections)
                         {
                             <article class="wk-card wk-section-card" data-section-id="@s.Id">
-                                <span class="wk-section-icon" aria-hidden="true">@WikiFormat.SectionIcon(s.Icon)</span>
+                                @WikiFormat.Tile(s.Icon, s.Color, null, "wk-section-icon")
                                 <div class="wk-section-body">
                                     <h2 class="wk-section-name"><a href="/Wiki/Section/@s.Id">@s.Name</a></h2>
                                     @if (!string.IsNullOrWhiteSpace(s.Description))
@@ -56,7 +56,8 @@
                                         <span>@WikiFormat.Pages(s.PageCount)</span>
                                         @if (s.LastModified.HasValue)
                                         {
-                                            <span>· обновлено @WikiFormat.Date(s.LastModified.Value).Split(' ')[0]</span>
+                                            <span class="wk-meta-dot" aria-hidden="true"></span>
+                                            <span>обновлено @WikiFormat.Date(s.LastModified.Value).Split(' ')[0]</span>
                                         }
                                         @if (s.AccessMode == "Selected")
                                         {
@@ -75,7 +76,7 @@
                                             <i class="fa-solid fa-ellipsis"></i>
                                         </button>
                                         <div class="wk-menu" hidden role="menu">
-                                            <button type="button" role="menuitem" data-wiki-edit-section data-id="@s.Id" data-name="@s.Name" data-icon="@s.Icon" data-description="@s.Description"><i class="fa-solid fa-pen"></i>Изменить</button>
+                                            <button type="button" role="menuitem" data-wiki-edit-section data-id="@s.Id" data-name="@s.Name" data-icon="@WikiIcons.Resolve(s.Icon).Key" data-color="@WikiIcons.ResolveColor(s.Color).Key" data-description="@s.Description"><i class="fa-solid fa-pen"></i>Изменить</button>
                                             <button type="button" role="menuitem" data-wiki-access data-id="@s.Id"><i class="fa-solid fa-user-lock"></i>Доступ и редакторы</button>
                                             <button type="button" role="menuitem" data-wiki-shift-section="-1" data-id="@s.Id"><i class="fa-solid fa-arrow-left"></i>Переместить раньше</button>
                                             <button type="button" role="menuitem" data-wiki-shift-section="1" data-id="@s.Id"><i class="fa-solid fa-arrow-right"></i>Переместить позже</button>
@@ -89,7 +90,7 @@
                         @if (Model.CanManage)
                         {
                             <button type="button" class="wk-card wk-section-card wk-section-add" data-wiki-new-section>
-                                <i class="fa-solid fa-plus" aria-hidden="true"></i><span>Новый раздел</span>
+                                <span class="wk-tile" aria-hidden="true"><i class="fa-solid fa-plus"></i></span><span>Новый раздел</span>
                             </button>
                         }
                     </div>

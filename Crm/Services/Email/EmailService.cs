@@ -830,7 +830,16 @@ namespace Crm.Services.Email
         //    await Task.CompletedTask;
         //}
 
-        private async Task<bool> SendEmailAsync(Mail mail)
+        public Task<bool> SendRawAsync(string to, string subject, string html, string? text)
+            => SendEmailAsync(new Mail
+            {
+                EmailFrom = "ashurkovav@yandex.ru",
+                EmailTo = to,
+                EmailSubject = subject,
+                EmailBody = html,
+            }, text);
+
+        private async Task<bool> SendEmailAsync(Mail mail, string? plainText = null)
         {
             try
             {
@@ -843,6 +852,12 @@ namespace Crm.Services.Email
                     Body = mail.EmailBody,
                     IsBodyHtml = true
                 };
+                if (!string.IsNullOrEmpty(plainText))
+                {
+                    // Текстовая альтернатива для клиентов без HTML (и для спам-фильтров)
+                    message.AlternateViews.Add(AlternateView.CreateAlternateViewFromString(plainText, System.Text.Encoding.UTF8, "text/plain"));
+                    message.AlternateViews.Add(AlternateView.CreateAlternateViewFromString(mail.EmailBody, System.Text.Encoding.UTF8, "text/html"));
+                }
 
                 using var smtpClient = new SmtpClient("smtp.yandex.ru", 587)
                 {

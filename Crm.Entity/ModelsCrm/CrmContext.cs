@@ -75,6 +75,14 @@ public partial class CrmContext : DbContext
 
     public virtual DbSet<WikiPageTask> WikiPageTasks { get; set; }
 
+    public virtual DbSet<NotificationOutbox> NotificationOutbox { get; set; }
+
+    public virtual DbSet<NotificationPreference> NotificationPreferences { get; set; }
+
+    public virtual DbSet<UserMaxLink> UserMaxLinks { get; set; }
+
+    public virtual DbSet<WikiNotificationEvent> WikiNotificationEvents { get; set; }
+
     public virtual DbSet<User> Users { get; set; }
 
     public virtual DbSet<UserToken> UserTokens { get; set; }
@@ -715,6 +723,49 @@ public partial class CrmContext : DbContext
             entity.HasIndex(e => new { e.PageId, e.TaskId }).IsUnique();
             entity.HasIndex(e => e.TaskId);
         });
+
+        // ====== Уведомления (схема создаётся при старте, см. NotificationSchema.cs) ======
+
+        modelBuilder.Entity<NotificationOutbox>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.ToTable("NotificationOutbox");
+            entity.Property(e => e.Channel).HasMaxLength(20);
+            entity.Property(e => e.Kind).HasMaxLength(40);
+            entity.Property(e => e.Subject).HasMaxLength(300);
+            entity.Property(e => e.LinkUrl).HasMaxLength(500);
+            entity.Property(e => e.LinkText).HasMaxLength(100);
+            entity.Property(e => e.Status).HasMaxLength(20);
+            entity.Property(e => e.LastError).HasMaxLength(500);
+            entity.HasIndex(e => new { e.Status, e.NextAttemptAt });
+        });
+
+        modelBuilder.Entity<NotificationPreference>(entity =>
+        {
+            entity.HasKey(e => e.UserId);
+            entity.Property(e => e.UserId).ValueGeneratedNever();
+            entity.ToTable("NotificationPreference");
+        });
+
+        modelBuilder.Entity<UserMaxLink>(entity =>
+        {
+            entity.HasKey(e => e.UserId);
+            entity.Property(e => e.UserId).ValueGeneratedNever();
+            entity.ToTable("UserMaxLink");
+            entity.Property(e => e.LinkTokenHash).HasMaxLength(64);
+            entity.HasIndex(e => e.MaxUserId);
+            entity.HasIndex(e => e.LinkTokenHash);
+        });
+
+        modelBuilder.Entity<WikiNotificationEvent>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.ToTable("WikiNotificationEvent");
+            entity.Property(e => e.Kind).HasMaxLength(20);
+            entity.HasIndex(e => new { e.CompanyId, e.ProcessedAt });
+        });
+
+        modelBuilder.Entity<WikiSection>(entity => entity.Property(e => e.Color).HasMaxLength(20));
 
         OnModelCreatingPartial(modelBuilder);
     }

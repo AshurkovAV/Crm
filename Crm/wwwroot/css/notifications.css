@@ -1,0 +1,63 @@
+/* Карточка «Уведомления» в профиле */
+.nt-card { padding: 22px 24px; display: flex; flex-direction: column; gap: 16px; font-family: var(--ui-font); color: var(--ui-ink); }
+.nt-head { display: flex; gap: 12px; align-items: center; }
+.nt-title { margin: 0; font-size: 16px; font-weight: 800; }
+.nt-sub { margin: 2px 0 0; font-size: 13px; color: var(--ui-muted); }
+.nt-tile {
+    --tile-fg: #4f46e5; --tile-bg: #eef0ff;
+    width: 40px; height: 40px; border-radius: 12px; flex: none;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--tile-bg); color: var(--tile-fg); font-size: 17px;
+}
+.nt-tile-max { --tile-fg: #2563eb; --tile-bg: #eaf2ff; }
+.nt-max { display: flex; gap: 12px; align-items: center; padding: 12px 14px; border: 1px solid var(--ui-line); border-radius: 16px; background: #fbfbfd; flex-wrap: wrap; }
+.nt-max-body { flex: 1 1 200px; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.nt-max-body b { font-size: 14px; }
+.nt-max-status { font-size: 13px; color: var(--ui-muted); }
+.nt-btn {
+    height: 38px; padding: 0 14px; border-radius: 11px; border: 1px solid var(--ui-line); background: #fff;
+    font: inherit; font-size: 13.5px; font-weight: 700; color: var(--ui-ink); cursor: pointer;
+    display: inline-flex; align-items: center; gap: 8px; text-decoration: none; white-space: nowrap;
+}
+.nt-btn:hover { background: #f6f7fb; }
+.nt-btn-pri { background: var(--ui-acc); border-color: var(--ui-acc); color: #fff; }
+.nt-btn-pri:hover { background: var(--ui-acc-h); color: #fff; }
+.nt-btn-ghost { border-color: transparent; color: var(--ui-acc); }
+.nt-btn[disabled] { opacity: .5; cursor: default; }
+.nt-link { padding: 12px 14px; border-radius: 14px; background: #eaf2ff; color: #1e3a8a; font-size: 13.5px; line-height: 1.5; }
+.nt-link p { margin: 0 0 10px; }
+.nt-link-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.nt-table { display: flex; flex-direction: column; border: 1px solid var(--ui-line); border-radius: 16px; overflow: hidden; }
+.nt-row { display: grid; grid-template-columns: minmax(0, 1fr) 76px 76px; align-items: center; gap: 8px; padding: 12px 14px; }
+.nt-row + .nt-row { border-top: 1px solid var(--ui-line2); }
+.nt-row-head { background: #f6f7fb; font-size: 12px; font-weight: 800; color: var(--ui-muted); text-transform: uppercase; letter-spacing: .4px; padding: 9px 14px; }
+.nt-row-head span:not(:first-child) { text-align: center; }
+.nt-event { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.nt-event b { font-size: 14px; }
+.nt-event small { font-size: 12.5px; color: var(--ui-muted); line-height: 1.35; }
+.nt-switch { justify-self: center; position: relative; width: 40px; height: 24px; cursor: pointer; }
+.nt-switch input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.nt-switch span { position: absolute; inset: 0; border-radius: 999px; background: #d5d9e3; transition: background .15s; }
+.nt-switch span::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(15, 23, 42, .25); transition: transform .15s; }
+.nt-switch input:checked + span { background: var(--ui-acc); }
+.nt-switch input:checked + span::after { transform: translateX(16px); }
+.nt-switch input:focus-visible + span { box-shadow: 0 0 0 3px var(--ui-acc-s); }
+.nt-switch input:disabled + span { background: #e4e7ee; }
+.nt-switch input:disabled + span::after { transform: none; box-shadow: none; }
+.nt-switch input:disabled { cursor: not-allowed; }
+.nt-foot { margin: 0; font-size: 13px; color: var(--ui-muted); }
+.nt-foot .nt-saved { margin-left: 10px; }
+.nt-saved { color: #15803d; font-weight: 700; }
+@media (max-width: 640px) {
+    .nt-card { padding: 18px 16px; }
+    .nt-row { grid-template-columns: minmax(0, 1fr) 52px 52px; padding: 12px; }
+    .nt-max .nt-btn { width: 100%; justify-content: center; }
+}
+
+/* В профиле карточка во всю ширину: MAX слева, таблица каналов справа */
+@media (min-width: 1000px) {
+    .nt-card { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 16px 24px; align-items: start; }
+    .nt-card > .nt-head, .nt-card > .nt-foot { grid-column: 1 / -1; }
+    .nt-card > .nt-max, .nt-card > .nt-link { grid-column: 1; }
+    .nt-card > .nt-table { grid-column: 2; grid-row: 2 / span 2; }
+}

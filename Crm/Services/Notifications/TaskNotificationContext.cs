@@ -22,6 +22,9 @@ namespace Crm.Services.Notifications
         public string? ProjectName { get; set; }
         public string? AuthorName { get; set; }
 
+        /// <summary>Кто создал/изменил задачу (себе уведомление не шлём; по нему определяется компания).</summary>
+        public int ActorUserId { get; set; }
+
         public int AssigneeUserId { get; set; }
         public string AssigneeName { get; set; } = string.Empty;
         public string? AssigneeEmail { get; set; }

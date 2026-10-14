@@ -19,7 +19,7 @@
                 <a href="/Wiki">База знаний</a>
             </nav>
             <div class="wk-page-head">
-                <h1 class="wk-page-title"><span aria-hidden="true">@WikiFormat.SectionIcon(s.Icon)</span> @s.Name</h1>
+                <h1 class="wk-page-title wk-title-with-tile">@WikiFormat.Tile(s.Icon, s.Color, "lg")<span>@s.Name</span></h1>
                 <div class="wk-page-actions">
                     @if (s.CanEdit)
                     {
@@ -30,7 +30,7 @@
                         <div class="wk-menu-wrap">
                             <button type="button" class="wk-icon-btn" data-menu-toggle aria-haspopup="true" aria-expanded="false" aria-label="Действия с разделом"><i class="fa-solid fa-ellipsis"></i></button>
                             <div class="wk-menu" hidden role="menu">
-                                <button type="button" role="menuitem" data-wiki-edit-section data-id="@s.Id" data-name="@s.Name" data-icon="@s.Icon" data-description="@s.Description"><i class="fa-solid fa-pen"></i>Изменить раздел</button>
+                                <button type="button" role="menuitem" data-wiki-edit-section data-id="@s.Id" data-name="@s.Name" data-icon="@WikiIcons.Resolve(s.Icon).Key" data-color="@WikiIcons.ResolveColor(s.Color).Key" data-description="@s.Description"><i class="fa-solid fa-pen"></i>Изменить раздел</button>
                                 <button type="button" role="menuitem" data-wiki-access data-id="@s.Id"><i class="fa-solid fa-user-lock"></i>Доступ и редакторы</button>
                                 <hr />
                                 <button type="button" role="menuitem" class="is-danger" data-wiki-delete-section data-id="@s.Id" data-name="@s.Name"><i class="fa-solid fa-trash"></i>Удалить раздел</button>

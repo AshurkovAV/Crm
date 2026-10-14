@@ -6,6 +6,7 @@ public sealed class WikiSectionInfo
     public int Id { get; init; }
     public string Name { get; init; } = "";
     public string? Icon { get; init; }
+    public string? Color { get; init; }
     public string? Description { get; init; }
     public int SortOrder { get; init; }
     public string AccessMode { get; init; } = "All";
@@ -33,6 +34,7 @@ public sealed class WikiPageListItem
     public int SectionId { get; init; }
     public string SectionName { get; init; } = "";
     public string? SectionIcon { get; init; }
+    public string? SectionColor { get; init; }
     public DateTime ModifiedDate { get; init; }
     public string? ModifiedByName { get; init; }
     public DateTime? ReviewDueDate { get; init; }
@@ -90,6 +92,7 @@ public sealed class WikiSearchHit
     public int SectionId { get; init; }
     public string SectionName { get; init; } = "";
     public string? SectionIcon { get; init; }
+    public string? SectionColor { get; init; }
     public string? ContentText { get; init; }
     public DateTime ModifiedDate { get; init; }
     public List<string> MatchedFiles { get; init; } = new();

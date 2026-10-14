@@ -18,8 +18,11 @@ public partial class WikiSection
 
     public string Name { get; set; } = null!;
 
-    /// <summary>Эмодзи или короткий значок раздела.</summary>
+    /// <summary>Ключ значка (WikiIcons, например «rocket»); старые записи могут содержать эмодзи.</summary>
     public string? Icon { get; set; }
+
+    /// <summary>Цвет плитки значка (ключ палитры WikiIcons, например «indigo»).</summary>
+    public string? Color { get; set; }
 
     public string? Description { get; set; }
 
